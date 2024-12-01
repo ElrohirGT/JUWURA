@@ -4,13 +4,14 @@
   "description": "Integration tests for the backend",
   "scripts": {
     "test": "vitest",
-		"format": "@biomejs/biome format --write ./src",
-		"lint": "@biomejs/biome lint --write ./src",
+    "format": "@biomejs/biome format --write ./src",
+    "lint": "@biomejs/biome lint --write ./src"
   },
   "main": "index.js",
   "author": "ElrohirGT",
   "license": "MIT",
   "devDependencies": {
+    "axios": "^1.7.8",
     "vitest": "^2.1.6"
   },
   "dependencies": {
