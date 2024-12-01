@@ -1,3 +1,7 @@
+.yarn
+.pnp.cjs
+.pnp.loader.mjs
+
 # Logs
 logs
 *.log
