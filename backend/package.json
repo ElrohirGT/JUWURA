@@ -2,6 +2,9 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Integration tests for the backend",
+	"scripts": {
+		"test": "vitest"
+	},
   "main": "index.js",
   "author": "ElrohirGT",
   "license": "MIT",
