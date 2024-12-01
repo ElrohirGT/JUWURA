@@ -2,14 +2,18 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Integration tests for the backend",
-	"scripts": {
-		"test": "vitest"
-	},
+  "scripts": {
+    "test": "vitest",
+		"format": "@biomejs/biome format --write ./src",
+		"lint": "@biomejs/biome lint --write ./src",
+  },
   "main": "index.js",
   "author": "ElrohirGT",
   "license": "MIT",
-  "private": false,
   "devDependencies": {
     "vitest": "^2.1.6"
+  },
+  "dependencies": {
+    "@biomejs/biome": "^1.9.4"
   }
 }
