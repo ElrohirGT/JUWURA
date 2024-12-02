@@ -1,9 +1,10 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, button, div, img, text)
-import Html.Attributes exposing (src)
-import Html.Events exposing (onClick)
+import Css exposing (display, inlineBlock, padding, rem)
+import Html.Styled exposing (Html, button, div, img, text, toUnstyled)
+import Html.Styled.Attributes exposing (css, src)
+import Html.Styled.Events exposing (onClick)
 
 
 
@@ -18,7 +19,7 @@ viteAsset path =
 
 
 main =
-    Browser.sandbox { init = 0, update = update, view = view }
+    Browser.sandbox { init = 0, update = update, view = view >> toUnstyled }
 
 
 type Msg
@@ -26,6 +27,7 @@ type Msg
     | Decrement
 
 
+update : Msg -> number -> number
 update msg model =
     case msg of
         Increment ->
@@ -35,10 +37,18 @@ update msg model =
             model - 1
 
 
+view : Int -> Html Msg
 view model =
     div []
         [ button [ onClick Decrement ] [ text "-" ]
         , div [] [ text (String.fromInt model) ]
-        , button [ onClick Increment ] [ text "+" ]
+        , button
+            [ onClick Increment
+            , css
+                [ display inlineBlock
+                , padding (1 |> rem)
+                ]
+            ]
+            [ text "+" ]
         , img [ "./javascript.svg" |> viteAsset |> src ] []
         ]
