@@ -19,7 +19,7 @@
     nixpkgsFor = forAllSystems (system: import nixpkgs {inherit system;});
 
     backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.yarn-berry];
-    frontendPkgs = pkgs: [pkgs.nodejs pkgs.yarn-berry pkgs.elmPackages.elm pkgs.live-server pkgs.elmPackages.elm-format];
+    frontendPkgs = pkgs: [pkgs.nodejs pkgs.yarn-berry pkgs.elmPackages.elm pkgs.elmPackages.elm-format];
     cicdPkgs = pkgs: [pkgs.process-compose pkgs.entr];
   in {
     packages = forAllSystems (system: let
@@ -32,20 +32,9 @@
           processYAML = pkgs.lib.generators.toYAML {} {
             version = "0.5"; 
             processes = {
-              compileFrontend = {
-                working_dir = "./frontend";
-                command = "find src/ | entr -sn 'elm make src/Main.elm --output=public/elm.js && yarn build'";
-                ready_log_line = "built in";
-              };
-
               frontend = {
-                working_dir = "./frontend/dist";
-                command = "live-server -H 127.0.0.1 -p 3240 --hard .";
-                depends_on = {
-                  compileFrontend = {
-                    condition = "process_log_ready";
-                  };
-                };
+                working_dir = "./frontend";
+                command = "yarn dev";
               };
 
 							backend = {
