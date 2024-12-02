@@ -2,6 +2,9 @@
 .pnp.cjs
 .pnp.loader.mjs
 
+# Elm
+elm-stuff/
+
 # Logs
 logs
 *.log

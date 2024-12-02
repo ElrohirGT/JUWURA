@@ -18,19 +18,57 @@
     # Nixpkgs instantiated for supported system types.
     nixpkgsFor = forAllSystems (system: import nixpkgs {inherit system;});
 
-    backendPkgs = forAllSystems (system: let
-      pkgs = nixpkgsFor.${system};
-    in [pkgs.zig pkgs.nodejs pkgs.yarn-berry]);
-
-    frontendPkgs = forAllSystems (system: let
-      pkgs = nixpkgsFor.${system};
-    in [pkgs.nodejs pkgs.yarn-berry pkgs.elmPackages.elm pkgs.live-server]);
+    backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.yarn-berry];
+    frontendPkgs = pkgs: [pkgs.nodejs pkgs.yarn-berry pkgs.elmPackages.elm pkgs.live-server pkgs.elmPackages.elm-format];
+    cicdPkgs = pkgs: [pkgs.process-compose pkgs.entr];
   in {
+    packages = forAllSystems (system: let
+      pkgs = nixpkgsFor.${system};
+    in {
+      restartServices = pkgs.writeShellApplication {
+        name = "JUWURA services starter";
+        runtimeInputs = backendPkgs pkgs ++ frontendPkgs pkgs ++ cicdPkgs pkgs;
+        text = let
+          processYAML = pkgs.lib.generators.toYAML {} {
+            version = "0.5"; 
+            processes = {
+              compileFrontend = {
+                working_dir = "./frontend";
+                command = "find src/ | entr -n elm make src/Main.elm --output=public/elm.js && yarn build";
+                ready_log_line = "Success!";
+              };
+
+              frontend = {
+                working_dir = "./frontend/dist";
+                command = "live-server";
+                depends_on = {
+                  compileFrontend = {
+                    condition = "process_log_ready";
+                  };
+                };
+              };
+
+							backend = {
+								working_dir = "./backend";
+								command = "zig build run";
+							};
+            };
+          };
+          composeFile = pkgs.writeTextFile {
+            name = "juwura-process-compose.yaml";
+            text = processYAML;
+          };
+        in ''
+          process-compose -f ${composeFile}
+        '';
+      };
+    });
+
     devShells = forAllSystems (system: let
       pkgs = nixpkgsFor.${system};
     in {
       default = pkgs.mkShell {
-        packages = backendPkgs.${system} ++ frontendPkgs.${system};
+        packages = backendPkgs pkgs ++ frontendPkgs pkgs ++ cicdPkgs pkgs;
       };
     });
   };
