@@ -34,13 +34,13 @@
             processes = {
               compileFrontend = {
                 working_dir = "./frontend";
-                command = "find src/ | entr -n elm make src/Main.elm --output=public/elm.js && yarn build";
-                ready_log_line = "Success!";
+                command = "find src/ | entr -sn 'elm make src/Main.elm --output=public/elm.js && yarn build'";
+                ready_log_line = "built in";
               };
 
               frontend = {
                 working_dir = "./frontend/dist";
-                command = "live-server";
+                command = "live-server -H 127.0.0.1 -p 3240 --hard .";
                 depends_on = {
                   compileFrontend = {
                     condition = "process_log_ready";

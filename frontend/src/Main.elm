@@ -17,10 +17,10 @@ type Msg
 update msg model =
     case msg of
         Increment ->
-            model + 2
+            model + 1
 
         Decrement ->
-            model - 2
+            model - 1
 
 
 view model =

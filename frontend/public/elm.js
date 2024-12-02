@@ -5185,7 +5185,7 @@ var $author$project$Main$update = F2(
 		if (msg.$ === 'Increment') {
 			return model + 2;
 		} else {
-			return model - 2;
+			return model - 3;
 		}
 	});
 var $author$project$Main$Decrement = {$: 'Decrement'};
