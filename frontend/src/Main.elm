@@ -1,8 +1,20 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, button, div, text)
+import Html exposing (Html, button, div, img, text)
+import Html.Attributes exposing (src)
 import Html.Events exposing (onClick)
+
+
+
+{-
+   Imports an asset using vite from a certain string path.
+-}
+
+
+viteAsset : String -> String
+viteAsset path =
+    "VITE_PLUGIN_HELPER_ASSET" ++ path
 
 
 main =
@@ -28,4 +40,5 @@ view model =
         [ button [ onClick Decrement ] [ text "-" ]
         , div [] [ text (String.fromInt model) ]
         , button [ onClick Increment ] [ text "+" ]
+        , img [ "./javascript.svg" |> viteAsset |> src ] []
         ]
