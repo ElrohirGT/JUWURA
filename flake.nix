@@ -24,7 +24,7 @@
 
     # System packages...
     backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.yarn-berry];
-    frontendPkgs = pkgs: [pkgs.nodejs pkgs.yarn-berry pkgs.elmPackages.elm pkgs.elmPackages.elm-format];
+    frontendPkgs = pkgs: [pkgs.nodejs pkgs.yarn-berry pkgs.elmPackages.elm pkgs.elmPackages.elm-format pkgs.biome];
     orquestrationPkgs = pkgs: [pkgs.process-compose];
 
     # Process-compose generator...

@@ -1,21 +1,21 @@
 {
-  "name": "frontend",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "yarn install && vite",
-    "build": "yarn install && vite build",
-    "preview": "yarn install && vite preview",
-    "format": "yarn install && @biomejs/biome format --write ./src",
-    "format:check": "yarn install && @biomejs/biome format ./src",
-    "lint": "yarn install && @biomejs/biome lint --write ./src"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "vite": "^6.0.1"
-  },
-  "dependencies": {
-    "vite-plugin-elm": "^3.0.1"
-  }
+	"name": "frontend",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "yarn install && vite",
+		"build": "yarn install && vite build",
+		"preview": "yarn install && vite preview",
+		"format": "yarn install && biome format --write ./src",
+		"format:check": "yarn install && biome format ./src",
+		"lint": "yarn install && biome lint --write ./src"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"vite": "^6.0.1"
+	},
+	"dependencies": {
+		"vite-plugin-elm": "^3.0.1"
+	}
 }
