@@ -109,7 +109,7 @@ update msg model =
                     ( { model | state = Details (DetailsPage.update innerModel innerMsg) }, Cmd.none )
 
                 _ ->
-                    Debug.todo "This should never happen!"
+                    ( model, Cmd.none )
 
 
 

@@ -40,7 +40,6 @@ config =
     , NoDebug.Log.rule
     , NoDebug.TodoOrToString.rule
         |> Rule.ignoreErrorsForDirectories [ "tests/" ]
-        |> Rule.ignoreErrorsForFiles [ "src/Main.elm" ]
     , NoExposingEverything.rule |> Rule.ignoreErrorsForFiles [ "src/Theme.elm" ]
     , NoImportingEverything.rule []
     , NoMissingTypeAnnotation.rule |> Rule.ignoreErrorsForFiles [ "src/Theme.elm" ]
