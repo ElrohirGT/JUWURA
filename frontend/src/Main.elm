@@ -1,4 +1,4 @@
-module Main exposing (main)
+module Main exposing (AppState, Model, Msg, main)
 
 import Browser
 import Browser.Navigation as Nav
@@ -6,12 +6,12 @@ import Html
 import Html.Styled exposing (toUnstyled)
 import Pages.Details as DetailsPage
 import Pages.Home as HomePage
-import Pages.Loading as LoadingPage
 import Pages.NotFound as NotFoundPage
 import Routing
 import Url exposing (Url)
 
 
+main : Program (Maybe String) Model Msg
 main =
     Browser.application
         { init = init
@@ -34,8 +34,7 @@ Used to represent the current page and state
 
 -}
 type AppState
-    = Loading
-    | Home
+    = Home
     | Details DetailsPage.Model
     | NotFound
 
@@ -62,6 +61,7 @@ type alias Model =
     }
 
 
+init : Maybe String -> Url -> Nav.Key -> ( Model, Cmd msg )
 init basePath url navKey =
     ( Model navKey basePath (fromUrlToAppState basePath url), Cmd.none )
 
@@ -70,7 +70,8 @@ init basePath url navKey =
 -- SUBSCRIPTIONS
 
 
-subscriptions model =
+subscriptions : Model -> Sub msg
+subscriptions _ =
     Sub.none
 
 
@@ -84,6 +85,7 @@ type Msg
     | DetailsViewMsg DetailsPage.Msg
 
 
+update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case msg of
         UrlChanged url ->
@@ -138,9 +140,6 @@ view model =
             }
     in
     case model.state of
-        Loading ->
-            viewStatic LoadingPage.view
-
         Home ->
             viewStatic HomePage.view
 

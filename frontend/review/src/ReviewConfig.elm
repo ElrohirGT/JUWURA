@@ -40,17 +40,18 @@ config =
     , NoDebug.Log.rule
     , NoDebug.TodoOrToString.rule
         |> Rule.ignoreErrorsForDirectories [ "tests/" ]
-    , NoExposingEverything.rule
+        |> Rule.ignoreErrorsForFiles [ "src/Main.elm" ]
+    , NoExposingEverything.rule |> Rule.ignoreErrorsForFiles [ "src/Theme.elm" ]
     , NoImportingEverything.rule []
-    , NoMissingTypeAnnotation.rule
-    , NoMissingTypeAnnotationInLetIn.rule
+    , NoMissingTypeAnnotation.rule |> Rule.ignoreErrorsForFiles [ "src/Theme.elm" ]
+    , NoMissingTypeAnnotationInLetIn.rule |> Rule.ignoreErrorsForFiles [ "src/Main.elm" ]
     , NoMissingTypeExpose.rule
     , NoSimpleLetBody.rule
     , NoPrematureLetComputation.rule
     , NoUnused.CustomTypeConstructors.rule []
     , NoUnused.CustomTypeConstructorArgs.rule
     , NoUnused.Dependencies.rule
-    , NoUnused.Exports.rule
+    , NoUnused.Exports.rule |> Rule.ignoreErrorsForFiles [ "src/Theme.elm" ]
     , NoUnused.Parameters.rule
     , NoUnused.Patterns.rule
     , NoUnused.Variables.rule

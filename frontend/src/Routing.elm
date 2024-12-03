@@ -1,5 +1,6 @@
 module Routing exposing (Route(..), goToHome, goToRouteWithParams, parseUrl)
 
+import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (href)
 import Url exposing (Url)
 import Url.Parser as P exposing ((</>), Parser, s)
@@ -47,6 +48,7 @@ genRouteParser maybeBasePath =
 parseUrl : Maybe String -> Url -> Route
 parseUrl basePath url =
     let
+        routeParser : Parser (Route -> a) a
         routeParser =
             genRouteParser basePath
     in
@@ -60,11 +62,13 @@ parseUrl basePath url =
 
 {-| Generates an href attribute to go to the details page
 -}
+goToRouteWithParams : Int -> Attribute msg
 goToRouteWithParams id =
     href (String.concat [ "details/", String.fromInt id ])
 
 
 {-| Generates an href attribute to go to the home page
 -}
+goToHome : Attribute msg
 goToHome =
     href "/"

@@ -25,6 +25,7 @@ type Msg
     | Decrement
 
 
+update : Model -> Msg -> Model
 update model msg =
     case msg of
         Increment ->
@@ -38,6 +39,7 @@ update model msg =
 -- VIEW
 
 
+view : Model -> { title : String, body : List (Html.Styled.Html Msg) }
 view model =
     { title = "Loading..."
     , body = body model
