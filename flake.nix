@@ -9,6 +9,10 @@
     self,
     nixpkgs,
   }: let
+    pgConfig = {
+      port = "6969";
+      host = "127.0.0.1";
+    };
     # System types to support.
     supportedSystems = ["x86_64-linux" "x86_64-darwin" "aarch64-linux" "aarch64-darwin"];
 
@@ -18,34 +22,49 @@
     # Nixpkgs instantiated for supported system types.
     nixpkgsFor = forAllSystems (system: import nixpkgs {inherit system;});
 
+    # System packages...
     backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.yarn-berry];
     frontendPkgs = pkgs: [pkgs.nodejs pkgs.yarn-berry pkgs.elmPackages.elm pkgs.elmPackages.elm-format];
     cicdPkgs = pkgs: [pkgs.process-compose pkgs.entr];
+
+    # Process-compose generator...
+    genProcessCompose = pkgs: let
+    in
+      pkgs.lib.generators.toYAML {} {
+        version = "0.5";
+        processes = {
+          frontend = import ./frontend/process.nix;
+          backend = import ./backend/process.nix;
+          database = import ./database/process.nix {
+            inherit pkgs pgConfig;
+            lib = pkgs.lib;
+          };
+        };
+      };
   in {
     packages = forAllSystems (system: let
       pkgs = nixpkgsFor.${system};
     in {
+      printDevPC = pkgs.writeShellApplication {
+        name = "Dev-Process-Compose";
+        runtimeInputs = [pkgs.bat];
+        text = let
+          yamlFile = pkgs.writeTextFile {
+            name = "juwura-process-compose.yaml";
+            text = pkgs.lib.debug.traceVal (genProcessCompose pkgs);
+          };
+        in ''
+          bat ${yamlFile}
+        '';
+      };
+
       restartServices = pkgs.writeShellApplication {
-        name = "JUWURA services starter";
+        name = "JUWURA-services-starter";
         runtimeInputs = backendPkgs pkgs ++ frontendPkgs pkgs ++ cicdPkgs pkgs;
         text = let
-          processYAML = pkgs.lib.generators.toYAML {} {
-            version = "0.5"; 
-            processes = {
-              frontend = {
-                working_dir = "./frontend";
-                command = "yarn dev";
-              };
-
-							backend = {
-								working_dir = "./backend";
-								command = "zig build run";
-							};
-            };
-          };
           composeFile = pkgs.writeTextFile {
             name = "juwura-process-compose.yaml";
-            text = processYAML;
+            text = genProcessCompose pkgs;
           };
         in ''
           process-compose -f ${composeFile}
