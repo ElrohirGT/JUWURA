@@ -43,7 +43,7 @@ CREATE TABLE task_unblock (
 	target_task INTEGER REFERENCES task(id) NOT NULL,
 	unblocked_task INTEGER REFERENCES task(id) NOT NULL
 );
-COMMENT ON TABLE task_unblock IS 'Stores all the tasks that unblock once `target_task` is completed';
+COMMENT ON TABLE task_unblock IS 'Stores all the tasks that unblock once target_task is completed';
 
 CREATE TABLE task_asignee (
 	task_id INTEGER REFERENCES task(id) NOT NULL,
