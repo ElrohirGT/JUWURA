@@ -1,0 +1,64 @@
+module Pages.Details exposing (Model, Msg, init, update, view)
+
+import Css exposing (column, displayFlex, flexDirection)
+import Html.Styled exposing (a, button, div, h1, text)
+import Html.Styled.Attributes exposing (css)
+import Html.Styled.Events exposing (onClick)
+import Routing exposing (goToHome)
+
+
+
+-- MODEL
+
+
+type alias Model =
+    { count : Int
+    }
+
+
+init =
+    { count = 0 }
+
+
+
+-- UPDATE
+
+
+type Msg
+    = Increment
+    | Decrement
+
+
+update model msg =
+    case msg of
+        Increment ->
+            { model | count = model.count + 1 }
+
+        Decrement ->
+            { model | count = model.count - 1 }
+
+
+
+-- VIEW
+
+
+view model =
+    { title = "Loading..."
+    , body = body model
+    }
+
+
+body : Model -> List (Html.Styled.Html Msg)
+body model =
+    [ div
+        [ css
+            [ displayFlex
+            , flexDirection column
+            ]
+        ]
+        [ button [ onClick Decrement ] [ text "-" ]
+        , h1 [] [ text (String.fromInt model.count) ]
+        , button [ onClick Increment ] [ text "+" ]
+        , a [ goToHome ] [ text "Return to Home..." ]
+        ]
+    ]

@@ -2,8 +2,11 @@ module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
+import Html
 import Html.Styled exposing (toUnstyled)
 import Html.Styled.Attributes exposing (css, href, src)
+import Pages.Details as DetailsPage
+import Pages.Home as HomePage
 import Pages.Loading as LoadingPage
 import Routing
 import Url exposing (Url)
@@ -33,7 +36,7 @@ Used to represent the current page and state
 type AppState
     = Loading
     | Home
-    | Details Int
+    | Details DetailsPage.Model
     | NotFound
 
 
@@ -46,8 +49,8 @@ fromUrlToAppState basePath url =
         Routing.NotFound ->
             NotFound
 
-        Routing.RouteWithParams param ->
-            Details param
+        Routing.RouteWithParams count ->
+            Details { count = count }
 
 
 {-| The application global store
@@ -84,6 +87,7 @@ subscriptions model =
 type Msg
     = UrlChanged Url
     | LinkClicked Browser.UrlRequest
+    | DetailsViewMsg DetailsPage.Msg
 
 
 update msg model =
@@ -103,11 +107,25 @@ update msg model =
                 Browser.External href ->
                     ( model, Nav.load href )
 
+        DetailsViewMsg innerMsg ->
+            case model.state of
+                Details innerModel ->
+                    ( { model | state = Details (DetailsPage.update innerModel innerMsg) }, Cmd.none )
+
+                _ ->
+                    Debug.todo "This should never happen!"
+
+
+
+-- ( { model | state = Details (DetailsPage.update model.state innerMsg) }
+-- , Cmd.none
+-- )
+
 
 view : Model -> Browser.Document Msg
 view model =
     let
-        viewPage staticView =
+        viewStatic staticView =
             let
                 { title, body } =
                     staticView
@@ -115,16 +133,25 @@ view model =
             { title = title
             , body = List.map toUnstyled body
             }
+
+        viewWithState viewFunc pagemodel msgWrapper =
+            let
+                { title, body } =
+                    viewFunc pagemodel
+            in
+            { title = title
+            , body = List.map (Html.map msgWrapper) (List.map toUnstyled body)
+            }
     in
     case model.state of
         Loading ->
-            viewPage LoadingPage.view
+            viewStatic LoadingPage.view
 
         Home ->
-            Debug.todo "branch 'Home' not implemented"
+            viewStatic HomePage.view
 
-        Details _ ->
-            Debug.todo "branch 'Details _' not implemented"
+        Details pageModel ->
+            viewWithState DetailsPage.view pageModel DetailsViewMsg
 
         NotFound ->
             Debug.todo "branch 'NotFound' not implemented"
