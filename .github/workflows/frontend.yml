@@ -32,11 +32,15 @@ jobs:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: DeterminateSystems/nix-installer-action@main
+      - name: Formatting ELM
+        run: elm-format --validate .
+      - name: Linting ELM
+        run: elm-review
       - name: Installing dependencies
         run: yarn install
-      - name: Formatting
+      - name: Formatting JS
         run: yarn run format:check
-      - name: Linting
+      - name: Linting JS
         run: yarn run lint
-      - name: Testing
+      - name: E2E Testing
         run: yarn test
