@@ -1,22 +1,22 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "Integration tests for the backend",
-  "scripts": {
-    "test": "yarn install && vitest",
-    "test:ci": "yarn install && vitest run .",
-    "format": "yarn install && biome format --write ./src",
-    "format:check": "yarn install && biome format ./src",
-    "lint": "yarn install && biome lint --write ./src"
-  },
-  "main": "index.js",
-  "author": "ElrohirGT",
-  "license": "MIT",
-  "devDependencies": {
-    "axios": "^1.7.8",
-    "vitest": "^2.1.6"
-  },
-  "dependencies": {
-    "@biomejs/biome": "^1.9.4"
-  }
+	"name": "backend",
+	"version": "1.0.0",
+	"description": "Integration tests for the backend",
+	"scripts": {
+		"test": "yarn install && vitest",
+		"test:ci": "yarn install && vitest run .",
+		"format": "yarn install && biome format --write ./src",
+		"format:check": "yarn install && biome format ./src",
+		"lint": "yarn install && biome lint --write ./src"
+	},
+	"main": "index.js",
+	"author": "ElrohirGT",
+	"license": "MIT",
+	"devDependencies": {
+		"axios": "^1.7.8",
+		"vitest": "^2.1.6"
+	},
+	"dependencies": {
+		"@biomejs/biome": "^1.9.4"
+	}
 }

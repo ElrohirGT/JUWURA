@@ -5,5 +5,5 @@ describe("Dummy tests", () => {
 		const payload = 1;
 		const result = 1 + payload;
 		expect(result).toBe(2);
-	})
+	});
 });
