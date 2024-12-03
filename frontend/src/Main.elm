@@ -4,7 +4,6 @@ import Browser
 import Browser.Navigation as Nav
 import Html
 import Html.Styled exposing (toUnstyled)
-import Html.Styled.Attributes exposing (css, href, src)
 import Pages.Details as DetailsPage
 import Pages.Home as HomePage
 import Pages.Loading as LoadingPage
@@ -61,12 +60,6 @@ type alias Model =
     , basePath : Maybe String
     , state : AppState
     }
-
-
-{-| Props for initializing the application
--}
-type alias Flags =
-    Maybe String
 
 
 init basePath url navKey =

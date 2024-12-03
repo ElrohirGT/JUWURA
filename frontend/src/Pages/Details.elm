@@ -1,4 +1,4 @@
-module Pages.Details exposing (Model, Msg, init, update, view)
+module Pages.Details exposing (Model, Msg, update, view)
 
 import Css exposing (column, displayFlex, flexDirection)
 import Html.Styled exposing (a, button, div, h1, text)
@@ -14,10 +14,6 @@ import Routing exposing (goToHome)
 type alias Model =
     { count : Int
     }
-
-
-init =
-    { count = 0 }
 
 
 

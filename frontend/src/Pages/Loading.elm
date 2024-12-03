@@ -1,6 +1,6 @@
 module Pages.Loading exposing (view)
 
-import Html.Styled exposing (div, toUnstyled)
+import Html.Styled exposing (div)
 
 
 view =

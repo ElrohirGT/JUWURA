@@ -1,4 +1,4 @@
-module Utils exposing (..)
+module Utils exposing (viteAsset)
 
 {-| Common utilities used in the project
 -}

@@ -1,6 +1,6 @@
 module Pages.Home exposing (view)
 
-import Html.Styled exposing (a, div, text, toUnstyled)
+import Html.Styled exposing (a, div, text)
 import Routing exposing (goToRouteWithParams)
 
 

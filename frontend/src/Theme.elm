@@ -1,4 +1,4 @@
-module Theme exposing (..)
+module Theme exposing (cssGaps, cssTheme, fontFamilies, fontSizes, gaps, locale, theme)
 
 import Css exposing (hex, rem)
 import FormatNumber.Locales exposing (Decimals(..), usLocale)

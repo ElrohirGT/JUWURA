@@ -1,4 +1,4 @@
-module Routing exposing (..)
+module Routing exposing (Route(..), goToHome, goToRouteWithParams, parseUrl)
 
 import Html.Styled.Attributes exposing (href)
 import Url exposing (Url)
