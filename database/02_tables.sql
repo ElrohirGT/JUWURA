@@ -35,10 +35,15 @@ CREATE TABLE task (
 	due_date TIMESTAMP,
 	status VARCHAR(16),
 	sprint INTEGER,
-	priority VARCHAR(16),
-	unblocks INTEGER REFERENCES task(id)
+	priority VARCHAR(16)
 );
 COMMENT ON TABLE task IS 'Stores all the task of all the projects, only some fields are required';
+
+CREATE TABLE task_unblock (
+	target_task INTEGER REFERENCES task(id) NOT NULL,
+	unblocked_task INTEGER REFERENCES task(id) NOT NULL
+);
+COMMENT ON TABLE task_unblock IS 'Stores all the tasks that unblock once `target_task` is completed';
 
 CREATE TABLE task_asignee (
 	task_id INTEGER REFERENCES task(id) NOT NULL,
