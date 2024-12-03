@@ -59,6 +59,14 @@
         '';
       };
 
+			compileBackend = pkgs.writeShellApplication {
+				name = "Backend-Compiler";
+				runtimeInputs = [pkgs.zig];
+				text = ''
+				cd ./backend/ && zig build -Doptimize=ReleaseSafe
+				'';
+			};
+
       restartServices = pkgs.writeShellApplication {
         name = "JUWURA-services-starter";
         runtimeInputs = backendPkgs pkgs ++ frontendPkgs pkgs ++ orquestrationPkgs pkgs;
