@@ -1,6 +1,7 @@
 ---
 name: Backend Lint and Tests
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
