@@ -25,7 +25,7 @@
     # System packages...
     backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.yarn-berry];
     frontendPkgs = pkgs: [pkgs.nodejs pkgs.yarn-berry pkgs.elmPackages.elm pkgs.elmPackages.elm-format pkgs.biome pkgs.elmPackages.elm-review];
-    orquestrationPkgs = pkgs: [pkgs.process-compose];
+    orquestrationPkgs = pkgs: [pkgs.process-compose pkgs.coreutils];
 
     # Process-compose generator...
     genProcessCompose = pkgs: useTui: let
@@ -117,7 +117,7 @@
           echo "Deleting previous DB..."
           rm .pgData || rm -rf .pgData || true
           echo "Starting process compose..."
-          process-compose -f ${composeFile}
+          timeout 3m process-compose -f ${composeFile}
         '';
       };
     });
