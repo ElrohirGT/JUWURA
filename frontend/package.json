@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "format": "@biomejs/biome format --write ./src",
+    "format:check": "@biomejs/biome format ./src",
     "lint": "@biomejs/biome lint --write ./src"
   },
   "devDependencies": {

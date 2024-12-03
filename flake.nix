@@ -25,13 +25,14 @@
     # System packages...
     backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.yarn-berry];
     frontendPkgs = pkgs: [pkgs.nodejs pkgs.yarn-berry pkgs.elmPackages.elm pkgs.elmPackages.elm-format];
-    cicdPkgs = pkgs: [pkgs.process-compose pkgs.entr];
+    orquestrationPkgs = pkgs: [pkgs.process-compose];
 
     # Process-compose generator...
-    genProcessCompose = pkgs: let
+    genProcessCompose = pkgs: useTui: let
     in
       pkgs.lib.generators.toYAML {} {
         version = "0.5";
+        is_tui_disabled = !useTui;
         processes = {
           frontend = import ./frontend/process.nix;
           backend = import ./backend/process.nix;
@@ -51,7 +52,7 @@
         text = let
           yamlFile = pkgs.writeTextFile {
             name = "juwura-process-compose.yaml";
-            text = pkgs.lib.debug.traceVal (genProcessCompose pkgs);
+            text = pkgs.lib.debug.traceVal (genProcessCompose pkgs true);
           };
         in ''
           bat ${yamlFile}
@@ -60,16 +61,54 @@
 
       restartServices = pkgs.writeShellApplication {
         name = "JUWURA-services-starter";
-        runtimeInputs = backendPkgs pkgs ++ frontendPkgs pkgs ++ cicdPkgs pkgs;
+        runtimeInputs = backendPkgs pkgs ++ frontendPkgs pkgs ++ orquestrationPkgs pkgs;
         text = let
           composeFile = pkgs.writeTextFile {
             name = "juwura-process-compose.yaml";
-            text = genProcessCompose pkgs;
+            text = genProcessCompose pkgs true;
           };
         in ''
-					echo "Deleting previous DB..."
-					rm .pgData || rm -rf .pgData || true
-					echo "Starting process compose..."
+          echo "Deleting previous DB..."
+          rm .pgData || rm -rf .pgData || true
+          echo "Starting process compose..."
+          process-compose -f ${composeFile}
+        '';
+      };
+
+      integrationTests = pkgs.writeShellApplication {
+        name = "JUWURA-integration-test-runner";
+        runtimeInputs = backendPkgs pkgs ++ orquestrationPkgs pkgs;
+        text = let
+          composeFile = pkgs.writeTextFile {
+            name = "juwura-process-compose.yaml";
+            text = pkgs.lib.generators.toYAML {} {
+              version = "0.5";
+              is_tui_disabled = true;
+              processes = {
+                backend = import ./backend/process.nix;
+                database = import ./database/process.nix {
+                  inherit pkgs pgConfig;
+                  lib = pkgs.lib;
+                };
+
+                tests = {
+                  working_dir = "backend";
+                  command = "yarn test:ci";
+                  availability = {
+                    exit_on_end = true;
+                  };
+                  depends_on = {
+                    database.condition = "process_log_ready";
+                    backend.condition = "process_log_ready";
+                  };
+                };
+              };
+            };
+          };
+        in ''
+          echo "Deleting previous DB..."
+          rm .pgData || rm -rf .pgData || true
+          echo "Starting process compose..."
           process-compose -f ${composeFile}
         '';
       };
@@ -79,7 +118,14 @@
       pkgs = nixpkgsFor.${system};
     in {
       default = pkgs.mkShell {
-        packages = backendPkgs pkgs ++ frontendPkgs pkgs ++ cicdPkgs pkgs;
+        packages = backendPkgs pkgs ++ frontendPkgs pkgs ++ orquestrationPkgs pkgs;
+      };
+
+      cicdFrontend = pkgs.mkShell {
+        packages = frontendPkgs pkgs;
+      };
+      cicdBackend = pkgs.mkShell {
+        packages = backendPkgs pkgs ++ orquestrationPkgs pkgs;
       };
     });
   };

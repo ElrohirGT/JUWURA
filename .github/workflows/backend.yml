@@ -1,0 +1,42 @@
+---
+name: Backend Lint and Tests
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+  pull_request_target:
+    paths:
+      - "backend/**"
+      - "./github/workflows/backend.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number
+    || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Frontend Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: nix develop .#cicdBackend --command bash {0}
+        working-directory: backend
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Formatting
+        run: zig fmt --check ./**/**.zig
+      - name: Compiling
+        run: zig build
+      - name: Installing Test Dependencies
+        run: yarn install
+      - name: Testing
+        run: nix run .#integrationTests

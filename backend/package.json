@@ -4,6 +4,7 @@
   "description": "Integration tests for the backend",
   "scripts": {
     "test": "vitest",
+    "test:ci": "vitest run .",
     "format": "@biomejs/biome format --write ./src",
     "lint": "@biomejs/biome lint --write ./src"
   },
