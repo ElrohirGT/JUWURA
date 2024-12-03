@@ -8,6 +8,7 @@ import Html.Styled.Attributes exposing (css, href, src)
 import Pages.Details as DetailsPage
 import Pages.Home as HomePage
 import Pages.Loading as LoadingPage
+import Pages.NotFound as NotFoundPage
 import Routing
 import Url exposing (Url)
 
@@ -154,4 +155,4 @@ view model =
             viewWithState DetailsPage.view pageModel DetailsViewMsg
 
         NotFound ->
-            Debug.todo "branch 'NotFound' not implemented"
+            viewStatic NotFoundPage.view
