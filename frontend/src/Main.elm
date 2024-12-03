@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Browser
-import Css exposing (display, inlineBlock, padding, rem)
+import Css exposing (backgroundColor, color, display, hex, inlineBlock, padding, rem, rgba)
 import Html.Styled exposing (Html, button, div, img, text, toUnstyled)
 import Html.Styled.Attributes exposing (css, src)
 import Html.Styled.Events exposing (onClick)
@@ -40,12 +40,19 @@ update msg model =
 view : Int -> Html Msg
 view model =
     div []
-        [ button [ onClick Decrement ] [ text "-" ]
+        [ button
+            [ onClick Decrement
+            , css
+                [ backgroundColor (rgba 230 230 230 255)
+                ]
+            ]
+            [ text "-" ]
         , div [] [ text (String.fromInt model) ]
         , button
             [ onClick Increment
             , css
                 [ display inlineBlock
+                , backgroundColor (hex "#ff0000")
                 , padding (1 |> rem)
                 ]
             ]
