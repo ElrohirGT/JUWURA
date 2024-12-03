@@ -33,4 +33,3 @@ pub fn main() !void {
         .workers = 2,
     });
 }
-

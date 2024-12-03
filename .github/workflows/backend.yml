@@ -33,7 +33,7 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: DeterminateSystems/nix-installer-action@main
       - name: Formatting
-        run: zig fmt --check ./**/**.zig
+        run: zig fmt --check .
       - name: Compiling
         run: zig build
       - name: Testing
