@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Integration tests for the backend",
   "scripts": {
-    "test": "vitest",
-    "test:ci": "vitest run .",
-    "format": "@biomejs/biome format --write ./src",
-    "lint": "@biomejs/biome lint --write ./src"
+    "test": "yarn install && vitest",
+    "test:ci": "yarn install && vitest run .",
+    "format": "yarn install && @biomejs/biome format --write ./src",
+    "lint": "yarn install && @biomejs/biome lint --write ./src"
   },
   "main": "index.js",
   "author": "ElrohirGT",
