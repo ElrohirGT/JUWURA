@@ -1,4 +1,7 @@
 # JUWURA
+[![Backend Lint and Tests](https://github.com/ElrohirGT/JUWURA/actions/workflows/backend.yml/badge.svg)](https://github.com/ElrohirGT/JUWURA/actions/workflows/backend.yml)
+[![Frontend Lint and Tests](https://github.com/ElrohirGT/JUWURA/actions/workflows/frontend.yml/badge.svg)](https://github.com/ElrohirGT/JUWURA/actions/workflows/frontend.yml)
+
 Jira but with anime and better UX!
 
 # Development
