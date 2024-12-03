@@ -67,6 +67,9 @@
             text = genProcessCompose pkgs;
           };
         in ''
+					echo "Deleting previous DB..."
+					rm .pgData || rm -rf .pgData || true
+					echo "Starting process compose..."
           process-compose -f ${composeFile}
         '';
       };

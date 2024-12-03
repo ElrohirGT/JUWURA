@@ -32,7 +32,7 @@ with lib; let
       (files dir)
     );
 
-  dbInitFile = strings.concatStringsSep "\n" (map (file: builtins.readFile) (getFilesWithExtension ./. ".sql"));
+  dbInitFile = strings.concatStringsSep "\n" (map builtins.readFile (getFilesWithExtension ./. ".sql"));
   PGDATA = ''"$PWD/.pgData"'';
   startPostgres = ''
     set -euo pipefail
@@ -70,7 +70,7 @@ with lib; let
 
     echo "Initializing DB"
     echo "${dbInitFile}" | psql --dbname postgres -p ${builtins.toString pgConfig.port}
-    echo "Sanitas postgres is now running!"
+    echo "JUWURA postgres is now running!"
   '';
   stopPostgres = ''
     set -euo pipefail
