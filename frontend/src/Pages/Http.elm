@@ -1,6 +1,9 @@
 module Pages.Http exposing (..)
 
-import Html.Styled exposing (pre, text)
+import Css exposing (column, displayFlex, flexDirection)
+import Html.Styled exposing (button, pre, text)
+import Html.Styled.Attributes exposing (css)
+import Html.Styled.Events exposing (onClick)
 import Http
 
 
@@ -30,9 +33,10 @@ init _ =
 
 type Msg
     = GotText (Result Http.Error String)
+    | Refresh
 
 
-update : Model -> Msg -> ( Model, Cmd msg )
+update : Model -> Msg -> ( Model, Cmd Msg )
 update _ msg =
     case msg of
         GotText result ->
@@ -42,6 +46,9 @@ update _ msg =
 
                 Err _ ->
                     ( Failure, Cmd.none )
+
+        Refresh ->
+            ( Loading, Http.get { url = "https://elm-lang.org/assets/public-opinion.txt", expect = Http.expectString GotText } )
 
 
 
@@ -66,7 +73,15 @@ view model =
 
 body : Model -> List (Html.Styled.Html Msg)
 body model =
-    [ case model of
+    [ button
+        [ onClick Refresh
+        , css
+            [ displayFlex
+            , flexDirection column
+            ]
+        ]
+        [ text "Refresh!" ]
+    , case model of
         Failure ->
             text "Sorry an error has occurred during the request!"
 

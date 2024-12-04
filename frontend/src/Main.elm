@@ -100,7 +100,7 @@ type Msg
     | HttpViewMsg HttpPage.Msg
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UrlChanged url ->
@@ -133,7 +133,7 @@ update msg model =
                         newModel =
                             HttpPage.update (Tuple.first innerModel) innerMsg
                     in
-                    ( { model | state = Http newModel }, Tuple.second newModel )
+                    ( { model | state = Http newModel }, Cmd.map HttpViewMsg (Tuple.second newModel) )
 
                 _ ->
                     ( model, Cmd.none )
