@@ -6,6 +6,7 @@ import Html
 import Html.Styled exposing (toUnstyled)
 import Pages.Details as DetailsPage
 import Pages.Home as HomePage
+import Pages.Http as HttpPage
 import Pages.NotFound as NotFoundPage
 import Routing
 import Url exposing (Url)
@@ -36,6 +37,7 @@ Used to represent the current page and state
 type AppState
     = Home
     | Details DetailsPage.Model
+    | Http ( HttpPage.Model, Cmd HttpPage.Msg )
     | NotFound
 
 
@@ -51,6 +53,9 @@ fromUrlToAppState basePath url =
         Routing.RouteWithParams count ->
             Details { count = count }
 
+        Routing.Http id ->
+            Http (HttpPage.init id)
+
 
 {-| The application global store
 -}
@@ -61,9 +66,18 @@ type alias Model =
     }
 
 
-init : Maybe String -> Url -> Nav.Key -> ( Model, Cmd msg )
+init : Maybe String -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init basePath url navKey =
-    ( Model navKey basePath (fromUrlToAppState basePath url), Cmd.none )
+    let
+        initialAppState =
+            fromUrlToAppState basePath url
+    in
+    case initialAppState of
+        Http ( _, command ) ->
+            ( Model navKey basePath initialAppState, Cmd.map HttpViewMsg command )
+
+        _ ->
+            ( Model navKey basePath initialAppState, Cmd.none )
 
 
 
@@ -83,6 +97,7 @@ type Msg
     = UrlChanged Url
     | LinkClicked Browser.UrlRequest
     | DetailsViewMsg DetailsPage.Msg
+    | HttpViewMsg HttpPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -111,6 +126,18 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        HttpViewMsg innerMsg ->
+            case model.state of
+                Http innerModel ->
+                    let
+                        newModel =
+                            HttpPage.update (Tuple.first innerModel) innerMsg
+                    in
+                    ( { model | state = Http newModel }, Tuple.second newModel )
+
+                _ ->
+                    ( model, Cmd.none )
+
 
 
 -- ( { model | state = Details (DetailsPage.update model.state innerMsg) }
@@ -130,10 +157,19 @@ view model =
             , body = List.map toUnstyled body
             }
 
-        viewWithState viewFunc pagemodel msgWrapper =
+        viewWithState viewFunc pageModel msgWrapper =
             let
                 { title, body } =
-                    viewFunc pagemodel
+                    viewFunc pageModel
+            in
+            { title = title
+            , body = List.map (Html.map msgWrapper) (List.map toUnstyled body)
+            }
+
+        viewWithEffects viewFunc pageModel msgWrapper =
+            let
+                { title, body } =
+                    viewFunc (Tuple.first pageModel)
             in
             { title = title
             , body = List.map (Html.map msgWrapper) (List.map toUnstyled body)
@@ -145,6 +181,9 @@ view model =
 
         Details pageModel ->
             viewWithState DetailsPage.view pageModel DetailsViewMsg
+
+        Http pageModel ->
+            viewWithEffects HttpPage.view pageModel HttpViewMsg
 
         NotFound ->
             viewStatic NotFoundPage.view

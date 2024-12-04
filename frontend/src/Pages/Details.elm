@@ -41,7 +41,7 @@ update model msg =
 
 view : Model -> { title : String, body : List (Html.Styled.Html Msg) }
 view model =
-    { title = "Loading..."
+    { title = "Details!"
     , body = body model
     }
 

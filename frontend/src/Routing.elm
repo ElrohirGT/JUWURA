@@ -1,4 +1,4 @@
-module Routing exposing (Route(..), goToHome, goToRouteWithParams, parseUrl)
+module Routing exposing (Route(..), goToHome, goToHttp, goToRouteWithParams, parseUrl)
 
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (href)
@@ -14,6 +14,7 @@ type Route
     = Home
     | RouteWithParams Int
     | NotFound
+    | Http Int
 
 
 {-| Generates a route parser given a base path.
@@ -33,6 +34,9 @@ genRouteParser maybeBasePath =
 
                 -- /${basePath}/details
                 , P.map RouteWithParams (s basePath </> s "details" </> P.int)
+
+                -- /${basePath}/http
+                , P.map Http (s basePath </> s "http" </> P.int)
                 ]
 
         Nothing ->
@@ -42,6 +46,9 @@ genRouteParser maybeBasePath =
 
                 -- /details
                 , P.map RouteWithParams (s "details" </> P.int)
+
+                -- /http
+                , P.map Http (s "http" </> P.int)
                 ]
 
 
@@ -51,13 +58,23 @@ parseUrl basePath url =
         routeParser : Parser (Route -> a) a
         routeParser =
             genRouteParser basePath
+
+        parsedUrl =
+            P.parse routeParser url
     in
-    case P.parse routeParser url of
+    case parsedUrl of
         Just a ->
             a
 
         Nothing ->
             NotFound
+
+
+{-| Generates an href attribute to go to the HTTP page
+-}
+goToHttp : Int -> Attribute msg
+goToHttp id =
+    href (String.concat [ "http/", String.fromInt id ])
 
 
 {-| Generates an href attribute to go to the details page
