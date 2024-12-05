@@ -66,6 +66,7 @@ parseUrl basePath url =
         routeParser =
             genRouteParser basePath
 
+        parsedUrl : Maybe Route
         parsedUrl =
             P.parse routeParser url
     in

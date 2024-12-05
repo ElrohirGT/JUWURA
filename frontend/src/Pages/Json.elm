@@ -1,4 +1,4 @@
-module Pages.Json exposing (..)
+module Pages.Json exposing (Model(..), Msg(..), init, update, view)
 
 import Api.Quotes exposing (getRandomQuoteDecoder)
 import Css exposing (block, display, right, textAlign)
@@ -27,6 +27,7 @@ type Model
     | Success Quote
 
 
+init : a -> ( Model, Cmd Msg )
 init _ =
     ( Loading, getRandomQuote )
 

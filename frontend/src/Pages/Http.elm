@@ -1,4 +1,4 @@
-module Pages.Http exposing (..)
+module Pages.Http exposing (Model(..), Msg(..), init, update, view)
 
 import Css exposing (column, displayFlex, flexDirection)
 import Html.Styled exposing (button, pre, text)
@@ -53,14 +53,6 @@ update _ msg =
 
 
 -- SUBSCRIPTIONS
-
-
-subscriptions : Model -> Sub msg
-subscriptions _ =
-    Sub.none
-
-
-
 -- VIEW
 
 

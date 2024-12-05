@@ -1,4 +1,4 @@
-module Data.Quote exposing (..)
+module Data.Quote exposing (Quote)
 
 
 type alias Quote =

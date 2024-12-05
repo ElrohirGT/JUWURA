@@ -1,7 +1,7 @@
-module Api.Quotes exposing (..)
+module Api.Quotes exposing (getRandomQuoteDecoder)
 
 import Data.Quote exposing (Quote)
-import Json.Decode as Decode exposing (Decoder, decodeString, int, string)
+import Json.Decode as Decode exposing (Decoder, int, string)
 import Json.Decode.Pipeline exposing (required)
 
 
