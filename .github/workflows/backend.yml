@@ -45,4 +45,4 @@ jobs:
       - name: Linting JS
         run: yarn lint
       - name: Testing
-        run: nix run .#integrationTests
+        run: cd .. && nix run .#integrationTests

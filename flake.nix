@@ -117,7 +117,7 @@
           echo "Deleting previous DB..."
           rm .pgData || rm -rf .pgData || true
           echo "Starting process compose..."
-          timeout 3m process-compose -f ${composeFile}
+					timeout --kill-after=1m 3m process-compose -f ${composeFile}
         '';
       };
     });
