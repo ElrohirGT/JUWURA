@@ -83,7 +83,13 @@ with lib; let
   '';
 in {
   command = startPostgres;
-  ready_log_line = "postgres is now running!";
+  ready_log_line = "postgres is now running";
+	# readiness_probe = {
+	# 	exec = ''${pkgs.postgresql}/bin/pg_isready \
+	# 	-d juwura -h '${pgConfig.host}' \
+	# 	-p '${builtins.toString pgConfig.port}' -U postgres
+	# 	'';
+	# };
   is_daemon = true;
   shutdown.command = stopPostgres;
 }
