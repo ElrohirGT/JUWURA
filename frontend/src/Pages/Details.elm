@@ -1,10 +1,10 @@
-module Pages.Details exposing (Model, Msg, update, view)
+module Pages.Details exposing (Model, Msg, init, update, view)
 
 import Css exposing (column, displayFlex, flexDirection)
 import Html.Styled exposing (a, button, div, h1, text)
 import Html.Styled.Attributes exposing (css)
 import Html.Styled.Events exposing (onClick)
-import Routing exposing (goToHome)
+import Routing exposing (BasePath, NavigationHrefs, generateRoutingFuncs)
 
 
 
@@ -13,6 +13,14 @@ import Routing exposing (goToHome)
 
 type alias Model =
     { count : Int
+    , navigation : NavigationHrefs Msg
+    }
+
+
+init : BasePath -> Model
+init basePath =
+    { count = 0
+    , navigation = generateRoutingFuncs basePath
     }
 
 
@@ -57,6 +65,6 @@ body model =
         [ button [ onClick Decrement ] [ text "-" ]
         , h1 [] [ text (String.fromInt model.count) ]
         , button [ onClick Increment ] [ text "+" ]
-        , a [ goToHome ] [ text "Return to Home..." ]
+        , a [ model.navigation.goToHome ] [ text "Return to Home..." ]
         ]
     ]

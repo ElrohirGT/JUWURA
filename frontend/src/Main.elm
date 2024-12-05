@@ -37,7 +37,7 @@ Used to represent the current page and state
 
 -}
 type AppState
-    = Home
+    = Home (HomePage.Model Msg)
     | Details DetailsPage.Model
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
     | Json ( JsonPage.Model, Cmd JsonPage.Msg )
@@ -49,13 +49,13 @@ fromUrlToAppState : Maybe String -> Url -> AppState
 fromUrlToAppState basePath url =
     case Routing.parseUrl basePath url of
         Routing.Home ->
-            Home
+            Home (HomePage.init basePath)
 
         Routing.NotFound ->
             NotFound
 
-        Routing.RouteWithParams count ->
-            Details { count = count }
+        Routing.RouteWithParams _ ->
+            Details (DetailsPage.init basePath)
 
         Routing.Http id ->
             Http (HttpPage.init id)
@@ -192,10 +192,19 @@ update msg model =
 view : Model -> Browser.Document Msg
 view model =
     let
-        viewStatic staticView =
+        viewStateLess staticView =
             let
                 { title, body } =
                     staticView
+            in
+            { title = title
+            , body = List.map toUnstyled body
+            }
+
+        viewStatic staticView pageModel =
+            let
+                { title, body } =
+                    staticView pageModel
             in
             { title = title
             , body = List.map toUnstyled body
@@ -220,8 +229,8 @@ view model =
             }
     in
     case model.state of
-        Home ->
-            viewStatic HomePage.view
+        Home pageModel ->
+            viewStatic HomePage.view pageModel
 
         Details pageModel ->
             viewWithState DetailsPage.view pageModel DetailsViewMsg
@@ -236,4 +245,4 @@ view model =
             viewWithEffects PortsPage.view pageModel PortsViewMsg
 
         NotFound ->
-            viewStatic NotFoundPage.view
+            viewStateLess NotFoundPage.view
