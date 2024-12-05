@@ -9,16 +9,16 @@ const app = Elm.Main.init({
 });
 
 // Create your WebSocket.
-var socket = new WebSocket('wss://echo.websocket.org');
+const socket = new WebSocket("wss://echo.websocket.org");
 
 // When a command goes to the `sendMessage` port, we pass the message
 // along to the WebSocket.
-app.ports.sendMessage.subscribe(function(message) {
+app.ports.sendMessage.subscribe((message) => {
 	socket.send(message);
 });
 
 // When a message comes into our WebSocket, we pass the message along
 // to the `messageReceiver` port.
-socket.addEventListener("message", function(event) {
+socket.addEventListener("message", (event) => {
 	app.ports.messageReceiver.send(event.data);
 });
