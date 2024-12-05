@@ -7,6 +7,7 @@ import Html.Styled exposing (toUnstyled)
 import Pages.Details as DetailsPage
 import Pages.Home as HomePage
 import Pages.Http as HttpPage
+import Pages.Json as JsonPage
 import Pages.NotFound as NotFoundPage
 import Routing
 import Url exposing (Url)
@@ -38,6 +39,7 @@ type AppState
     = Home
     | Details DetailsPage.Model
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
+    | Json ( JsonPage.Model, Cmd JsonPage.Msg )
     | NotFound
 
 
@@ -55,6 +57,9 @@ fromUrlToAppState basePath url =
 
         Routing.Http id ->
             Http (HttpPage.init id)
+
+        Routing.Json id ->
+            Json (JsonPage.init id)
 
 
 {-| The application global store
@@ -75,6 +80,9 @@ init basePath url navKey =
     case initialAppState of
         Http ( _, command ) ->
             ( Model navKey basePath initialAppState, Cmd.map HttpViewMsg command )
+
+        Json ( _, command ) ->
+            ( Model navKey basePath initialAppState, Cmd.map JsonViewMsg command )
 
         _ ->
             ( Model navKey basePath initialAppState, Cmd.none )
@@ -98,6 +106,7 @@ type Msg
     | LinkClicked Browser.UrlRequest
     | DetailsViewMsg DetailsPage.Msg
     | HttpViewMsg HttpPage.Msg
+    | JsonViewMsg JsonPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -134,6 +143,18 @@ update msg model =
                             HttpPage.update (Tuple.first innerModel) innerMsg
                     in
                     ( { model | state = Http newModel }, Cmd.map HttpViewMsg (Tuple.second newModel) )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        JsonViewMsg innerMsg ->
+            case model.state of
+                Json innerModel ->
+                    let
+                        newModel =
+                            JsonPage.update (Tuple.first innerModel) innerMsg
+                    in
+                    ( { model | state = Json newModel }, Cmd.map JsonViewMsg (Tuple.second newModel) )
 
                 _ ->
                     ( model, Cmd.none )
@@ -184,6 +205,9 @@ view model =
 
         Http pageModel ->
             viewWithEffects HttpPage.view pageModel HttpViewMsg
+
+        Json pageModel ->
+            viewWithEffects JsonPage.view pageModel JsonViewMsg
 
         NotFound ->
             viewStatic NotFoundPage.view

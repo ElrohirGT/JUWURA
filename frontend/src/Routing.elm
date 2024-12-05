@@ -1,4 +1,4 @@
-module Routing exposing (Route(..), goToHome, goToHttp, goToRouteWithParams, parseUrl)
+module Routing exposing (Route(..), goToHome, goToHttp, goToJson, goToRouteWithParams, parseUrl)
 
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (href)
@@ -15,6 +15,7 @@ type Route
     | RouteWithParams Int
     | NotFound
     | Http Int
+    | Json Int
 
 
 {-| Generates a route parser given a base path.
@@ -37,6 +38,9 @@ genRouteParser maybeBasePath =
 
                 -- /${basePath}/http
                 , P.map Http (s basePath </> s "http" </> P.int)
+
+                -- /${basePath}/json
+                , P.map Json (s basePath </> s "json" </> P.int)
                 ]
 
         Nothing ->
@@ -49,6 +53,9 @@ genRouteParser maybeBasePath =
 
                 -- /http
                 , P.map Http (s "http" </> P.int)
+
+                -- /json
+                , P.map Json (s "json" </> P.int)
                 ]
 
 
@@ -68,6 +75,13 @@ parseUrl basePath url =
 
         Nothing ->
             NotFound
+
+
+{-| Generates an href attribute to go to the JSON page
+-}
+goToJson : Int -> Attribute msg
+goToJson id =
+    href (String.concat [ "json/", String.fromInt id ])
 
 
 {-| Generates an href attribute to go to the HTTP page
