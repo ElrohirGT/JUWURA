@@ -14,6 +14,22 @@ import Routing
 import Url exposing (Url)
 
 
+
+{-
+   All ViewPages have exercises for you to prove you understand Elm!
+   You're free to look around for _inspiration_ and yoink anything you like.
+
+   You probably will need to modify other files in the project and not
+   only the {PageView}.elm file in question! Don't be afraid to experiment!
+
+   Please follow the order of the pages specified by the AppState enum...
+   For example the first one would be NotFound.elm because NotFound is
+   the first element inside the AppState enum.
+
+   Good Luck!
+-}
+
+
 main : Program (Maybe String) Model Msg
 main =
     Browser.application
@@ -27,7 +43,6 @@ main =
 
 
 
--- Browser.sandbox { init = 0, update = update, view = view >> toUnstyled }
 -- MODEL
 
 
@@ -37,12 +52,12 @@ Used to represent the current page and state
 
 -}
 type AppState
-    = Home (HomePage.Model Msg)
+    = NotFound
     | Details DetailsPage.Model
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
     | Json ( JsonPage.Model, Cmd JsonPage.Msg )
+    | Home (HomePage.Model Msg)
     | Ports ( PortsPage.Model, Cmd PortsPage.Msg )
-    | NotFound
 
 
 fromUrlToAppState : Maybe String -> Url -> AppState

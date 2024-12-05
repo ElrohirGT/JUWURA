@@ -7,6 +7,11 @@ import Json.Decode as D
 
 
 
+{-
+   Excersice:
+   - Modify the JS por file to throw an exception 80% of the time when it send a message.
+   What happens? Can we make the application display an error message instead?
+-}
 -- PORTS
 
 

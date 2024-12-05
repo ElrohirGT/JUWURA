@@ -7,6 +7,16 @@ import Routing exposing (BasePath, NavigationHrefs, generateRoutingFuncs)
 import Utils exposing (viteAsset)
 
 
+
+{-
+   Exercises:
+   - Get familiar with how the navigation works!
+   Try to make a navbar like the one below and
+   use it on at least one of the other views!
+   REMEMBER: This is ELM no rEaCt...
+-}
+
+
 type alias Model msg =
     NavigationHrefs msg
 

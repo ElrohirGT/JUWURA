@@ -8,6 +8,13 @@ import Routing exposing (BasePath, NavigationHrefs, generateRoutingFuncs)
 
 
 
+{-
+
+   Exercises:
+   - Try to make the initial count depend on a URL parameter!
+   So if I navigate to /details/10 it should start in 10 instead of 0!
+
+-}
 -- MODEL
 
 

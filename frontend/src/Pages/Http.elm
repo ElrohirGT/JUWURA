@@ -8,6 +8,11 @@ import Http
 
 
 
+{-
+   Exercises:
+   - Try to make the Failure state more specific!
+   Can you inform the user why the request failed?
+-}
 -- MODEL
 
 

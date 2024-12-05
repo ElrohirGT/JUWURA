@@ -9,6 +9,14 @@ import Html.Styled.Events exposing (onClick)
 import Http
 
 
+
+{-
+   Exercises:
+   - The API is free but lets say it isn't.
+   How would I parse JSON without making a request?
+-}
+
+
 getRandomQuote : Cmd Msg
 getRandomQuote =
     Http.get
