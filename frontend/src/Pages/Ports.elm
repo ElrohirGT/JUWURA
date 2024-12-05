@@ -1,9 +1,8 @@
-port module Pages.Ports exposing (..)
+port module Pages.Ports exposing (Model, Msg(..), init, subscriptions, update, view)
 
-import Browser
-import Html.Styled exposing (..)
-import Html.Styled.Attributes exposing (..)
-import Html.Styled.Events exposing (..)
+import Html.Styled exposing (button, div, h1, input, li, text, ul)
+import Html.Styled.Attributes exposing (placeholder, type_, value)
+import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as D
 
 
@@ -87,6 +86,7 @@ subscriptions _ =
 -- VIEW
 
 
+view : Model -> { title : String, body : List (Html.Styled.Html Msg) }
 view model =
     { title = "Ports Example"
     , body =
