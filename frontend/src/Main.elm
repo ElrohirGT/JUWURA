@@ -54,7 +54,7 @@ fromUrlToAppState basePath url =
         Routing.NotFound ->
             NotFound
 
-        Routing.RouteWithParams _ ->
+        Routing.RouteWithParams ->
             Details (DetailsPage.init basePath)
 
         Routing.Http id ->
