@@ -1,4 +1,4 @@
-module Routing exposing (Route(..), goToHome, goToHttp, goToJson, goToRouteWithParams, parseUrl)
+module Routing exposing (Route(..), goToHome, goToHttp, goToJson, goToPorts, goToRouteWithParams, parseUrl)
 
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (href)
@@ -16,6 +16,7 @@ type Route
     | NotFound
     | Http Int
     | Json Int
+    | Ports
 
 
 {-| Generates a route parser given a base path.
@@ -41,6 +42,9 @@ genRouteParser maybeBasePath =
 
                 -- /${basePath}/json
                 , P.map Json (s basePath </> s "json" </> P.int)
+
+                -- /${basePath}/ports
+                , P.map Ports (s basePath </> s "ports")
                 ]
 
         Nothing ->
@@ -56,6 +60,9 @@ genRouteParser maybeBasePath =
 
                 -- /json
                 , P.map Json (s "json" </> P.int)
+
+                -- /json
+                , P.map Ports (s "ports")
                 ]
 
 
@@ -76,6 +83,13 @@ parseUrl basePath url =
 
         Nothing ->
             NotFound
+
+
+{-| Generates an href attribute to go to the PORTS page
+-}
+goToPorts : Attribute msg
+goToPorts =
+    href "ports/"
 
 
 {-| Generates an href attribute to go to the JSON page

@@ -3,7 +3,7 @@ module Pages.Home exposing (view)
 import Css exposing (column, displayFlex, flexDirection)
 import Html.Styled exposing (a, div, img, text)
 import Html.Styled.Attributes exposing (css, src)
-import Routing exposing (goToHttp, goToJson, goToRouteWithParams)
+import Routing exposing (goToHttp, goToJson, goToPorts, goToRouteWithParams)
 import Utils exposing (viteAsset)
 
 
@@ -20,6 +20,7 @@ body =
         [ a [ goToRouteWithParams 10 ] [ text "Go to details" ]
         , a [ goToHttp 10 ] [ text "Go to HTTP example" ]
         , a [ goToJson 10 ] [ text "Go to JSON example" ]
+        , a [ goToPorts ] [ text "Go to PORTS example" ]
         , img [ src <| viteAsset <| "./javascript.svg" ] []
         ]
     ]

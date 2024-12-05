@@ -9,6 +9,7 @@ import Pages.Home as HomePage
 import Pages.Http as HttpPage
 import Pages.Json as JsonPage
 import Pages.NotFound as NotFoundPage
+import Pages.Ports as PortsPage
 import Routing
 import Url exposing (Url)
 
@@ -40,6 +41,7 @@ type AppState
     | Details DetailsPage.Model
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
     | Json ( JsonPage.Model, Cmd JsonPage.Msg )
+    | Ports ( PortsPage.Model, Cmd PortsPage.Msg )
     | NotFound
 
 
@@ -60,6 +62,9 @@ fromUrlToAppState basePath url =
 
         Routing.Json id ->
             Json (JsonPage.init id)
+
+        Routing.Ports ->
+            Ports PortsPage.init
 
 
 {-| The application global store
@@ -92,9 +97,14 @@ init basePath url navKey =
 -- SUBSCRIPTIONS
 
 
-subscriptions : Model -> Sub msg
-subscriptions _ =
-    Sub.none
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.state of
+        Ports innerModel ->
+            Sub.map PortsViewMsg (PortsPage.subscriptions (Tuple.first innerModel))
+
+        _ ->
+            Sub.none
 
 
 
@@ -107,6 +117,7 @@ type Msg
     | DetailsViewMsg DetailsPage.Msg
     | HttpViewMsg HttpPage.Msg
     | JsonViewMsg JsonPage.Msg
+    | PortsViewMsg PortsPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -155,6 +166,18 @@ update msg model =
                             JsonPage.update (Tuple.first innerModel) innerMsg
                     in
                     ( { model | state = Json newModel }, Cmd.map JsonViewMsg (Tuple.second newModel) )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        PortsViewMsg innerMsg ->
+            case model.state of
+                Ports innerModel ->
+                    let
+                        newModel =
+                            PortsPage.update (Tuple.first innerModel) innerMsg
+                    in
+                    ( { model | state = Ports newModel }, Cmd.map PortsViewMsg (Tuple.second newModel) )
 
                 _ ->
                     ( model, Cmd.none )
@@ -208,6 +231,9 @@ view model =
 
         Json pageModel ->
             viewWithEffects JsonPage.view pageModel JsonViewMsg
+
+        Ports pageModel ->
+            viewWithEffects PortsPage.view pageModel PortsViewMsg
 
         NotFound ->
             viewStatic NotFoundPage.view
