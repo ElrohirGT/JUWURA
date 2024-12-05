@@ -26,7 +26,7 @@ view model =
 body : Model msg -> List (Html.Styled.Html msg)
 body model =
     [ div [ css [ displayFlex, flexDirection column ] ]
-        [ a [ model.goToRouteWithParams 10 ] [ text "Go to details" ]
+        [ a [ model.goToRouteWithParams ] [ text "Go to details" ]
         , a [ model.goToHttp 10 ] [ text "Go to HTTP example" ]
         , a [ model.goToJson 10 ] [ text "Go to JSON example" ]
         , a [ model.goToPorts ] [ text "Go to PORTS example" ]

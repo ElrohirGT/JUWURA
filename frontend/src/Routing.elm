@@ -101,7 +101,7 @@ type alias NavigationHrefs msg =
     { goToPorts : Attribute msg
     , goToJson : Int -> Attribute msg
     , goToHttp : Int -> Attribute msg
-    , goToRouteWithParams : Int -> Attribute msg
+    , goToRouteWithParams : Attribute msg
     , goToHome : Attribute msg
     }
 
@@ -154,14 +154,14 @@ goToHttp basePath id =
 
 {-| Generates an href attribute to go to the details page
 -}
-goToRouteWithParams : BasePath -> Int -> Attribute msg
-goToRouteWithParams basePath id =
+goToRouteWithParams : BasePath -> Attribute msg
+goToRouteWithParams basePath =
     case basePath of
         Just s ->
-            href (String.concat [ "/", s, "/details/", String.fromInt id ])
+            href (String.concat [ "/", s, "/details/" ])
 
         Nothing ->
-            href (String.concat [ "/details/", String.fromInt id ])
+            href "/details/"
 
 
 {-| Generates an href attribute to go to the home page
