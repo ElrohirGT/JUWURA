@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const dotenv = @import("dotenv");
 
 const pg = @import("pg");
 
@@ -9,18 +10,18 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = if (builtin.mode == .Debug) gpa.allocator() else std.heap.c_allocator;
 
+    // NOTE: Override needs to be false for deployment.
+    try dotenv.load(allocator, .{ .override = false });
+
     // While a connection can be created directly, pools should be used in most
     // cases. The pool's `acquire` method, to get a connection is thread-safe.
     // The pool may start 1 background thread to reconnect disconnected
     // connections (or connections in an invalid state).
-    var pool = pg.Pool.init(allocator, .{ .size = 5, .connect = .{
-        .port = 6969,
-        .host = "127.0.0.1",
-    }, .auth = .{
-        .username = "postgres",
-        .database = "juwura",
-        .timeout = 10_000,
-    } }) catch |err| {
+    const pool_size = 10;
+    const conn_timeout_ms = 10_000;
+    const postgres_url = std.posix.getenv("POSTGRES_URL") orelse unreachable;
+    const uri = try std.Uri.parse(postgres_url);
+    var pool = pg.Pool.initUri(allocator, uri, pool_size, conn_timeout_ms) catch |err| {
         log.err("Failed to connect: {}", .{err});
         std.posix.exit(1);
     };

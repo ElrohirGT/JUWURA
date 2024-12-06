@@ -36,18 +36,25 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const zap = b.dependency("zap", .{
+    const zap_dep = b.dependency("zap", .{
         .target = target,
         .optimize = optimize,
         .openssl = false, // set to true to enable TLS support
     });
-    main_exe.root_module.addImport("zap", zap.module("zap"));
+    main_exe.root_module.addImport("zap", zap_dep.module("zap"));
 
-    const pg = b.dependency("pg", .{
+    const pg_dep = b.dependency("pg", .{
         .target = target,
         .optimize = optimize,
     });
-    main_exe.root_module.addImport("pg", pg.module("pg"));
+    main_exe.root_module.addImport("pg", pg_dep.module("pg"));
+
+    const dotenv_dep = b.dependency("dotenv", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    main_exe.root_module.addImport("dotenv", dotenv_dep.module("dotenv"));
+    main_exe.linkSystemLibrary("c"); // Needed because of dotenv...
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
@@ -86,7 +93,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    ws_example_exe.root_module.addImport("zap", zap.module("zap"));
+    ws_example_exe.root_module.addImport("zap", zap_dep.module("zap"));
 
     const ws_example_run = b.addRunArtifact(ws_example_exe);
     ws_example_run_step.dependOn(&ws_example_run.step);
@@ -103,7 +110,9 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    db_example_exe.root_module.addImport("pg", pg.module("pg"));
+    db_example_exe.root_module.addImport("pg", pg_dep.module("pg"));
+    db_example_exe.root_module.addImport("dotenv", dotenv_dep.module("dotenv"));
+    db_example_exe.linkSystemLibrary("c"); // Needed because of dotenv...
 
     const db_example_run = b.addRunArtifact(db_example_exe);
     db_example_run_step.dependOn(&db_example_run.step);
