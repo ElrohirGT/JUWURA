@@ -41,8 +41,13 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .openssl = false, // set to true to enable TLS support
     });
-
     main_exe.root_module.addImport("zap", zap.module("zap"));
+
+    const pg = b.dependency("pg", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    main_exe.root_module.addImport("pg", pg.module("pg"));
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
