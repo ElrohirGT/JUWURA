@@ -94,6 +94,23 @@ pub fn build(b: *std.Build) void {
     const ws_example_build = b.addInstallArtifact(ws_example_exe, .{});
     ws_example_build_step.dependOn(&ws_example_build.step);
 
+    const db_example_run_step = b.step("run-db", "Run the DB example");
+    const db_example_build_step = b.step("build-db", "Build the DB example");
+
+    const db_example_exe = b.addExecutable(.{
+        .name = "wsExample",
+        .root_source_file = b.path("./src/dbExample.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    db_example_exe.root_module.addImport("pg", pg.module("pg"));
+
+    const db_example_run = b.addRunArtifact(db_example_exe);
+    db_example_run_step.dependOn(&db_example_run.step);
+
+    const db_example_build = b.addInstallArtifact(db_example_exe, .{});
+    db_example_build_step.dependOn(&db_example_build.step);
+
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
     const lib_unit_tests = b.addTest(.{
