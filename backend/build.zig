@@ -29,7 +29,7 @@ pub fn build(b: *std.Build) void {
     // running `zig build`).
     b.installArtifact(lib);
 
-    const exe = b.addExecutable(.{
+    const main_exe = b.addExecutable(.{
         .name = "backend",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
@@ -42,35 +42,52 @@ pub fn build(b: *std.Build) void {
         .openssl = false, // set to true to enable TLS support
     });
 
-    exe.root_module.addImport("zap", zap.module("zap"));
+    main_exe.root_module.addImport("zap", zap.module("zap"));
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).
-    b.installArtifact(exe);
+    b.installArtifact(main_exe);
 
     // This *creates* a Run step in the build graph, to be executed when another
     // step is evaluated that depends on it. The next line below will establish
     // such a dependency.
-    const run_cmd = b.addRunArtifact(exe);
+    const run_main_cmd = b.addRunArtifact(main_exe);
 
     // By making the run step depend on the install step, it will be run from the
     // installation directory rather than directly from within the cache directory.
     // This is not necessary, however, if the application depends on other installed
     // files, this ensures they will be present and in the expected location.
-    run_cmd.step.dependOn(b.getInstallStep());
+    run_main_cmd.step.dependOn(b.getInstallStep());
 
     // This allows the user to pass arguments to the application in the build
     // command itself, like this: `zig build run -- arg1 arg2 etc`
     if (b.args) |args| {
-        run_cmd.addArgs(args);
+        run_main_cmd.addArgs(args);
     }
 
     // This creates a build step. It will be visible in the `zig build --help` menu,
     // and can be selected like this: `zig build run`
     // This will evaluate the `run` step rather than the default, which is "install".
     const run_step = b.step("run", "Run the app");
-    run_step.dependOn(&run_cmd.step);
+    run_step.dependOn(&run_main_cmd.step);
+
+    const ws_example_run_step = b.step("run-ws", "Run the WS example");
+    const ws_example_build_step = b.step("build-ws", "Build the WS example");
+
+    const ws_example_exe = b.addExecutable(.{
+        .name = "wsExample",
+        .root_source_file = b.path("./src/wsExample.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    ws_example_exe.root_module.addImport("zap", zap.module("zap"));
+
+    const ws_example_run = b.addRunArtifact(ws_example_exe);
+    ws_example_run_step.dependOn(&ws_example_run.step);
+
+    const ws_example_build = b.addInstallArtifact(ws_example_exe, .{});
+    ws_example_build_step.dependOn(&ws_example_build.step);
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
