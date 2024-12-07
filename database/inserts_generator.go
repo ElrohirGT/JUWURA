@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -15,13 +16,14 @@ func main() {
 	var seed int64
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Can't read seed from stdin! Generating new one...\n")
+		fmt.Fprintln(os.Stderr, err)
 		seed = rand.Int63()
 	} else {
-		seed, err = strconv.ParseInt(seedText, 10, 64)
+		seed, err = strconv.ParseInt(strings.TrimSpace(seedText), 10, 64)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Can't parse seed from stdin! Generating new one...\n")
-		} else {
+			fmt.Fprintln(os.Stderr, err)
 			seed = rand.Int63()
 		}
 	}
