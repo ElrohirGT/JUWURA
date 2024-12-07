@@ -96,6 +96,7 @@ func main() {
 		"MEDIUM",
 		"LOW",
 	}
+	taskFieldTypes := []string{"TEXT", "DATE", "SELECT", "NUMBER"}
 
 	// Generate app users...
 	userCount := 8
@@ -199,8 +200,22 @@ func main() {
 
 			endInserts((projectIdx+1)*(assIdx+1)-1, assigneeCount*len(membersByProject))
 		}
-
 	}
+	fmt.Println()
+
+	// Generate task field types...
+	fmt.Println("INSERT INTO task_field_type (name, project_id) VALUES")
+	for projecIdx := range projectCount {
+		projectId := projecIdx + 1
+
+		for idx, name := range taskFieldTypes {
+			fmt.Printf("('%s', %d)", name, projectId)
+
+			endInserts((idx+1)*(projecIdx+1)-1, projectCount*len(taskFieldTypes))
+		}
+	}
+
+	// TODO: Generate custom fields for some projects...
 }
 
 func endInserts(i int, count int) {
