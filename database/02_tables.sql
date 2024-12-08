@@ -15,7 +15,7 @@ COMMENT ON TABLE project IS 'Stores all projects in JUWURA';
 CREATE TABLE project_member (
 	project_id INTEGER REFERENCES project(id) NOT NULL,
 	user_id VARCHAR(100) REFERENCES app_user(email) NOT NULL,
-	is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+	is_pinned BOOLEAN DEFAULT FALSE,
 	last_visited TIMESTAMP NOT NULL
 );
 COMMENT ON TABLE project_member IS 'Stores all the members of a specific project';
@@ -52,8 +52,9 @@ CREATE TABLE task_assignee (
 COMMENT ON TABLE task_assignee IS 'Stores all the asigness for a given task';
 
 CREATE TABLE task_field_type (
-	name VARCHAR(16) PRIMARY KEY,
-	project_id INTEGER REFERENCES project(id)
+	id SERIAL PRIMARY KEY,
+	project_id INTEGER REFERENCES project(id),
+	name VARCHAR(16) NOT NULL
 );
 COMMENT ON TABLE task_field_type IS 'Stores all the types of fields a task can have, for example DATE, TEXT, SELECT, etc';
 
@@ -61,7 +62,7 @@ CREATE TABLE task_field (
 	id SERIAL PRIMARY KEY,
 	project_id INTEGER REFERENCES project(id) NOT NULL,
 	task_type VARCHAR(16) REFERENCES task_type(name) NOT NULL,
-	task_field_type VARCHAR(16) REFERENCES task_field_type(name) NOT NULL,
+	task_field_type INTEGER REFERENCES task_field_type(id) NOT NULL,
 	name VARCHAR(16) NOT NULL
 );
 COMMENT ON TABLE task_field IS 'Stores all the custom fields of a given task type in a given project';

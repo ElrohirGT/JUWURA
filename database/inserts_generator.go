@@ -100,6 +100,9 @@ func main() {
 	}
 	taskFieldTypes := []string{"TEXT", "DATE", "SELECT", "NUMBER"}
 
+	// Changing to DB...
+	fmt.Println("\\c juwura")
+
 	// Generate app users...
 	userCount := 8
 	generatedEmails := make([]string, userCount)
@@ -136,9 +139,9 @@ func main() {
 		userIdxs := random.Perm(userCount)
 		for i := range projectMembers {
 			projectId := pIdx + 1
-			userId := userIdxs[i] + 1
+			userId := generatedEmails[userIdxs[i%len(userIdxs)]]
 			isPinned := nullEveryPercent(random, 0.5, from(random, booleans))
-			fmt.Printf("(%d, %d, %s, NOW())", projectId, userId, isPinned)
+			fmt.Printf("(%d, '%s', %s, NOW())", projectId, userId, isPinned)
 
 			membersByProject[pIdx] = append(membersByProject[pIdx], generatedEmails[userIdxs[i]])
 
@@ -161,7 +164,7 @@ func main() {
 			name := nullEveryPercent(random, 0.3, from(random, taskNames))
 			dueDate := nullEveryPercent(random, 0.5, "NOW()")
 			status := nullEveryPercent(random, 0.5, from(random, taskStatuses))
-			sprint := nullEveryPercent(random, 0.5, random.Intn(10))
+			sprint := nullEveryPercent(random, 0.5, fmt.Sprintf("%d", random.Intn(10)))
 			priority := nullEveryPercent(random, 0.8, from(random, taskPriorities))
 			fmt.Printf("(%d, '%s', %s, %s, %s, %s, %s)", projectIdx+1, tType, name, dueDate, status, sprint, priority)
 
@@ -188,7 +191,7 @@ func main() {
 	fmt.Println()
 
 	// Generate task assignees...
-	fmt.Println("INSERT INTO task_asignee (task_id, user_id) VALUES")
+	fmt.Println("INSERT INTO task_assignee (task_id, user_id) VALUES")
 	assigneeCount := taskCount * 3 / 2
 	for projectIdx, members := range membersByProject {
 		tasksIdxs := random.Perm(taskCount)
@@ -196,7 +199,7 @@ func main() {
 
 		for assIdx := range assigneeCount {
 			userId := members[membersIdxs[assIdx%len(membersIdxs)]]
-			taskId := tasksIdxs[assIdx%len(tasksIdxs)] + projectIdx*taskCount
+			taskId := tasksIdxs[assIdx%len(tasksIdxs)] + 1 + projectIdx*taskCount
 
 			fmt.Printf("(%d, '%s')", taskId, userId)
 
@@ -230,7 +233,7 @@ func endInserts(i int, count int) {
 	fmt.Println()
 }
 
-func nullEveryPercent[T any](r *rand.Rand, percent float32, okValue T) string {
+func nullEveryPercent(r *rand.Rand, percent float32, okValue string) string {
 	okMapped := fmt.Sprintf("'%s'", okValue)
 	return everyPercent(r, percent, "NULL", okMapped)
 }

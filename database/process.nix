@@ -70,6 +70,8 @@ with lib; let
 
     echo "Initializing DB"
     echo "${dbInitFile}" | psql --dbname postgres -p ${builtins.toString pgConfig.port}
+		echo "Generating inserts..."
+		${pkgs.go}/bin/go run ${./inserts_generator.go} < /dev/null | psql --dbname postgres -p ${builtins.toString pgConfig.port}
     echo "JUWURA postgres is now running!"
   '';
   stopPostgres = ''
