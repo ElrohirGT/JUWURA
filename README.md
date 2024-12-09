@@ -1,4 +1,5 @@
 # JUWURA
+
 [![DB Linting](https://github.com/ElrohirGT/JUWURA/actions/workflows/db.yml/badge.svg)](https://github.com/ElrohirGT/JUWURA/actions/workflows/db.yml)
 [![Backend Lint and Tests](https://github.com/ElrohirGT/JUWURA/actions/workflows/backend.yml/badge.svg)](https://github.com/ElrohirGT/JUWURA/actions/workflows/backend.yml)
 [![Frontend Lint and Tests](https://github.com/ElrohirGT/JUWURA/actions/workflows/frontend.yml/badge.svg)](https://github.com/ElrohirGT/JUWURA/actions/workflows/frontend.yml)
