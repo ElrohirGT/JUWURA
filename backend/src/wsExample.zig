@@ -2,6 +2,10 @@ const std = @import("std");
 const zap = @import("zap");
 const WebSockets = zap.WebSockets;
 
+// Context that saves data of a given websocket connection
+// In the case of a chatroom, is just the userName and a channelName to send messages.
+//
+// The settings and subscribeArgs are used to handle messages and the initial subscription.
 const Context = struct {
     userName: []const u8,
     channel: []const u8,
@@ -13,6 +17,7 @@ const Context = struct {
 
 const ContextList = std.ArrayList(*Context);
 
+// Manages all contexts (user connections) for a given channel.
 const ContextManager = struct {
     allocator: std.mem.Allocator,
     channel: []const u8,
