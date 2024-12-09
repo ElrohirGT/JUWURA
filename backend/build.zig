@@ -89,7 +89,7 @@ pub fn build(b: *std.Build) void {
 
     const ws_example_exe = b.addExecutable(.{
         .name = "wsExample",
-        .root_source_file = b.path("./src/wsExample.zig"),
+        .root_source_file = b.path("./src/examples/wsExample.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -106,7 +106,7 @@ pub fn build(b: *std.Build) void {
 
     const db_example_exe = b.addExecutable(.{
         .name = "wsExample",
-        .root_source_file = b.path("./src/dbExample.zig"),
+        .root_source_file = b.path("./src/examples/dbExample.zig"),
         .target = target,
         .optimize = optimize,
     });
