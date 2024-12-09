@@ -1,9 +1,5 @@
 import { client as ClientGenerator, connection } from "websocket";
 
-/**
- * @typedef {Object} WebSocketClient
- */
-
 export async function generateClient(url) {
 	const wrapper = new Promise((res, rej) => {
 		const generator = new ClientGenerator();
