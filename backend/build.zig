@@ -35,6 +35,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    main_exe.root_module.addImport("juwura", &lib.root_module);
 
     const zap_dep = b.dependency("zap", .{
         .target = target,
@@ -42,6 +43,7 @@ pub fn build(b: *std.Build) void {
         .openssl = false, // set to true to enable TLS support
     });
     main_exe.root_module.addImport("zap", zap_dep.module("zap"));
+    lib.root_module.addImport("zap", zap_dep.module("zap"));
 
     const pg_dep = b.dependency("pg", .{
         .target = target,

@@ -1,10 +1,11 @@
 const std = @import("std");
-const testing = std.testing;
+const zap = @import("zap");
 
-export fn add(a: i32, b: i32) i32 {
-    return a + b;
-}
-
-test "basic add functionality" {
-    try testing.expect(add(3, 7) == 10);
+pub fn on_request(r: zap.Request) void {
+    r.setHeader("Server", "JUWURA") catch unreachable;
+    r.sendBody(
+        \\ <html><body>
+        \\ <h1>This is a simple Websocket chatroom example</h1>
+        \\ </body></html>
+    ) catch unreachable;
 }
