@@ -24,6 +24,7 @@
 
     # System packages...
     backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.yarn-berry];
+    dbPkgs = pkgs: [pkgs.sqlfluff];
     frontendPkgs = pkgs: [pkgs.nodejs pkgs.yarn-berry pkgs.elmPackages.elm pkgs.elmPackages.elm-format pkgs.biome pkgs.elmPackages.elm-review];
     orquestrationPkgs = pkgs: [pkgs.process-compose pkgs.coreutils];
 
@@ -59,13 +60,13 @@
         '';
       };
 
-			compileBackend = pkgs.writeShellApplication {
-				name = "Backend-Compiler";
-				runtimeInputs = [pkgs.zig];
-				text = ''
-				cd ./backend/ && zig build -Doptimize=ReleaseSafe
-				'';
-			};
+      compileBackend = pkgs.writeShellApplication {
+        name = "Backend-Compiler";
+        runtimeInputs = [pkgs.zig];
+        text = ''
+          cd ./backend/ && zig build -Doptimize=ReleaseSafe
+        '';
+      };
 
       restartServices = pkgs.writeShellApplication {
         name = "JUWURA-services-starter";
@@ -114,10 +115,10 @@
             };
           };
         in ''
-          echo "Deleting previous DB..."
-          rm .pgData || rm -rf .pgData || true
-          echo "Starting process compose..."
-					timeout --kill-after=1m 3m process-compose -f ${composeFile}
+               echo "Deleting previous DB..."
+               rm .pgData || rm -rf .pgData || true
+               echo "Starting process compose..."
+          timeout --kill-after=1m 3m process-compose -f ${composeFile}
         '';
       };
     });
@@ -132,8 +133,13 @@
       cicdFrontend = pkgs.mkShell {
         packages = frontendPkgs pkgs;
       };
+
       cicdBackend = pkgs.mkShell {
         packages = backendPkgs pkgs ++ orquestrationPkgs pkgs;
+      };
+
+      cicdDB = pkgs.mkShell {
+        packages = dbPkgs pkgs;
       };
     });
   };
