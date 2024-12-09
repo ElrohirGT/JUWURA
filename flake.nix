@@ -127,7 +127,7 @@
       pkgs = nixpkgsFor.${system};
     in {
       default = pkgs.mkShell {
-        packages = backendPkgs pkgs ++ frontendPkgs pkgs ++ orquestrationPkgs pkgs;
+        packages = backendPkgs pkgs ++ frontendPkgs pkgs ++ orquestrationPkgs pkgs ++ dbPkgs pkgs;
       };
 
       cicdFrontend = pkgs.mkShell {
