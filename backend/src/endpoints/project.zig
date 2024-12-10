@@ -38,7 +38,7 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     };
 
     const parsed = std.json.parseFromSlice(PostProjectRequest, self.alloc, body, .{}) catch |err| {
-        log.err("Error in body parsing: {}", .{err});
+        log.err("Error in body parsing: {}. The body was {s}", .{ err, body });
 
         switch (err) {
             std.json.ParseFromValueError.Overflow,
