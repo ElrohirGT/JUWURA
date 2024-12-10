@@ -36,8 +36,6 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
       - name: Formatting Zig
         run: zig fmt --check .
-      - name: Compiling
-        run: zig build
       - name: Installing JS dependencies
         run: yarn install
       - name: Formatting JS
