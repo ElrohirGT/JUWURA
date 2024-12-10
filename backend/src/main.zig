@@ -40,7 +40,9 @@ pub fn main() !void {
     log.info("Logging pool initialized!", .{});
 
     juwura.logInfo("Initializing env variables...").log();
-    try dotenv.load(allocator, .{ .override = false });
+    dotenv.load(allocator, .{ .override = false }) catch |err| {
+        juwura.logErr("Error initializing env variables").err(err).log();
+    };
     juwura.logInfo("Env variables initialized!").log();
 
     const pool_size = 10;
