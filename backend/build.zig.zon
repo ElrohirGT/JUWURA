@@ -35,6 +35,10 @@
             .url = "git+https://github.com/dying-will-bullet/dotenv.git#ad7e37c4b05d07a3319376eb17afd6ad491ffb6b",
             .hash = "12201347c20e8c4cb161f16bba30e51da17c32b89ef887b9b8932d6ed135ee5a6d01",
         },
+        .logz = .{
+            .url = "git+https://github.com/karlseguin/log.zig?ref=zig-0.13#5d5bbaeb98ad30cda30c60ab0f2d1a7fb4890676",
+            .hash = "122030cda8b80a813ed2d1c460b9d1138bbb0c325f4ccda74785810e7395d6154670",
+        },
     },
     .paths = .{
         "build.zig",

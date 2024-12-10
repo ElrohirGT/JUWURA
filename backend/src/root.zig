@@ -1,6 +1,8 @@
 const std = @import("std");
 const zap = @import("zap");
 
+// pub fn logInfo(msg: []u8)
+
 pub fn on_request(r: zap.Request) void {
     r.setHeader("Server", "JUWURA") catch unreachable;
     r.sendBody(
