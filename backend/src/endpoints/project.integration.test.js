@@ -3,7 +3,7 @@ import { malformedJSON, noPayloadSupplied } from "./testHelpers";
 import { API_URL, createProject } from "./testHelpers/project";
 
 describe("Project POST integration tests", () => {
-	test.only("Successfully creates a project", async () => {
+	test("Successfully creates a project", async () => {
 		await createProject("JUWURA test project", "correo1@gmail.com");
 	});
 	test("No payload supplied", noPayloadSupplied(API_URL));
