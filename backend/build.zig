@@ -45,16 +45,14 @@ pub fn build(b: *std.Build) void {
     main_exe.root_module.addImport("zap", zap_dep.module("zap"));
     lib.root_module.addImport("zap", zap_dep.module("zap"));
 
-    const pg_dep = b.dependency("pg", .{
-        .target = target,
-        .optimize = optimize,
-    });
+    const pg_dep = b.dependency("pg", .{ .target = target, .optimize = optimize });
     main_exe.root_module.addImport("pg", pg_dep.module("pg"));
 
-    const dotenv_dep = b.dependency("dotenv", .{
-        .target = target,
-        .optimize = optimize,
-    });
+    const log_dep = b.dependency("logz", .{ .target = target, .optimize = optimize });
+    main_exe.root_module.addImport("logz", log_dep.module("logz"));
+    lib.root_module.addImport("logz", log_dep.module("logz"));
+
+    const dotenv_dep = b.dependency("dotenv", .{ .target = target, .optimize = optimize });
     main_exe.root_module.addImport("dotenv", dotenv_dep.module("dotenv"));
     main_exe.linkSystemLibrary("c"); // Needed because of dotenv...
 
