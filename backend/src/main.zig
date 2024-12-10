@@ -3,6 +3,7 @@ const dotenv = @import("dotenv");
 const zap = @import("zap");
 const pg = @import("pg");
 const ProjectsWeb = @import("endpoints/project.zig");
+const juwura = @import("juwura");
 
 pub const log = std.log.scoped(.juwura);
 
