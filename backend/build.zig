@@ -50,6 +50,7 @@ pub fn build(b: *std.Build) void {
 
     const log_dep = b.dependency("logz", .{ .target = target, .optimize = optimize });
     main_exe.root_module.addImport("logz", log_dep.module("logz"));
+    lib.root_module.addImport("logz", log_dep.module("logz"));
 
     const dotenv_dep = b.dependency("dotenv", .{ .target = target, .optimize = optimize });
     main_exe.root_module.addImport("dotenv", dotenv_dep.module("dotenv"));

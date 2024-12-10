@@ -39,19 +39,19 @@ pub fn main() !void {
     defer logz.deinit();
     log.info("Logging pool initialized!", .{});
 
-    logz.info().string("msg", "Initializing env variables...").log();
+    juwura.logInfo("Initializing env variables...").log();
     try dotenv.load(allocator, .{ .override = false });
-    logz.info().string("msg", "Env variables initialized!").log();
+    juwura.logInfo("Env variables initialized!").log();
 
     const pool_size = 10;
     const conn_timeout_ms = 10_000;
     const postgres_url = std.posix.getenv("POSTGRES_URL") orelse {
-        logz.err().string("msg", "No POSTGRES_URL env variable supplied!").log();
+        juwura.logErr("No POSTGRES_URL env variable supplied!").log();
         std.posix.exit(1);
     };
     const uri = try std.Uri.parse(postgres_url);
     const pool = pg.Pool.initUri(allocator, uri, pool_size, conn_timeout_ms) catch |err| {
-        logz.err().string("msg", "Failed to connect to DB!").err(err).string("url", postgres_url).log();
+        juwura.logErr("Failed to connect to DB!").err(err).string("url", postgres_url).log();
         std.posix.exit(1);
     };
     defer pool.deinit();
@@ -64,13 +64,13 @@ pub fn main() !void {
         .max_body_size = 1000 * 1024 * 1024,
     });
 
-    logz.info().string("msg", "Initializing endpoints...").log();
+    juwura.logInfo("Initializing endpoints...").log();
     var projects = ProjectsWeb.init(allocator, pool, "/projects");
     try listener.register(projects.endpoint());
-    logz.info().string("msg", "Endpoints initialized!").log();
+    juwura.logInfo("Endpoints initialized!").log();
 
     try listener.listen();
-    logz.info().string("msg", "Listening on 0.0.0.0:3000").log();
+    juwura.logInfo("Listening on 0.0.0.0:3000").log();
 
     // start worker threads
     zap.start(.{
