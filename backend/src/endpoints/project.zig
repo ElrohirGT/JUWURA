@@ -80,28 +80,39 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     defer conn.release();
     juwura.logInfo("Connection aquired!").log();
 
-    const query = "INSERT INTO project (name, photo_url) VALUES ($1, $2) RETURNING *";
-    const params = .{ request.name, request.photo_url };
+    const pj_query = "INSERT INTO project (name, photo_url) VALUES ($1, $2) RETURNING *";
+    const pj_params = .{ request.name, request.photo_url };
 
-    juwura.logInfo("Querying DB...").string("query", query).string("name", request.name).string("photo_url", request.photo_url).log();
-    const result = conn.query(query, params) catch |err| {
+    juwura.logInfo("Creating project in DB...").string("query", pj_query).string("name", request.name).string("photo_url", request.photo_url).log();
+    const pj_result = conn.query(pj_query, pj_params) catch |err| {
         juwura.logErr("Error in query").err(err).log();
         r.setStatus(.internal_server_error);
         r.sendBody("QUERY ERROR") catch unreachable;
         return;
     };
-    defer result.deinit();
-    juwura.logInfo("Query done!").log();
 
-    juwura.logInfo("Creating response...").log();
-    const dataRow = (result.next() catch unreachable) orelse unreachable;
+    const dataRow = (pj_result.next() catch unreachable) orelse unreachable;
     const id = dataRow.get(i32, 0);
     const name = dataRow.get([]u8, 1);
     const url = dataRow.get(?[]u8, 2);
 
-    const response = PostProjectResponse{ .project = Project{ .id = id, .photo_url = url, .name = name } };
-    juwura.logInfo("Done creating response!").log();
+    pj_result.deinit();
+    juwura.logInfo("Project created!").log();
 
+    const mem_query = "INSERT INTO project_member (project_id, user_id) VALUES ($1, $2)";
+    const mem_params = .{ id, request.email };
+
+    juwura.logInfo("Adding project creator to members...").string("query", mem_query).int("projectId", id).string("userEmail", request.email).log();
+    const memberResult = conn.query(mem_query, mem_params) catch |err| {
+        juwura.logErr("Error in query").err(err).log();
+        r.setStatus(.internal_server_error);
+        r.sendBody("QUERY ERROR") catch unreachable;
+        return;
+    };
+    memberResult.deinit();
+    juwura.logInfo("Creator added to member!").log();
+
+    const response = PostProjectResponse{ .project = Project{ .id = id, .photo_url = url, .name = name } };
     var jsonResponse = std.ArrayList(u8).init(self.alloc);
     defer jsonResponse.deinit();
     std.json.stringify(response, .{}, jsonResponse.writer()) catch unreachable;
