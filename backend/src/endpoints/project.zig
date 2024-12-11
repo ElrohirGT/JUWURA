@@ -17,14 +17,14 @@ const Project = struct {
 };
 
 pub fn init(a: std.mem.Allocator, pool: *pg.Pool, path: []const u8) Self {
-    return .{ .alloc = a, .pool = pool, .ep = zap.Endpoint.init(.{ .path = path, .get = get_projects, .post = post_project }) };
+    return .{ .alloc = a, .pool = pool, .ep = zap.Endpoint.init(.{ .path = path, .post = post_project }) };
 }
 
 pub fn endpoint(self: *Self) *zap.Endpoint {
     return &self.ep;
 }
 
-const PostProjectRequest = struct { email: []u8, name: []u8, photo_url: ?[]u8 = null };
+const PostProjectRequest = struct { email: []u8, name: []u8, photo_url: ?[]u8 = null, now_timestamp: i64 };
 const PostProjectResponse = struct { project: Project };
 fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     const self: *Self = @fieldParentPtr("ep", e);
@@ -80,51 +80,42 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     defer conn.release();
     juwura.logInfo("Connection aquired!").log();
 
-    const query = "INSERT INTO project (name, photo_url) VALUES ($1, $2) RETURNING *";
-    const params = .{ request.name, request.photo_url };
+    conn.begin() catch unreachable;
+    const project: Project = project_creation_block: {
+        const query = "INSERT INTO project (name, photo_url) VALUES ($1, $2) RETURNING *";
+        const params = .{ request.name, request.photo_url };
+        juwura.logInfo("Creating project in DB...").string("query", query).string("name", request.name).string("photo_url", request.photo_url).log();
 
-    juwura.logInfo("Querying DB...").string("query", query).string("name", request.name).string("photo_url", request.photo_url).log();
-    const result = conn.query(query, params) catch |err| {
-        juwura.logErr("Error in query").err(err).log();
-        r.setStatus(.internal_server_error);
-        r.sendBody("QUERY ERROR") catch unreachable;
-        return;
+        var dataRow = conn.row(query, params) catch |err| {
+            juwura.manageTransactionError(&r, conn, err);
+            return;
+        } orelse unreachable;
+        defer dataRow.deinit() catch unreachable;
+
+        const id = dataRow.get(i32, 0);
+        const name = dataRow.get([]u8, 1);
+        const url = dataRow.get(?[]u8, 2);
+
+        break :project_creation_block Project{ .id = id, .name = name, .photo_url = url };
     };
-    defer result.deinit();
-    juwura.logInfo("Query done!").log();
+    juwura.logInfo("Project created!").int("id", project.id).string("name", project.name).string("photo_url", project.photo_url).log();
 
-    juwura.logInfo("Creating response...").log();
-    const dataRow = (result.next() catch unreachable) orelse unreachable;
-    const id = dataRow.get(i32, 0);
-    const name = dataRow.get([]u8, 1);
-    const url = dataRow.get(?[]u8, 2);
+    const response = PostProjectResponse{ .project = project };
+    const responseBody = juwura.toJson(self.alloc, response) catch unreachable;
 
-    const response = PostProjectResponse{ .project = Project{ .id = id, .photo_url = url, .name = name } };
-    juwura.logInfo("Done creating response!").log();
+    {
+        const query = "INSERT INTO project_member (project_id, user_id, last_visited) VALUES ($1, $2, $3)";
+        const params = .{ project.id, request.email, request.now_timestamp };
 
-    var jsonResponse = std.ArrayList(u8).init(self.alloc);
-    defer jsonResponse.deinit();
-    std.json.stringify(response, .{}, jsonResponse.writer()) catch unreachable;
+        juwura.logInfo("Adding project creator to members...").string("query", query).int("projectId", project.id).string("userEmail", request.email).int("last_visited", request.now_timestamp).log();
+        _ = conn.exec(query, params) catch |err| {
+            juwura.manageTransactionError(&r, conn, err);
+            return;
+        };
+        juwura.logInfo("Creator added to members!").log();
+    }
 
-    r.sendJson((jsonResponse.toOwnedSlice() catch unreachable)) catch unreachable;
-}
-
-fn get_projects(e: *zap.Endpoint, r: zap.Request) void {
-    const self: *Self = @fieldParentPtr("ep", e);
-    const conn = self.pool.acquire() catch unreachable;
-    defer conn.release();
-
-    // We need to cast to integer in order to make pg.zig understand the type to obtain.
-    var row = (conn.row("SELECT COUNT(*)::INTEGER FROM project", .{}) catch unreachable) orelse unreachable;
-    defer row.deinit() catch {};
-
-    const count = row.get(i32, 0);
-
-    var body: [255]u8 = undefined;
-    _ = std.fmt.bufPrint(&body,
-        \\ <html><body>
-        \\ <h1>Welcome to PROJECTS endpoint! Current count: {d}</h1>
-        \\ </body></html>
-    , .{count}) catch unreachable;
-    r.sendBody(&body) catch unreachable;
+    conn.commit() catch unreachable;
+    juwura.logInfo("Responding with body...").string("body", responseBody).log();
+    r.sendJson(responseBody) catch unreachable;
 }

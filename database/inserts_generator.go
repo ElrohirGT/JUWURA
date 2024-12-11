@@ -39,7 +39,7 @@ func main() {
 
 	fmt.Fprintf(os.Stderr, "Creating with seed: %d\n", seed)
 
-	booleans := []string{"true", "false"}
+	// booleans := []string{"true", "false"}
 	profilePictures := []string{
 		"https://i.pinimg.com/474x/ce/01/a8/ce01a81ede670b25c1fe42ab53372be9.jpg",
 		"https://pbs.twimg.com/profile_images/701573331661799424/Nz7S_Oie_400x400.png",
@@ -140,7 +140,7 @@ func main() {
 		for i := range projectMembers {
 			projectId := pIdx + 1
 			userId := generatedEmails[userIdxs[i%len(userIdxs)]]
-			isPinned := nullEveryPercent(random, 0.5, from(random, booleans))
+			isPinned := defaultEveryPercent(random, 0.5, "true")
 			fmt.Printf("(%d, '%s', %s, NOW())", projectId, userId, isPinned)
 
 			membersByProject[pIdx] = append(membersByProject[pIdx], generatedEmails[userIdxs[i]])
@@ -236,6 +236,11 @@ func endInserts(i int, count int) {
 func nullEveryPercent(r *rand.Rand, percent float32, okValue string) string {
 	okMapped := fmt.Sprintf("'%s'", okValue)
 	return everyPercent(r, percent, "NULL", okMapped)
+}
+
+func defaultEveryPercent(r *rand.Rand, percent float32, okValue string) string {
+	okMapped := fmt.Sprintf("'%s'", okValue)
+	return everyPercent(r, percent, "default", okMapped)
 }
 
 func everyPercent[T any](r *rand.Rand, percent float32, okValue T, elseValue T) T {

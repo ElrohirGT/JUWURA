@@ -6,8 +6,6 @@ const ProjectsWeb = @import("endpoints/project.zig");
 const juwura = @import("juwura");
 const logz = @import("logz");
 
-pub const log = std.log.scoped(.juwura);
-
 fn on_request(r: zap.Request) void {
     r.setHeader("Server", "JUWURA") catch unreachable;
     r.sendBody(
@@ -18,15 +16,12 @@ fn on_request(r: zap.Request) void {
 }
 
 pub fn main() !void {
-    log.info("Initializing allocator...", .{});
     var gpa = std.heap.GeneralPurposeAllocator(.{
         .thread_safe = true,
     }){};
     const allocator = gpa.allocator();
-    log.info("Allocator initialized!", .{});
 
     // initialize a logging pool
-    log.info("Initializing logging pool...", .{});
     try logz.setup(allocator, .{
         .level = .Info,
         .pool_size = 100,
@@ -37,7 +32,6 @@ pub fn main() !void {
         .encoding = .logfmt,
     });
     defer logz.deinit();
-    log.info("Logging pool initialized!", .{});
 
     juwura.logInfo("Initializing env variables...").log();
     dotenv.load(allocator, .{ .override = false }) catch |err| {
@@ -45,6 +39,7 @@ pub fn main() !void {
     };
     juwura.logInfo("Env variables initialized!").log();
 
+    juwura.logInfo("Initializing DB pool...").log();
     const pool_size = 10;
     const conn_timeout_ms = 10_000;
     const postgres_url = std.posix.getenv("POSTGRES_URL") orelse {
@@ -65,6 +60,7 @@ pub fn main() !void {
         .max_clients = 100_000,
         .max_body_size = 1000 * 1024 * 1024,
     });
+    juwura.logInfo("DB Pool initialized!").log();
 
     juwura.logInfo("Initializing endpoints...").log();
     var projects = ProjectsWeb.init(allocator, pool, "/projects");

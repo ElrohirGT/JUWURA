@@ -14,6 +14,7 @@ export async function createProject(name, userEmail) {
 	const payload = {
 		email: userEmail,
 		name,
+		now_timestamp: new Date().getTime(),
 	};
 
 	const response = await axios.post(API_URL, payload, {

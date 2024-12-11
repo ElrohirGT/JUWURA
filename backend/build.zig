@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
         .name = "backend",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
-        .root_source_file = b.path("src/root.zig"),
+        .root_source_file = b.path("src/zigLib/root.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -47,6 +47,7 @@ pub fn build(b: *std.Build) void {
 
     const pg_dep = b.dependency("pg", .{ .target = target, .optimize = optimize });
     main_exe.root_module.addImport("pg", pg_dep.module("pg"));
+    lib.root_module.addImport("pg", pg_dep.module("pg"));
 
     const log_dep = b.dependency("logz", .{ .target = target, .optimize = optimize });
     main_exe.root_module.addImport("logz", log_dep.module("logz"));
