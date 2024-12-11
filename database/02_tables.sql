@@ -16,7 +16,7 @@ CREATE TABLE project_member (
     project_id INTEGER REFERENCES project (id) NOT NULL,
     user_id VARCHAR(100) REFERENCES app_user (email) NOT NULL,
     is_pinned BOOLEAN DEFAULT FALSE,
-    last_visited TIMESTAMP
+    last_visited TIMESTAMP NOT NULL
 );
 COMMENT ON TABLE project_member IS
 'Stores all the members of a specific project';

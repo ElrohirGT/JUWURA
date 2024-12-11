@@ -24,7 +24,7 @@ pub fn endpoint(self: *Self) *zap.Endpoint {
     return &self.ep;
 }
 
-const PostProjectRequest = struct { email: []u8, name: []u8, photo_url: ?[]u8 = null };
+const PostProjectRequest = struct { email: []u8, name: []u8, photo_url: ?[]u8 = null, now_timestamp: i64 };
 const PostProjectResponse = struct { project: Project };
 fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     const self: *Self = @fieldParentPtr("ep", e);
@@ -86,7 +86,14 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
         juwura.logInfo("Creating project in DB...").string("query", query).string("name", request.name).string("photo_url", request.photo_url).log();
 
         var dataRow = conn.row(query, params) catch |err| {
-            juwura.logErr("Error in query").err(err).log();
+            var l = juwura.logErr("Error in query").err(err);
+            if (err == error.PG) {
+                if (conn.err) |pge| {
+                    l = l.string("pg_error", pge.message);
+                }
+            }
+            l.log();
+
             r.setStatus(.internal_server_error);
             r.sendBody("QUERY ERROR") catch unreachable;
             return;
@@ -105,12 +112,18 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     const responseBody = juwura.toJson(self.alloc, response) catch unreachable;
 
     {
-        const query = "INSERT INTO project_member (project_id, user_id) VALUES ($1, $2)";
-        const params = .{ project.id, request.email };
+        const query = "INSERT INTO project_member (project_id, user_id, last_visited) VALUES ($1, $2, $3)";
+        const params = .{ project.id, request.email, request.now_timestamp };
 
-        juwura.logInfo("Adding project creator to members...").string("query", query).int("projectId", project.id).string("userEmail", request.email).log();
+        juwura.logInfo("Adding project creator to members...").string("query", query).int("projectId", project.id).string("userEmail", request.email).int("last_visited", request.now_timestamp).log();
         _ = conn.exec(query, params) catch |err| {
-            juwura.logErr("Error in query").err(err).log();
+            var l = juwura.logErr("Error in query").err(err);
+            if (err == error.PG) {
+                if (conn.err) |pge| {
+                    l = l.string("pg_error", pge.message);
+                }
+            }
+            l.log();
             r.setStatus(.internal_server_error);
             r.sendBody("QUERY ERROR") catch unreachable;
             return;
