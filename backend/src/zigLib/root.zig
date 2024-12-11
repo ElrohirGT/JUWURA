@@ -42,3 +42,8 @@ pub fn manageQueryError(r: *const zap.Request, conn: *const pg.Conn, err: anyerr
     r.sendBody("QUERY ERROR") catch unreachable;
     return;
 }
+
+pub fn manageTransactionError(r: *const zap.Request, conn: *pg.Conn, err: anyerror) void {
+    manageQueryError(r, conn, err);
+    conn.rollback() catch unreachable;
+}

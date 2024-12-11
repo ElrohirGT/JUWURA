@@ -80,13 +80,14 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     defer conn.release();
     juwura.logInfo("Connection aquired!").log();
 
+    conn.begin() catch unreachable;
     const project: Project = project_creation_block: {
         const query = "INSERT INTO project (name, photo_url) VALUES ($1, $2) RETURNING *";
         const params = .{ request.name, request.photo_url };
         juwura.logInfo("Creating project in DB...").string("query", query).string("name", request.name).string("photo_url", request.photo_url).log();
 
         var dataRow = conn.row(query, params) catch |err| {
-            juwura.manageQueryError(&r, conn, err);
+            juwura.manageTransactionError(&r, conn, err);
             return;
         } orelse unreachable;
         defer dataRow.deinit() catch unreachable;
@@ -108,12 +109,13 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
 
         juwura.logInfo("Adding project creator to members...").string("query", query).int("projectId", project.id).string("userEmail", request.email).int("last_visited", request.now_timestamp).log();
         _ = conn.exec(query, params) catch |err| {
-            juwura.manageQueryError(&r, conn, err);
+            juwura.manageTransactionError(&r, conn, err);
             return;
         };
         juwura.logInfo("Creator added to members!").log();
     }
 
+    conn.commit() catch unreachable;
     juwura.logInfo("Responding with body...").string("body", responseBody).log();
     r.sendJson(responseBody) catch unreachable;
 }
