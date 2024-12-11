@@ -17,7 +17,7 @@ const Project = struct {
 };
 
 pub fn init(a: std.mem.Allocator, pool: *pg.Pool, path: []const u8) Self {
-    return .{ .alloc = a, .pool = pool, .ep = zap.Endpoint.init(.{ .path = path, .get = get_projects, .post = post_project }) };
+    return .{ .alloc = a, .pool = pool, .ep = zap.Endpoint.init(.{ .path = path, .post = post_project }) };
 }
 
 pub fn endpoint(self: *Self) *zap.Endpoint {
@@ -118,24 +118,4 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     conn.commit() catch unreachable;
     juwura.logInfo("Responding with body...").string("body", responseBody).log();
     r.sendJson(responseBody) catch unreachable;
-}
-
-fn get_projects(e: *zap.Endpoint, r: zap.Request) void {
-    const self: *Self = @fieldParentPtr("ep", e);
-    const conn = self.pool.acquire() catch unreachable;
-    defer conn.release();
-
-    // We need to cast to integer in order to make pg.zig understand the type to obtain.
-    var row = (conn.row("SELECT COUNT(*)::INTEGER FROM project", .{}) catch unreachable) orelse unreachable;
-    defer row.deinit() catch {};
-
-    const count = row.get(i32, 0);
-
-    var body: [255]u8 = undefined;
-    _ = std.fmt.bufPrint(&body,
-        \\ <html><body>
-        \\ <h1>Welcome to PROJECTS endpoint! Current count: {d}</h1>
-        \\ </body></html>
-    , .{count}) catch unreachable;
-    r.sendBody(&body) catch unreachable;
 }
