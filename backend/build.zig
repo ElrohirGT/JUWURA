@@ -47,6 +47,7 @@ pub fn build(b: *std.Build) void {
 
     const pg_dep = b.dependency("pg", .{ .target = target, .optimize = optimize });
     main_exe.root_module.addImport("pg", pg_dep.module("pg"));
+    lib.root_module.addImport("pg", pg_dep.module("pg"));
 
     const log_dep = b.dependency("logz", .{ .target = target, .optimize = optimize });
     main_exe.root_module.addImport("logz", log_dep.module("logz"));

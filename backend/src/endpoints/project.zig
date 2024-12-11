@@ -86,16 +86,7 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
         juwura.logInfo("Creating project in DB...").string("query", query).string("name", request.name).string("photo_url", request.photo_url).log();
 
         var dataRow = conn.row(query, params) catch |err| {
-            var l = juwura.logErr("Error in query").err(err);
-            if (err == error.PG) {
-                if (conn.err) |pge| {
-                    l = l.string("pg_error", pge.message);
-                }
-            }
-            l.log();
-
-            r.setStatus(.internal_server_error);
-            r.sendBody("QUERY ERROR") catch unreachable;
+            juwura.manageQueryError(&r, conn, err);
             return;
         } orelse unreachable;
         defer dataRow.deinit() catch unreachable;
@@ -117,15 +108,7 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
 
         juwura.logInfo("Adding project creator to members...").string("query", query).int("projectId", project.id).string("userEmail", request.email).int("last_visited", request.now_timestamp).log();
         _ = conn.exec(query, params) catch |err| {
-            var l = juwura.logErr("Error in query").err(err);
-            if (err == error.PG) {
-                if (conn.err) |pge| {
-                    l = l.string("pg_error", pge.message);
-                }
-            }
-            l.log();
-            r.setStatus(.internal_server_error);
-            r.sendBody("QUERY ERROR") catch unreachable;
+            juwura.manageQueryError(&r, conn, err);
             return;
         };
         juwura.logInfo("Creator added to members!").log();

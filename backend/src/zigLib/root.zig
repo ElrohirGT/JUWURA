@@ -1,5 +1,6 @@
 const std = @import("std");
 const zap = @import("zap");
+const pg = @import("pg");
 const logz = @import("logz");
 
 pub fn logInfo(msg: []const u8) logz.Logger {
@@ -21,18 +22,23 @@ pub fn toJson(alloc: std.mem.Allocator, value: anytype) ![]u8 {
     defer buffer.deinit();
 
     try std.json.stringify(value, .{}, buffer.writer());
-    for (buffer.items) |char| {
-        std.log.debug("{c}", .{char});
-    }
+    // for (buffer.items) |char| {
+    //     std.log.debug("{c}", .{char});
+    // }
 
     return buffer.toOwnedSlice();
 }
 
-pub fn on_request(r: zap.Request) void {
-    r.setHeader("Server", "JUWURA") catch unreachable;
-    r.sendBody(
-        \\ <html><body>
-        \\ <h1>This is a simple Websocket chatroom example</h1>
-        \\ </body></html>
-    ) catch unreachable;
+pub fn manageQueryError(r: *const zap.Request, conn: *const pg.Conn, err: anyerror) void {
+    var l = logErr("Error in query").err(err);
+    if (err == error.PG) {
+        if (conn.err) |pge| {
+            l = l.string("pg_error", pge.message);
+        }
+    }
+
+    l.log();
+    r.setStatus(.internal_server_error);
+    r.sendBody("QUERY ERROR") catch unreachable;
+    return;
 }
