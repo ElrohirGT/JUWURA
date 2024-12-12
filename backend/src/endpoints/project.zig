@@ -110,13 +110,21 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     const response = PostProjectResponse{ .project = project };
     const responseBody = juwura.toJson(self.alloc, response) catch unreachable;
 
+    juwura.logInfo("Adding members to project...").log();
     for (request.members) |memberEmail| {
         add_member_to_project(memberEmail, conn, project.id, request.now_timestamp) catch |err| {
             juwura.manageTransactionError(&r, conn, err);
             return;
         };
-        juwura.logInfo("Creator added to members!").log();
     }
+    juwura.logInfo("Members added!").log();
+
+    juwura.logInfo("Adding creator to project...").log();
+    add_member_to_project(request.email, conn, project.id, request.now_timestamp) catch |err| {
+        juwura.manageTransactionError(&r, conn, err);
+        return;
+    };
+    juwura.logInfo("Creator added!").log();
 
     conn.commit() catch unreachable;
     juwura.logInfo("Responding with body...").string("body", responseBody).log();
@@ -127,12 +135,12 @@ fn add_member_to_project(memberEmail: []u8, conn: *pg.Conn, projectId: i32, now_
     const query = "INSERT INTO project_member (project_id, user_id, last_visited) VALUES ($1, $2, $3)";
     const params = .{ projectId, memberEmail, now_timestamp };
 
-    juwura.logInfo("Adding member to project...")
+    juwura.logDebug("Adding member to project...")
         .string("query", query)
         .int("projectId", projectId)
         .string("userEmail", memberEmail)
         .int("last_visited", now_timestamp)
         .log();
     _ = try conn.exec(query, params);
-    juwura.logInfo("Member added to project!").log();
+    juwura.logDebug("Member added to project!").log();
 }
