@@ -1,14 +1,15 @@
 CREATE TABLE app_user (
     email VARCHAR(100) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    photo_url TEXT
+    photo_url TEXT NOT NULL
 );
 COMMENT ON TABLE app_user IS 'Stores all the application users of JUWURA.';
 
 CREATE TABLE project (
     id SERIAL PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
-    photo_url TEXT
+    photo_url TEXT NOT NULL,
+    icon CHAR(1) NOT NULL
 );
 COMMENT ON TABLE project IS 'Stores all projects in JUWURA';
 
