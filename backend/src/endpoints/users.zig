@@ -46,14 +46,22 @@ fn get_user(e: *zap.Endpoint, r: zap.Request) void {
         return;
     };
     const emailResource = maybeEmail orelse {
-        juwura.logErr("`email` GET param is empty!").log();
+        juwura.logErr("`email` GET param is null!").log();
         r.setStatus(.bad_request);
         r.sendBody("BAD REQUEST PARAMS") catch unreachable;
         return;
     };
 
     defer emailResource.deinit();
-    const email = emailResource.str;
+    const email: []const u8 = emailResource.str;
+
+    if (email.len == 0) {
+        juwura.logErr("`email` GET param is empty!").log();
+        r.setStatus(.bad_request);
+        r.sendBody("BAD REQUEST PARAMS") catch unreachable;
+        return;
+    }
+
     const get_params = GetUserParams{ .email = email };
     juwura.logInfo("Queries parsed!").log();
 
