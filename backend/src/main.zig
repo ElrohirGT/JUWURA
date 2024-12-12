@@ -2,9 +2,11 @@ const std = @import("std");
 const dotenv = @import("dotenv");
 const zap = @import("zap");
 const pg = @import("pg");
-const ProjectsHttp = @import("endpoints/projects.zig");
 const juwura = @import("juwura");
 const logz = @import("logz");
+
+const ProjectsHttp = @import("endpoints/projects.zig");
+const UsersHttp = @import("endpoints/users.zig");
 
 fn on_request(r: zap.Request) void {
     r.setHeader("Server", "JUWURA") catch unreachable;
@@ -63,8 +65,13 @@ pub fn main() !void {
     juwura.logInfo("DB Pool initialized!").log();
 
     juwura.logInfo("Initializing endpoints...").log();
+
     var projects = ProjectsHttp.init(allocator, pool, "/projects");
     try listener.register(projects.endpoint());
+
+    var users = UsersHttp.init(allocator, pool, "/users");
+    try listener.register(users.endpoint());
+
     juwura.logInfo("Endpoints initialized!").log();
 
     try listener.listen();
