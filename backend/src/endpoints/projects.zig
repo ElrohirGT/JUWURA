@@ -1,4 +1,7 @@
 //! JUWURA Project endpoints
+//!
+//! This module is based on the endpoint example inside `zap`.
+//! The **whole file** acts as a struct that can be initialized with the `init` function.
 const std = @import("std");
 const zap = @import("zap");
 const pg = @import("pg");
@@ -10,6 +13,7 @@ alloc: std.mem.Allocator = undefined,
 ep: zap.Endpoint = undefined,
 pool: *pg.Pool,
 
+/// Struct that represents a project in JUWURA
 const Project = struct { id: i32, name: []u8, photo_url: []u8, icon: []u8 };
 
 pub fn init(a: std.mem.Allocator, pool: *pg.Pool, path: []const u8) Self {

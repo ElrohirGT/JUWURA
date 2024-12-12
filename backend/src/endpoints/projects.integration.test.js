@@ -1,6 +1,6 @@
 import { describe, test } from "vitest";
 import { malformedJSON, noPayloadSupplied } from "./testHelpers";
-import { API_URL, createProject } from "./testHelpers/project";
+import { API_URL, createProject } from "./testHelpers/projects";
 
 describe("Project POST integration tests", () => {
 	test("Successfully creates a project", async () =>
