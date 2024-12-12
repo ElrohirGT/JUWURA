@@ -10,11 +10,7 @@ alloc: std.mem.Allocator = undefined,
 ep: zap.Endpoint = undefined,
 pool: *pg.Pool,
 
-const Project = struct {
-    id: i32,
-    name: []u8,
-    photo_url: ?[]u8 = null,
-};
+const Project = struct { id: i32, name: []u8, photo_url: []u8, icon: []u8 };
 
 pub fn init(a: std.mem.Allocator, pool: *pg.Pool, path: []const u8) Self {
     return .{ .alloc = a, .pool = pool, .ep = zap.Endpoint.init(.{ .path = path, .post = post_project }) };
@@ -24,7 +20,7 @@ pub fn endpoint(self: *Self) *zap.Endpoint {
     return &self.ep;
 }
 
-const PostProjectRequest = struct { email: []u8, name: []u8, photo_url: ?[]u8 = null, now_timestamp: i64 };
+const PostProjectRequest = struct { email: []u8, name: []u8, photo_url: []u8, now_timestamp: i64, icon: [4]u8, members: [][]u8 };
 const PostProjectResponse = struct { project: Project };
 fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     const self: *Self = @fieldParentPtr("ep", e);
@@ -82,9 +78,14 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
 
     conn.begin() catch unreachable;
     const project: Project = project_creation_block: {
-        const query = "INSERT INTO project (name, photo_url) VALUES ($1, $2) RETURNING *";
-        const params = .{ request.name, request.photo_url };
-        juwura.logInfo("Creating project in DB...").string("query", query).string("name", request.name).string("photo_url", request.photo_url).log();
+        const query = "INSERT INTO project (name, photo_url, icon) VALUES ($1, $2, $3) RETURNING *";
+        const params = .{ request.name, request.photo_url, request.icon };
+        juwura.logInfo("Creating project in DB...")
+            .string("query", query)
+            .string("name", request.name)
+            .string("photo_url", request.photo_url)
+            .string("icon", &request.icon)
+            .log();
 
         var dataRow = conn.row(query, params) catch |err| {
             juwura.manageTransactionError(&r, conn, err);
@@ -94,28 +95,52 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
 
         const id = dataRow.get(i32, 0);
         const name = dataRow.get([]u8, 1);
-        const url = dataRow.get(?[]u8, 2);
+        const url = dataRow.get([]u8, 2);
+        const icon = dataRow.get([]u8, 3);
 
-        break :project_creation_block Project{ .id = id, .name = name, .photo_url = url };
+        break :project_creation_block Project{ .id = id, .name = name, .photo_url = url, .icon = icon };
     };
-    juwura.logInfo("Project created!").int("id", project.id).string("name", project.name).string("photo_url", project.photo_url).log();
+    juwura.logInfo("Project created!")
+        .int("id", project.id)
+        .string("name", project.name)
+        .string("photo_url", project.photo_url)
+        .string("icon", project.icon)
+        .log();
 
     const response = PostProjectResponse{ .project = project };
     const responseBody = juwura.toJson(self.alloc, response) catch unreachable;
 
-    {
-        const query = "INSERT INTO project_member (project_id, user_id, last_visited) VALUES ($1, $2, $3)";
-        const params = .{ project.id, request.email, request.now_timestamp };
-
-        juwura.logInfo("Adding project creator to members...").string("query", query).int("projectId", project.id).string("userEmail", request.email).int("last_visited", request.now_timestamp).log();
-        _ = conn.exec(query, params) catch |err| {
+    juwura.logInfo("Adding members to project...").log();
+    for (request.members) |memberEmail| {
+        add_member_to_project(memberEmail, conn, project.id, request.now_timestamp) catch |err| {
             juwura.manageTransactionError(&r, conn, err);
             return;
         };
-        juwura.logInfo("Creator added to members!").log();
     }
+    juwura.logInfo("Members added!").log();
+
+    juwura.logInfo("Adding creator to project...").log();
+    add_member_to_project(request.email, conn, project.id, request.now_timestamp) catch |err| {
+        juwura.manageTransactionError(&r, conn, err);
+        return;
+    };
+    juwura.logInfo("Creator added!").log();
 
     conn.commit() catch unreachable;
     juwura.logInfo("Responding with body...").string("body", responseBody).log();
     r.sendJson(responseBody) catch unreachable;
+}
+
+fn add_member_to_project(memberEmail: []u8, conn: *pg.Conn, projectId: i32, now_timestamp: i64) !void {
+    const query = "INSERT INTO project_member (project_id, user_id, last_visited) VALUES ($1, $2, $3)";
+    const params = .{ projectId, memberEmail, now_timestamp };
+
+    juwura.logDebug("Adding member to project...")
+        .string("query", query)
+        .int("projectId", projectId)
+        .string("userEmail", memberEmail)
+        .int("last_visited", now_timestamp)
+        .log();
+    _ = try conn.exec(query, params);
+    juwura.logDebug("Member added to project!").log();
 }

@@ -77,6 +77,31 @@ func main() {
 		"Shoto Todoroki",
 	}
 
+	emojis := []string{
+		"😀",
+		"😋",
+		"😎",
+		"👺",
+		"💩",
+		"👽",
+		"🤖",
+		"😺",
+		"😸",
+		"😼",
+		"🗣",
+		"👑",
+		"🎩",
+		"👙",
+	}
+	projectBanners := []string{
+		"https://img.freepik.com/free-photo/painting-mountain-lake-with-mountain-background_188544-9126.jpg",
+		"https://images3.alphacoders.com/135/1350069.jpeg",
+		"https://image-0.uhdpaper.com/wallpaper/anime-girl-with-katana-hd-wallpaper-uhdpaper.com-719@0@j.jpg",
+		"https://image-0.uhdpaper.com/wallpaper/sports-car-futuristic-mountain-sunset-scenery-digital-art-hd-wallpaper-uhdpaper.com-537@0@i.jpg",
+		"https://image-0.uhdpaper.com/wallpaper/anime-girls-angel-wings-hd-wallpaper-uhdpaper.com-187@0@k.jpg",
+		"https://image-0.uhdpaper.com/wallpaper/anime-girl-vampire-nun-smoking-hd-wallpaper-uhdpaper.com-608@0@j.jpg",
+	}
+
 	taskTypes := []string{"EPIC", "TASK", "SUBTASK"}
 	taskNames := []string{
 		"Programar endpoints del backend",
@@ -110,8 +135,8 @@ func main() {
 	for i := range userCount {
 		email := fmt.Sprintf("correo%d@gmail.com", i+1)
 		name := from(random, names)
-		photo := nullEveryPercent(random, 0.5, from(random, profilePictures))
-		fmt.Printf("('%s', '%s', %s)", email, name, photo)
+		photo := from(random, profilePictures)
+		fmt.Printf("('%s', '%s', '%s')", email, name, photo)
 
 		generatedEmails[i] = email
 		endInserts(i, userCount)
@@ -121,11 +146,12 @@ func main() {
 
 	// Generate projects...
 	projectCount := 5
-	fmt.Println("INSERT INTO project (name, photo_url) VALUES")
+	fmt.Println("INSERT INTO project (name, photo_url, icon) VALUES")
 	for i := range projectCount {
 		name := fmt.Sprintf("Proyecto %s", from(random, names))
-		photo := nullEveryPercent(random, 0.5, from(random, profilePictures))
-		fmt.Printf("('%s', %s)", name, photo)
+		photo := from(random, projectBanners)
+		icon := from(random, emojis)
+		fmt.Printf("('%s', '%s', '%s')", name, photo, icon)
 
 		endInserts(i, projectCount)
 	}
