@@ -1,12 +1,21 @@
+///! Websocket module for JUWURA
 const std = @import("std");
 const zap = @import("zap");
 const WebSockets = zap.WebSockets;
 const uwu_log = @import("log.zig");
 
+/// Hashmap to store connectinos by user.
+/// * Key: User email.
+/// * Value: WS Connection configuration.
 const ConnectionsByUser = std.StringHashMap(Connection);
+/// Hashmap to store all user connections for a given project.
+/// * Key: Project ID.
+/// * Value: Hashmap of connections.
 const UsersConnectionsByProject = std.StringHashMap(ConnectionsByUser);
-
+/// Websocket handler according to facil.io library.
 pub const WebsocketHandler = WebSockets.Handler(Connection);
+
+/// Saves all the metadata for the websocket connection.
 const Connection = struct {
     email: []const u8,
     project_id: []const u8,
@@ -16,6 +25,7 @@ const Connection = struct {
     settings: WebsocketHandler.WebSocketSettings,
 };
 
+/// Manages all connections metadata.
 pub const ConnectionManager = struct {
     alloc: std.mem.Allocator,
     active_projects: UsersConnectionsByProject,
