@@ -39,7 +39,15 @@ describe("Websocket Implementation tests", () => {
 			`${clientEmail2} joined the ws for project ${projectId}.`,
 		];
 		expect(response).toStrictEqual(expected);
-		// expect(response[0]).toBe(expected[0]);
-		// expect(response[1]).toBe(expected[1]);
+	});
+
+	test("Can't connect unless a project id is provided", async () => {
+		const projectId = "";
+
+		await expect(() =>
+			generateClient(
+				genURL("correo1@gmail.com", projectId),
+			).rejects.toThrowError(),
+		);
 	});
 });
