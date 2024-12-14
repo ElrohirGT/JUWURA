@@ -68,7 +68,7 @@ pub fn main() !void {
     WsHandler.alloc = allocator;
 
     // initialize a logging pool
-    uwu_log.init(allocator);
+    try uwu_log.init(allocator);
     defer uwu_log.deinit();
 
     uwu_log.logInfo("Initializing WS connection manager...").log();
