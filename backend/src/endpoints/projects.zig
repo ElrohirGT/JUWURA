@@ -41,7 +41,7 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     const parsed = std.json.parseFromSlice(PostProjectRequest, self.alloc, body, .{}) catch |err| {
         uwu_log.logErr("Error in body parsing!").err(err).string("body", body).log();
 
-        if (err == error.ParseFromValueError) {
+        if (uwu_lib.errIsFromUnion(err, std.json.ParseFromValueError)) {
             uwu_log.logInfo("The body is malformed, responding 404...").log();
             r.setStatus(.bad_request);
             r.sendBody("INCORRECT BODY") catch unreachable;
