@@ -86,12 +86,15 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
         defer dataRow.deinit() catch unreachable;
 
         const id = dataRow.get(i32, 0);
-        const name = dataRow.get([]u8, 1);
-        const url = dataRow.get([]u8, 2);
-        const icon = dataRow.get([]u8, 3);
+        const name = self.alloc.dupe(u8, dataRow.get([]u8, 1)) catch unreachable;
+        const url = self.alloc.dupe(u8, dataRow.get([]u8, 2)) catch unreachable;
+        const icon = self.alloc.dupe(u8, dataRow.get([]u8, 3)) catch unreachable;
 
         break :project_creation_block Project{ .id = id, .name = name, .photo_url = url, .icon = icon };
     };
+    defer self.alloc.free(project.name);
+    defer self.alloc.free(project.photo_url);
+    defer self.alloc.free(project.icon);
     uwu_log.logInfo("Project created!")
         .int("id", project.id)
         .string("name", project.name)
@@ -101,6 +104,7 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
 
     const response = PostProjectResponse{ .project = project };
     const responseBody = uwu_lib.toJson(self.alloc, response) catch unreachable;
+    defer self.alloc.free(responseBody);
 
     uwu_log.logInfo("Adding members to project...").log();
     for (request.members) |memberEmail| {
