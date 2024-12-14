@@ -1,5 +1,7 @@
 import { client as ClientGenerator, connection } from "websocket";
 
+export const API_HOST = "ws://127.0.0.1:3000";
+
 export async function generateClient(url) {
 	const wrapper = new Promise((res, rej) => {
 		const generator = new ClientGenerator();
