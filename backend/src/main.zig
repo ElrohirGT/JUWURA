@@ -19,35 +19,6 @@ fn on_request(r: zap.Request) void {
     ) catch unreachable;
 }
 
-fn on_upgrade(r: zap.Request, target_protocol: []const u8) void {
-    uwu_log.logInfo("Received upgrade to WS connection...");
-    if (!std.mem.eql(u8, target_protocol, "websocket")) {
-        uwu_log.logWarn("received illegal protocol: {s}", .{target_protocol});
-
-        r.setStatus(.bad_request);
-        r.sendBody("400 - BAD REQUEST") catch unreachable;
-        return;
-    }
-
-    uwu_log.logInfo("Parsing body and queries...");
-    r.parseBody() catch {};
-    r.parseQuery();
-
-    // const userEmail = r.getParamStr("email") orelse {
-    //     juwura.logErr("Couldn't retrieve the `email` param!").log();
-    //     r.setStatus(.bad_request);
-    //     r.sendBody("BAD REQUEST PARAMS") catch unreachable;
-    //     return;
-    // };
-    //
-    // const projectId = r.getParamSlice("projectId") orelse {
-    //     juwura.logErr("Couldn't retrieve the `projectId` param!").log();
-    //     r.setStatus(.bad_request);
-    //     r.sendBody("BAD REQUEST PARAMS") catch unreachable;
-    //     return;
-    // };
-}
-
 var GlobalWsConnectionManager: uwu_ws.ConnectionManager = undefined;
 
 pub fn main() !void {
