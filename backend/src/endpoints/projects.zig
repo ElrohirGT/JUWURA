@@ -41,27 +41,14 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     const parsed = std.json.parseFromSlice(PostProjectRequest, self.alloc, body, .{}) catch |err| {
         uwu_log.logErr("Error in body parsing!").err(err).string("body", body).log();
 
-        switch (err) {
-            std.json.ParseFromValueError.Overflow,
-            std.json.ParseFromValueError.OutOfMemory,
-            std.json.ParseFromValueError.UnknownField,
-            std.json.ParseFromValueError.MissingField,
-            std.json.ParseFromValueError.InvalidNumber,
-            std.json.ParseFromValueError.InvalidEnumTag,
-            std.json.ParseFromValueError.DuplicateField,
-            std.json.ParseFromValueError.LengthMismatch,
-            std.json.ParseFromValueError.UnexpectedToken,
-            std.json.ParseFromValueError.InvalidCharacter,
-            => {
-                uwu_log.logInfo("The body is malformed, responding 404...").log();
-                r.setStatus(.bad_request);
-                r.sendBody("INCORRECT BODY") catch unreachable;
-            },
-            else => {
-                uwu_log.logInfo("The error is internal to the server...").log();
-                r.setStatus(.internal_server_error);
-                r.sendBody("INTERNAL SERVER ERROR") catch unreachable;
-            },
+        if (err == error.ParseFromValueError) {
+            uwu_log.logInfo("The body is malformed, responding 404...").log();
+            r.setStatus(.bad_request);
+            r.sendBody("INCORRECT BODY") catch unreachable;
+        } else {
+            uwu_log.logInfo("The error is internal to the server...").log();
+            r.setStatus(.internal_server_error);
+            r.sendBody("INTERNAL SERVER ERROR") catch unreachable;
         }
 
         return;
