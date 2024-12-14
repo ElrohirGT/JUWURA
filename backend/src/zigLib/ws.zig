@@ -2,6 +2,7 @@
 const std = @import("std");
 const zap = @import("zap");
 const WebSockets = zap.WebSockets;
+const uwu_lib = @import("root.zig");
 const uwu_log = @import("log.zig");
 
 /// Hashmap to store connectinos by user.
@@ -19,6 +20,7 @@ pub const WebsocketHandler = WebSockets.Handler(Connection);
 const Connection = struct {
     email: []const u8,
     project_id: []const u8,
+    allocator: std.mem.Allocator,
 
     // We need to hold on to them to re-use them on every message.
     subscribeArgs: WebsocketHandler.SubscribeArgs,
@@ -77,6 +79,7 @@ pub const ConnectionManager = struct {
         conn.* = .{
             .email = email,
             .project_id = project_id,
+            .allocator = self.alloc,
             // NOTE: Used when subscribing to a WS!
             .subscribeArgs = .{
                 .channel = project_id,
@@ -140,16 +143,54 @@ fn on_close_base(connection: ?*Connection, uuid: isize) void {
         var buf: [255]u8 = undefined;
         const message = std.fmt.bufPrint(&buf, "{s} left the ws for project {s}.", .{ conn.email, conn.project_id }) catch unreachable;
 
+        const req = WebsocketRequest{ .create_task = CreateTaskMessage{ .project_id = 1, .task_type = "hello" } };
+        const value = uwu_lib.toJson(conn.allocator, req) catch unreachable;
+        defer conn.allocator.free(value);
+
         WebsocketHandler.publish(.{ .channel = conn.project_id, .message = message });
-        uwu_log.logInfo("Closed websocket connection!").string("innerMsg", message).log();
+        uwu_log.logInfo("Closed websocket connection!").string("innerMsg", message).string("serialized", value).log();
     }
 }
 
+const WebsocketAPIError = enum { MalformedMessage, InternalServerError };
+
+const CreateTaskMessage = struct {
+    project_id: i32,
+    task_type: []const u8,
+};
+const DeleteTaskMessage = struct {
+    task_id: i32,
+};
+const WebsocketRequest = union(enum) { create_task: CreateTaskMessage, delete_task: DeleteTaskMessage };
+const WebsocketResponse = union(enum) { err: WebsocketAPIError };
+
 fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []const u8, is_text: bool) void {
     _ = is_text;
-    _ = handle;
 
-    if (connection) |_| {
+    if (connection) |conn| {
+        const parsed = std.json.parseFromSlice(WebsocketRequest, conn.allocator, message, .{}) catch |err| {
+            uwu_log.logErr("Error in parsing ws message!")
+                .err(err)
+                .string("userId", conn.email)
+                .string("projectId", conn.project_id)
+                .string("payload", message)
+                .log();
+
+            if (uwu_lib.errIsFromUnion(err, std.json.ParseFromValueError)) {
+                uwu_log.logInfo("The message payload is malformed, responding with invalid request...").log();
+                const server_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = .MalformedMessage }) catch unreachable;
+                defer conn.allocator.free(server_error);
+                WebsocketHandler.write(handle, server_error, true) catch unreachable;
+            } else {
+                uwu_log.logInfo("The error is internal to the server...").log();
+                const server_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = .InternalServerError }) catch unreachable;
+                defer conn.allocator.free(server_error);
+                WebsocketHandler.write(handle, server_error, true) catch unreachable;
+            }
+            return;
+        };
+        defer parsed.deinit();
+
         uwu_log.logInfo("Received a message!").string("message", message).log();
     }
 }

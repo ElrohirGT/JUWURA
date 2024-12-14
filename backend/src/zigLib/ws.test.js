@@ -6,7 +6,7 @@ function genURL(email, projectId) {
 }
 
 describe("Websocket Implementation tests", () => {
-	test("Can't connect unless email provided", async () => {
+	test("Can connect successfully", async () => {
 		// FIXME: Once auth is implemented this should be updated!
 		// The WS socket should check if the user is authenticated...
 
@@ -39,6 +39,25 @@ describe("Websocket Implementation tests", () => {
 			`${clientEmail2} joined the ws for project ${projectId}.`,
 		];
 		expect(response).toStrictEqual(expected);
+	});
+
+	test("Malformed message error", async () => {
+		const client = await generateClient(genURL("correo1@gmail.com", 1));
+		const promise = new Promise((res, rej) => {
+			client.configureHandlers(rej, (rev) => {
+				try {
+					const response = JSON.parse(rev.utf8Data);
+					if (response.err) {
+						res(response);
+					}
+				} catch {}
+			});
+
+			client.send(JSON.stringify({ h: "abcd" }));
+		});
+
+		const response = await promise;
+		expect(response.err).toBe("MalformedMessage");
 	});
 
 	test("Can't connect unless an email is provided", async () => {

@@ -4,6 +4,13 @@ const pg = @import("pg");
 pub const ws = @import("ws.zig");
 pub const log = @import("log.zig");
 
+/// Checks if a given error belongs to a given error union.
+pub fn errIsFromUnion(err: anyerror, comptime ErrorUnion: type) bool {
+    return inline for (comptime std.meta.fields(ErrorUnion)) |f| {
+        if (@field(anyerror, f.name) == err) break true;
+    } else false;
+}
+
 /// Converts a given value into a JSON.
 /// Because the JSON can be arbitrarily large it needs an allocator.
 pub fn toJson(alloc: std.mem.Allocator, value: anytype) ![]u8 {
