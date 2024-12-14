@@ -41,12 +41,28 @@ describe("Websocket Implementation tests", () => {
 		expect(response).toStrictEqual(expected);
 	});
 
+	test("Can't connect unless an email is provided", async () => {
+		const email = "";
+
+		await expect(() =>
+			generateClient(genURL(email, "1")).rejects.toThrowError(),
+		);
+		await expect(() =>
+			generateClient(genURL(undefined, "1")).rejects.toThrowError(),
+		);
+	});
+
 	test("Can't connect unless a project id is provided", async () => {
 		const projectId = "";
 
 		await expect(() =>
 			generateClient(
 				genURL("correo1@gmail.com", projectId),
+			).rejects.toThrowError(),
+		);
+		await expect(() =>
+			generateClient(
+				genURL("correo1@gmail.com", undefined),
 			).rejects.toThrowError(),
 		);
 	});
