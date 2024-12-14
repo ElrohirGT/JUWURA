@@ -5,7 +5,8 @@
 const std = @import("std");
 const zap = @import("zap");
 const pg = @import("pg");
-const juwura = @import("juwura");
+const uwu_lib = @import("juwura");
+const uwu_log = uwu_lib.log;
 
 pub const Self = @This();
 
@@ -29,16 +30,16 @@ const PostProjectResponse = struct { project: Project };
 fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     const self: *Self = @fieldParentPtr("ep", e);
 
-    juwura.logInfo("Parsing body...").log();
+    uwu_log.logInfo("Parsing body...").log();
     const body = r.body orelse {
-        juwura.logErr("No body found on request!").log();
+        uwu_log.logErr("No body found on request!").log();
         r.setStatus(.bad_request);
         r.sendBody("NO BODY FOUND") catch unreachable;
         return;
     };
 
     const parsed = std.json.parseFromSlice(PostProjectRequest, self.alloc, body, .{}) catch |err| {
-        juwura.logErr("Error in body parsing!").err(err).string("body", body).log();
+        uwu_log.logErr("Error in body parsing!").err(err).string("body", body).log();
 
         switch (err) {
             std.json.ParseFromValueError.Overflow,
@@ -52,12 +53,12 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
             std.json.ParseFromValueError.UnexpectedToken,
             std.json.ParseFromValueError.InvalidCharacter,
             => {
-                juwura.logInfo("The body is malformed, responding 404...").log();
+                uwu_log.logInfo("The body is malformed, responding 404...").log();
                 r.setStatus(.bad_request);
                 r.sendBody("INCORRECT BODY") catch unreachable;
             },
             else => {
-                juwura.logInfo("The error is internal to the server...").log();
+                uwu_log.logInfo("The error is internal to the server...").log();
                 r.setStatus(.internal_server_error);
                 r.sendBody("INTERNAL SERVER ERROR") catch unreachable;
             },
@@ -68,23 +69,23 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     defer parsed.deinit();
 
     const request = parsed.value;
-    juwura.logInfo("Body parsed!").log();
+    uwu_log.logInfo("Body parsed!").log();
 
-    juwura.logInfo("Getting DB connection...").log();
+    uwu_log.logInfo("Getting DB connection...").log();
     const conn = self.pool.acquire() catch |err| {
-        juwura.logErr("Error in DB connection").err(err).log();
+        uwu_log.logErr("Error in DB connection").err(err).log();
         r.setStatus(.internal_server_error);
         r.sendBody("NO DB CONNECTION AQUIRED") catch unreachable;
         return;
     };
     defer conn.release();
-    juwura.logInfo("Connection aquired!").log();
+    uwu_log.logInfo("Connection aquired!").log();
 
     conn.begin() catch unreachable;
     const project: Project = project_creation_block: {
         const query = "INSERT INTO project (name, photo_url, icon) VALUES ($1, $2, $3) RETURNING *";
         const params = .{ request.name, request.photo_url, request.icon };
-        juwura.logInfo("Creating project in DB...")
+        uwu_log.logInfo("Creating project in DB...")
             .string("query", query)
             .string("name", request.name)
             .string("photo_url", request.photo_url)
@@ -92,7 +93,7 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
             .log();
 
         var dataRow = conn.row(query, params) catch |err| {
-            juwura.manageTransactionError(&r, conn, err);
+            uwu_lib.manageTransactionError(&r, conn, err);
             return;
         } orelse unreachable;
         defer dataRow.deinit() catch unreachable;
@@ -104,7 +105,7 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
 
         break :project_creation_block Project{ .id = id, .name = name, .photo_url = url, .icon = icon };
     };
-    juwura.logInfo("Project created!")
+    uwu_log.logInfo("Project created!")
         .int("id", project.id)
         .string("name", project.name)
         .string("photo_url", project.photo_url)
@@ -112,26 +113,26 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
         .log();
 
     const response = PostProjectResponse{ .project = project };
-    const responseBody = juwura.toJson(self.alloc, response) catch unreachable;
+    const responseBody = uwu_lib.toJson(self.alloc, response) catch unreachable;
 
-    juwura.logInfo("Adding members to project...").log();
+    uwu_log.logInfo("Adding members to project...").log();
     for (request.members) |memberEmail| {
         add_member_to_project(memberEmail, conn, project.id, request.now_timestamp) catch |err| {
-            juwura.manageTransactionError(&r, conn, err);
+            uwu_lib.manageTransactionError(&r, conn, err);
             return;
         };
     }
-    juwura.logInfo("Members added!").log();
+    uwu_log.logInfo("Members added!").log();
 
-    juwura.logInfo("Adding creator to project...").log();
+    uwu_log.logInfo("Adding creator to project...").log();
     add_member_to_project(request.email, conn, project.id, request.now_timestamp) catch |err| {
-        juwura.manageTransactionError(&r, conn, err);
+        uwu_lib.manageTransactionError(&r, conn, err);
         return;
     };
-    juwura.logInfo("Creator added!").log();
+    uwu_log.logInfo("Creator added!").log();
 
     conn.commit() catch unreachable;
-    juwura.logInfo("Responding with body...").string("body", responseBody).log();
+    uwu_log.logInfo("Responding with body...").string("body", responseBody).log();
     r.sendJson(responseBody) catch unreachable;
 }
 
@@ -139,12 +140,12 @@ fn add_member_to_project(memberEmail: []u8, conn: *pg.Conn, projectId: i32, now_
     const query = "INSERT INTO project_member (project_id, user_id, last_visited) VALUES ($1, $2, $3)";
     const params = .{ projectId, memberEmail, now_timestamp };
 
-    juwura.logDebug("Adding member to project...")
+    uwu_log.logDebug("Adding member to project...")
         .string("query", query)
         .int("projectId", projectId)
         .string("userEmail", memberEmail)
         .int("last_visited", now_timestamp)
         .log();
     _ = try conn.exec(query, params);
-    juwura.logDebug("Member added to project!").log();
+    uwu_log.logDebug("Member added to project!").log();
 }
