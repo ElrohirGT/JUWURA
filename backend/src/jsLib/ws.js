@@ -36,6 +36,10 @@ export async function generateClient(email, projectId) {
 			client.send(message);
 		},
 
+		close: () => {
+			client.close();
+		},
+
 		configureHandlers: (onError, onMessage) => {
 			client.removeListener("message", onMessage);
 			client.on("message", onMessage);

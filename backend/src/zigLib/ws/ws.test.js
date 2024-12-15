@@ -28,7 +28,8 @@ describe.sequential("Websocket Implementation tests", () => {
 		});
 
 		// Connect a second client...
-		await generateClient(clientEmail2, projectId);
+		const client2 = await generateClient(clientEmail2, projectId);
+		client2.close();
 
 		const expectedResponse = {
 			user_connected: expect.any(String),
@@ -38,6 +39,35 @@ describe.sequential("Websocket Implementation tests", () => {
 		for (const message of responseMessages) {
 			expect(message).toEqual(expectedResponse);
 		}
+
+		client1.close();
+	});
+
+	test("Can close connections", async () => {
+		const client = await generateClient("correo1@gmail.com", 1);
+		const promise = new Promise((res, rej) => {
+			client.configureHandlers(rej, (rev) => {
+				try {
+					const response = JSON.parse(rev.utf8Data);
+					if (response.user_disconnected) {
+						res(response);
+					}
+				} catch {}
+			});
+		});
+
+		const client2 = await generateClient("correo2@gmail.com", 1);
+		client2.close();
+
+		const response = await promise;
+
+		const expectedResponse = {
+			user_disconnected: expect.any(String),
+		};
+		expect(response).toEqual(expectedResponse);
+		expect(response.user_disconnected).toBe("correo2@gmail.com");
+
+		client.close();
 	});
 
 	test("Malformed message error", async () => {
@@ -57,6 +87,8 @@ describe.sequential("Websocket Implementation tests", () => {
 
 		const response = await promise;
 		expect(response.err).toBe("MalformedMessage");
+
+		client.close();
 	});
 
 	test("Can't connect unless an email is provided", async () => {
