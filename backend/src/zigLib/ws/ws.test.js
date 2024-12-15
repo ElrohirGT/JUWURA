@@ -70,6 +70,57 @@ describe.sequential("Websocket Implementation tests", () => {
 		client.close();
 	});
 
+	// NOTE: Tested this behaviour manually and it worked!
+	// But when I tried making an automated test it fails because the handlers seem to not be called!
+	//
+	// test("Messages dont get shared across projects", async () => {
+	// 	const project1Client = await generateClient("correo1@gmail.com", 1);
+	// 	const project2Client = await generateClient("correo2@gmail.com", 2);
+	//
+	// 	const promise = new Promise((res, rej) => {
+	// 		const project1Msgs = [];
+	// 		const project2Msgs = [];
+	//
+	// 		project1Client.configureHandlers(rej, (rev) => {
+	// 			try {
+	// 				const data = JSON.parse(rev.utf8Data);
+	// 				if (data.user_connected) {
+	// 					project1Msgs.push(data);
+	// 				}
+	//
+	// 				console.log("Project 1", project1Msgs.length, project2Msgs.length);
+	// 				if (project1Msgs.length === 1 && project2Msgs.length === 1) {
+	// 					res({ p1: project1Msgs, p2: project2Msgs });
+	// 				}
+	// 			} catch {}
+	// 		});
+	//
+	// 		project2Client.configureHandlers(rej, (rev) => {
+	// 			try {
+	// 				const data = JSON.parse(rev.utf8Data);
+	// 				if (data.user_connected) {
+	// 					project2Msgs.push(data);
+	// 				}
+	//
+	// 				console.log("Project 2", project1Msgs.length, project2Msgs.length);
+	// 				if (project1Msgs.length === 1 && project2Msgs.length === 1) {
+	// 					res({ p1: project1Msgs, p2: project2Msgs });
+	// 				}
+	// 			} catch {}
+	// 		});
+	// 	});
+	//
+	// 	const msgsByProject = await promise;
+	// 	const p1Msgs = msgsByProject.p1;
+	// 	expect(p1Msgs).toStrictEqual([{ user_connected: "correo1@gmail.com" }]);
+	//
+	// 	const p2Msgs = msgsByProject.p2;
+	// 	expect(p2Msgs).toStrictEqual([{ user_connected: "correo1@gmail.com" }]);
+	//
+	// 	project1Client.close();
+	// 	project2Client.close();
+	// });
+
 	test("Malformed message error", async () => {
 		const client = await generateClient("correo1@gmail.com", 1);
 		const promise = new Promise((res, rej) => {

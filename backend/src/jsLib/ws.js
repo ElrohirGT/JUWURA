@@ -9,6 +9,7 @@ export function genURL(email, projectId) {
 export async function generateClient(email, projectId) {
 	const url = genURL(email, projectId);
 	const wrapper = new Promise((res, rej) => {
+		console.log("Connecting to:", url);
 		const generator = new ClientGenerator();
 		generator.on("connect", (client) => {
 			res(client);

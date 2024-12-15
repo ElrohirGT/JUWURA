@@ -1,7 +1,7 @@
 import { expect, describe, test } from "vitest";
 import { generateClient } from "../../jsLib/ws";
 
-describe("Create Task test suite", () => {
+describe.sequential("Create Task test suite", () => {
 	test("Can create a task", async () => {
 		const payload = {
 			create_task: {
