@@ -17,8 +17,8 @@ export function genURL(email, projectId) {
 
 /**
  * @typedef {Object} WSConnection
- * @property {(message: string)=>void} send - Sends a message in the connection
- * @property {()=>void} close - Closes the websocket connection.
+ * @property {(message: string)=>Promise<void>} send - Sends a message in the connection
+ * @property {()=>Promise<void>} close - Closes the websocket connection.
  * @property {(onError: OnErrorCallback, onMesage: OnMessageCallback) => void} configureHandlers - Configures the handlers of the connection
  */
 
@@ -29,21 +29,17 @@ export function genURL(email, projectId) {
  */
 export async function generateClient(email, projectId) {
 	const url = genURL(email, projectId);
-	let rejected = null;
-	const wrapper = new Promise((res, rej) => {
+	console.log("Connecting to:", url);
+	const client = new WebSocket(url, {});
+
+	let rejected = undefined;
+	const isConnectedPromise = new Promise((res, rej) => {
 		rejected = rej;
-
-		console.log("Connecting to:", url);
-		const ws = new WebSocket(url);
-		ws.on("open", () => {
-			res(ws);
+		client.on("open", () => {
+			res();
 		});
-		ws.on("error", rej);
+		client.on("error", rej);
 	});
-
-	/**@type {WebSocket}*/
-	const client = await wrapper;
-	client.off("error", rejected);
 
 	client.on("message", (ev) => {
 		console.info(`[${email}] Received message:`, ev.toString());
@@ -54,11 +50,15 @@ export async function generateClient(email, projectId) {
 	});
 
 	return {
-		send: (message) => {
+		send: async (message) => {
+			await isConnectedPromise;
+			client.off("error", rejected);
 			client.send(message);
 		},
 
-		close: () => {
+		close: async () => {
+			await isConnectedPromise;
+			client.off("error", rejected);
 			client.close();
 		},
 

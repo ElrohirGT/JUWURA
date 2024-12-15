@@ -29,7 +29,6 @@ describe.sequential("Websocket Implementation tests", () => {
 
 		// Connect a second client...
 		const client2 = await generateClient(clientEmail2, projectId);
-		client2.close();
 
 		const expectedResponse = {
 			user_connected: expect.any(String),
@@ -41,6 +40,7 @@ describe.sequential("Websocket Implementation tests", () => {
 		}
 
 		client1.close();
+		client2.close();
 	});
 
 	test("Can close connections", async () => {

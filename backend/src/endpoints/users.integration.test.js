@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import axios from "axios";
-import { getUser, API_URL } from "./testHelpers/users";
+import { getUser, API_URL } from "../jsLib/testHelpers/users.js";
 
 describe("User GET integration tests", () => {
 	test("Successfully GETs a user", async () =>

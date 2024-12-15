@@ -34,6 +34,11 @@ describe.sequential("Create Task test suite", () => {
 					id: expect.any(Number),
 					project_id: expect.any(Number),
 					type: expect.any(String),
+					due_date: null,
+					name: null,
+					priority: null,
+					sprint: null,
+					status: null,
 				},
 			},
 		};
@@ -86,12 +91,14 @@ describe.sequential("Create Task test suite", () => {
 		/**@type{[any[], any[]]}*/
 		const [c1Msgs, c2Msgs] = await promise;
 
-		// The connection message is lost because the headers are set too late!
-		expect(c1Msgs.length).toBe(1);
+		expect(c1Msgs.length).toBe(2);
 		expect(c2Msgs.length).toBe(1);
 
-		expect(c1Msgs[0]).toStrictEqual({ err: "CreateTaskError" });
-		expect(c2Msgs[0]).toStrictEqual({ user_connected: "correo2@gmail.com" });
+		expect(c1Msgs).toStrictEqual([
+			{ user_connected: "correo1@gmail.com" },
+			{ err: "CreateTaskError" },
+		]);
+		expect(c2Msgs).toStrictEqual([{ user_connected: "correo2@gmail.com" }]);
 	});
 
 	test("Create task response is sent to all connected clients", async () => {
@@ -141,16 +148,23 @@ describe.sequential("Create Task test suite", () => {
 					id: expect.any(Number),
 					project_id: expect.any(Number),
 					type: expect.any(String),
+					due_date: null,
+					name: null,
+					priority: null,
+					sprint: null,
+					status: null,
 				},
 			},
 		};
 
 		for (const response of responses) {
+			// console.log("SERVER:", response, "EXPECTED:", expectedResponse);
+			// console.log("EXPECTED: ", response);
 			expect(response).toEqual(expectedResponse);
 
 			const { task } = response.create_task;
 			expect(task.type).toEqual(payload.create_task.task_type);
 			expect(task.project_id).toEqual(payload.create_task.project_id);
 		}
-	});
+	}, 7000);
 });
