@@ -79,7 +79,7 @@ export function errorOnlyOnSameClient(
 
 			setTimeout(() => {
 				res([client1Msgs, client2Msgs]);
-			}, 4500);
+			}, 2500);
 
 			client1.configureHandlers(rej, (rev) => {
 				try {

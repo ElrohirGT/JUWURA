@@ -45,7 +45,7 @@ describe("Create Task test suite", () => {
 		),
 	);
 
-	test.only(
+	test(
 		"Create task response is sent to all connected clients",
 		async () =>
 			await messageIsSentToAllClients(
