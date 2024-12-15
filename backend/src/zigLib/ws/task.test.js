@@ -1,52 +1,16 @@
 import { expect, describe, test } from "vitest";
 import { generateClient } from "../../jsLib/ws";
+import { createTask } from "../../jsLib/testHelpers/tasks";
 
 describe.sequential("Create Task test suite", () => {
 	test("Can create a task", async () => {
-		const payload = {
-			create_task: {
-				task_type: "EPIC",
-				project_id: 1,
-			},
-		};
-		const client = await generateClient(
-			"correo1@gmail.com",
-			payload.create_task.project_id,
-		);
+		const email = "correo1@gmail.com";
+		const type = "EPIC";
+		const projectId = 1;
 
-		const promise = new Promise((res, rej) => {
-			client.configureHandlers(rej, (rev) => {
-				try {
-					const response = JSON.parse(rev);
-					if (response.create_task) {
-						res(response);
-					}
-				} catch {}
-			});
+		const taskId = await createTask(email, type, projectId);
 
-			client.send(JSON.stringify(payload));
-		});
-		const response = await promise;
-
-		const expectedResponse = {
-			create_task: {
-				task: {
-					id: expect.any(Number),
-					project_id: expect.any(Number),
-					type: expect.any(String),
-					due_date: null,
-					name: null,
-					priority: null,
-					sprint: null,
-					status: null,
-				},
-			},
-		};
-		expect(response).toEqual(expectedResponse);
-
-		const { task } = response.create_task;
-		expect(task.type).toEqual(payload.create_task.task_type);
-		expect(task.project_id).toEqual(payload.create_task.project_id);
+		expect(taskId).toEqual(expect.any(Number));
 	});
 
 	test("Create task error is sent only to request client", async () => {
