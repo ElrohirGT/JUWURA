@@ -6,7 +6,8 @@ export function genURL(email, projectId) {
 	return encodeURI(`${API_HOST}?email=${email}&projectId=${projectId}`);
 }
 
-export async function generateClient(url) {
+export async function generateClient(email, projectId) {
+	const url = genURL(email, projectId);
 	const wrapper = new Promise((res, rej) => {
 		const generator = new ClientGenerator();
 		generator.on("connect", (client) => {
@@ -23,7 +24,7 @@ export async function generateClient(url) {
 	const client = await wrapper;
 
 	client.on("message", (ev) => {
-		console.info("Received message:", ev);
+		console.info(`[${email}] Received message:`, ev);
 	});
 
 	client.on("error", (err) => {

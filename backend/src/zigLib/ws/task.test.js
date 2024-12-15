@@ -1,5 +1,5 @@
 import { expect, describe, test } from "vitest";
-import { generateClient, genURL } from "../../jsLib/ws";
+import { generateClient } from "../../jsLib/ws";
 
 describe("Create Task test suite", () => {
 	test("Can create a task", async () => {
@@ -10,7 +10,8 @@ describe("Create Task test suite", () => {
 			},
 		};
 		const client = await generateClient(
-			genURL("correo1@gmail.com", payload.create_task.project_id),
+			"correo1@gmail.com",
+			payload.create_task.project_id,
 		);
 
 		const promise = new Promise((res, rej) => {
@@ -52,10 +53,12 @@ describe("Create Task test suite", () => {
 		};
 
 		const client1 = await generateClient(
-			genURL("correo1@gmail.com", payload.create_task.project_id),
+			"correo1@gmail.com",
+			payload.create_task.project_id,
 		);
 		const client2 = await generateClient(
-			genURL("correo2@gmail.com", payload.create_task.project_id),
+			"correo2@gmail.com",
+			payload.create_task.project_id,
 		);
 
 		const client1Waiter = new Promise((res, rej) => {

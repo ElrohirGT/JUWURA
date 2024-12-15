@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
-import { generateClient, genURL } from "../../jsLib/ws.js";
+import { generateClient } from "../../jsLib/ws.js";
 
-describe("Websocket Implementation tests", () => {
+describe.sequential("Websocket Implementation tests", () => {
 	test("Can connect successfully", async () => {
 		// FIXME: Once auth is implemented this should be updated!
 		// The WS socket should check if the user is authenticated...
@@ -10,35 +10,38 @@ describe("Websocket Implementation tests", () => {
 		const clientEmail1 = "correo1@gmail.com";
 		const clientEmail2 = "correo2@gmail.com";
 
-		const client1 = await generateClient(genURL(clientEmail1, projectId));
+		const client1 = await generateClient(clientEmail1, projectId);
 		const promise = new Promise((res, rej) => {
 			const msgs = [];
 			client1.configureHandlers(rej, (ev) => {
-				/**@type {string}*/
-				const data = ev.utf8Data;
-				if (data.includes("joined the ws for project")) {
-					msgs.push(data);
-				}
+				try {
+					const data = JSON.parse(ev.utf8Data);
+					if (data.user_connected) {
+						msgs.push(data);
+					}
 
-				if (msgs.length === 2) {
-					res(msgs);
-				}
+					if (msgs.length === 2) {
+						res(msgs);
+					}
+				} catch {}
 			});
 		});
 
 		// Connect a second client...
-		await generateClient(genURL(clientEmail2, projectId));
+		await generateClient(clientEmail2, projectId);
 
-		const response = await promise;
-		const expected = [
-			`${clientEmail1} joined the ws for project ${projectId}.`,
-			`${clientEmail2} joined the ws for project ${projectId}.`,
-		];
-		expect(response).toStrictEqual(expected);
+		const expectedResponse = {
+			user_connected: expect.any(String),
+		};
+
+		const responseMessages = await promise;
+		for (const message of responseMessages) {
+			expect(message).toEqual(expectedResponse);
+		}
 	});
 
 	test("Malformed message error", async () => {
-		const client = await generateClient(genURL("correo1@gmail.com", 1));
+		const client = await generateClient("correo1@gmail.com", 1);
 		const promise = new Promise((res, rej) => {
 			client.configureHandlers(rej, (rev) => {
 				try {
@@ -59,26 +62,18 @@ describe("Websocket Implementation tests", () => {
 	test("Can't connect unless an email is provided", async () => {
 		const email = "";
 
-		await expect(() =>
-			generateClient(genURL(email, "1")).rejects.toThrowError(),
-		);
-		await expect(() =>
-			generateClient(genURL(undefined, "1")).rejects.toThrowError(),
-		);
+		await expect(() => generateClient(email, "1").rejects.toThrowError());
+		await expect(() => generateClient(undefined, "1").rejects.toThrowError());
 	});
 
 	test("Can't connect unless a project id is provided", async () => {
 		const projectId = "";
 
 		await expect(() =>
-			generateClient(
-				genURL("correo1@gmail.com", projectId),
-			).rejects.toThrowError(),
+			generateClient("correo1@gmail.com", projectId).rejects.toThrowError(),
 		);
 		await expect(() =>
-			generateClient(
-				genURL("correo1@gmail.com", undefined),
-			).rejects.toThrowError(),
+			generateClient("correo1@gmail.com", undefined).rejects.toThrowError(),
 		);
 	});
 });

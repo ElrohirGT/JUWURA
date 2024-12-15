@@ -134,12 +134,17 @@ fn on_open(connection: ?*Connection, handle: WebSockets.WsHandle) void {
             return;
         };
 
-        var buf: [255]u8 = undefined;
-        const message = std.fmt.bufPrint(&buf, "{s} joined the ws for project {s}.", .{ conn.email, conn.project_id }) catch unreachable;
+        var buf = std.ArrayList(u8).init(conn.allocator);
+        defer buf.deinit();
+        buf.writer().print("{s} joined the ws for project {s}", .{ conn.email, conn.project_id }) catch unreachable;
 
-        // NOTE: Sends a broadcast to all connected clients...
-        WebsocketHandler.publish(.{ .channel = conn.project_id, .message = message });
+        const message = buf.toOwnedSlice() catch unreachable;
+        defer conn.allocator.free(message);
         uwu_log.logInfo("New websocket connection opened!").string("innerMsg", message).log();
+
+        // NOTE: Sends a broadcast to all connected clients in the project...
+        const response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .user_connected = conn.email }) catch unreachable;
+        WebsocketHandler.publish(.{ .channel = conn.project_id, .message = response });
     }
 }
 
@@ -147,11 +152,16 @@ fn on_close_base(connection: ?*Connection, uuid: isize) void {
     _ = uuid;
 
     if (connection) |conn| {
-        var buf: [255]u8 = undefined;
-        const message = std.fmt.bufPrint(&buf, "{s} left the ws for project {s}.", .{ conn.email, conn.project_id }) catch unreachable;
+        var buf = std.ArrayList(u8).init(conn.allocator);
+        defer buf.deinit();
+        buf.writer().print("{s} left the ws for project {s}", .{ conn.email, conn.project_id }) catch unreachable;
 
-        WebsocketHandler.publish(.{ .channel = conn.project_id, .message = message });
+        const message = buf.toOwnedSlice() catch unreachable;
+        defer conn.allocator.free(message);
         uwu_log.logInfo("Closed websocket connection!").string("innerMsg", message).log();
+
+        const response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .user_disconnected = conn.email }) catch unreachable;
+        WebsocketHandler.publish(.{ .channel = conn.project_id, .message = response });
     }
 }
 
@@ -161,7 +171,7 @@ const DeleteTaskMessage = struct {
     task_id: i32,
 };
 const WebsocketRequest = union(enum) { create_task: uwu_tasks.CreateTaskRequest, delete_task: DeleteTaskMessage };
-const WebsocketResponse = union(enum) { err: WebsocketAPIError, create_task: uwu_tasks.CreateTaskResponse };
+const WebsocketResponse = union(enum) { err: WebsocketAPIError, create_task: uwu_tasks.CreateTaskResponse, user_connected: []const u8, user_disconnected: []const u8 };
 
 fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []const u8, is_text: bool) void {
     _ = is_text;
