@@ -167,11 +167,8 @@ fn on_close_base(connection: ?*Connection, uuid: isize) void {
 
 const WebsocketAPIError = error{ MalformedMessage, InternalServerError } || uwu_tasks.Errors;
 
-const DeleteTaskMessage = struct {
-    task_id: i32,
-};
-const WebsocketRequest = union(enum) { create_task: uwu_tasks.CreateTaskRequest, delete_task: DeleteTaskMessage };
-const WebsocketResponse = union(enum) { err: WebsocketAPIError, create_task: uwu_tasks.CreateTaskResponse, user_connected: []const u8, user_disconnected: []const u8 };
+const WebsocketRequest = union(enum) { create_task: uwu_tasks.CreateTaskRequest, update_task: uwu_tasks.UpdateTaskRequest };
+const WebsocketResponse = union(enum) { err: WebsocketAPIError, user_connected: []const u8, user_disconnected: []const u8, create_task: uwu_tasks.CreateTaskResponse, update_task: uwu_tasks.UpdateTaskResponse };
 
 fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []const u8, is_text: bool) void {
     _ = is_text;
@@ -218,8 +215,20 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
 
                 WebsocketHandler.publish(.{ .channel = conn.project_id, .message = response });
             },
-            else => {
-                uwu_log.logWarn("Request type not implemented!").log();
+            .update_task => {
+                const task_response = uwu_tasks.update_task(conn.allocator, conn.pool, request.update_task) catch |err| {
+                    uwu_log.logErr("An error occurred updating a task!").err(err).string("message", message).log();
+                    const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.UpdateTaskError }) catch unreachable;
+                    defer conn.allocator.free(serve_error);
+
+                    WebsocketHandler.write(handle, serve_error, true) catch unreachable;
+                    return;
+                };
+
+                const response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .update_task = task_response }) catch unreachable;
+                defer conn.allocator.free(response);
+
+                WebsocketHandler.publish(.{ .channel = conn.project_id, .message = response });
             },
         }
     }
