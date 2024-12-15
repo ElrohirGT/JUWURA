@@ -59,7 +59,14 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
             .string("type", req.task_type)
             .log();
 
-        var dataRow = try conn.row(query, params) orelse unreachable;
+        var dataRow = conn.row(query, params) catch |err| {
+            var l = uwu_log.logErr("Internal error creating task!").err(err);
+            if (conn.err) |pg_err| {
+                l = l.string("PGError", pg_err.message);
+            }
+            l.log();
+            return err;
+        } orelse unreachable;
         defer dataRow.deinit() catch unreachable;
 
         break :task_creation_block try taskFromDB(alloc, &dataRow);

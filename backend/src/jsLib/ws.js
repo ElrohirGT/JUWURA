@@ -53,6 +53,7 @@ export async function generateClient(email, projectId) {
 		send: async (message) => {
 			await isConnectedPromise;
 			client.off("error", rejected);
+			console.info(`[${email}] Sending message:`, message);
 			client.send(message);
 		},
 
