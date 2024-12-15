@@ -1,4 +1,4 @@
-import { client as ClientGenerator, connection } from "websocket";
+import WebSocket from "ws";
 
 export const API_HOST = "ws://127.0.0.1:3000";
 
@@ -6,26 +6,47 @@ export function genURL(email, projectId) {
 	return encodeURI(`${API_HOST}?email=${email}&projectId=${projectId}`);
 }
 
+/**
+ * @callback OnErrorCallback
+ */
+
+/**
+ * @callback OnMessageCallback
+ * @param {WebSocket.RawData} message - The message to send in the websocket
+ */
+
+/**
+ * @typedef {Object} WSConnection
+ * @property {(message: string)=>void} send - Sends a message in the connection
+ * @property {()=>void} close - Closes the websocket connection.
+ * @property {(onError: OnErrorCallback, onMesage: OnMessageCallback) => void} configureHandlers - Configures the handlers of the connection
+ */
+
+/**
+ * @param {string} email - The email of the user that tries to connect
+ * @param {number} projectId - The ID of the project to connect to
+ * @returns {Promise<WSConnection>} - The client to connect to
+ */
 export async function generateClient(email, projectId) {
 	const url = genURL(email, projectId);
+	var rejected = null;
 	const wrapper = new Promise((res, rej) => {
-		console.log("Connecting to:", url);
-		const generator = new ClientGenerator();
-		generator.on("connect", (client) => {
-			res(client);
-		});
-		generator.on("connectFailed", (err) => {
-			rej(err);
-		});
+		rejected = rej;
 
-		generator.connect(url);
+		console.log("Connecting to:", url);
+		const ws = new WebSocket(url);
+		ws.on("open", () => {
+			res(ws);
+		});
+		ws.on("error", rej);
 	});
 
-	/**@type {connection}*/
+	/**@type {WebSocket}*/
 	const client = await wrapper;
+	client.off("error", rejected);
 
 	client.on("message", (ev) => {
-		console.info(`[${email}] Received message:`, ev);
+		console.info(`[${email}] Received message:`, ev.toString());
 	});
 
 	client.on("error", (err) => {

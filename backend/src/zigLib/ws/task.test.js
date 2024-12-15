@@ -17,7 +17,7 @@ describe.sequential("Create Task test suite", () => {
 		const promise = new Promise((res, rej) => {
 			client.configureHandlers(rej, (rev) => {
 				try {
-					const response = JSON.parse(rev.utf8Data);
+					const response = JSON.parse(rev);
 					if (response.create_task) {
 						res(response);
 					}
@@ -64,7 +64,7 @@ describe.sequential("Create Task test suite", () => {
 		const client1Waiter = new Promise((res, rej) => {
 			client1.configureHandlers(rej, (rev) => {
 				try {
-					const response = JSON.parse(rev.utf8Data);
+					const response = JSON.parse(rev);
 					if (response.create_task) {
 						res(response);
 					}
@@ -74,7 +74,7 @@ describe.sequential("Create Task test suite", () => {
 		const client2Waiter = new Promise((res, rej) => {
 			client2.configureHandlers(rej, (rev) => {
 				try {
-					const response = JSON.parse(rev.utf8Data);
+					const response = JSON.parse(rev);
 					if (response.create_task) {
 						res(response);
 					}
