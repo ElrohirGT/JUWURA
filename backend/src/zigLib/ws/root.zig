@@ -1,9 +1,11 @@
 ///! Websocket module for JUWURA
 const std = @import("std");
 const zap = @import("zap");
+const pg = @import("pg");
 const WebSockets = zap.WebSockets;
-const uwu_lib = @import("root.zig");
-const uwu_log = @import("log.zig");
+const uwu_lib = @import("../root.zig");
+const uwu_log = @import("../log.zig");
+const uwu_tasks = @import("task.zig");
 
 /// Hashmap to store connectinos by user.
 /// * Key: User email.
@@ -20,7 +22,10 @@ pub const WebsocketHandler = WebSockets.Handler(Connection);
 const Connection = struct {
     email: []const u8,
     project_id: []const u8,
+
+    // Helper objects used for logic
     allocator: std.mem.Allocator,
+    pool: *pg.Pool,
 
     // We need to hold on to them to re-use them on every message.
     subscribeArgs: WebsocketHandler.SubscribeArgs,
@@ -30,13 +35,14 @@ const Connection = struct {
 /// Manages all connections metadata.
 pub const ConnectionManager = struct {
     alloc: std.mem.Allocator,
+    pool: *pg.Pool,
     active_projects: UsersConnectionsByProject,
     lock: std.Thread.Mutex = .{},
 
     const Self = @This();
 
-    pub fn init(allocator: std.mem.Allocator) Self {
-        return .{ .alloc = allocator, .active_projects = UsersConnectionsByProject.init(allocator) };
+    pub fn init(allocator: std.mem.Allocator, pool: *pg.Pool) Self {
+        return .{ .alloc = allocator, .pool = pool, .active_projects = UsersConnectionsByProject.init(allocator) };
     }
 
     pub fn deinit(self: *Self) void {
@@ -80,6 +86,7 @@ pub const ConnectionManager = struct {
             .email = email,
             .project_id = project_id,
             .allocator = self.alloc,
+            .pool = self.pool,
             // NOTE: Used when subscribing to a WS!
             .subscribeArgs = .{
                 .channel = project_id,
@@ -143,26 +150,18 @@ fn on_close_base(connection: ?*Connection, uuid: isize) void {
         var buf: [255]u8 = undefined;
         const message = std.fmt.bufPrint(&buf, "{s} left the ws for project {s}.", .{ conn.email, conn.project_id }) catch unreachable;
 
-        const req = WebsocketRequest{ .create_task = CreateTaskMessage{ .project_id = 1, .task_type = "hello" } };
-        const value = uwu_lib.toJson(conn.allocator, req) catch unreachable;
-        defer conn.allocator.free(value);
-
         WebsocketHandler.publish(.{ .channel = conn.project_id, .message = message });
-        uwu_log.logInfo("Closed websocket connection!").string("innerMsg", message).string("serialized", value).log();
+        uwu_log.logInfo("Closed websocket connection!").string("innerMsg", message).log();
     }
 }
 
-const WebsocketAPIError = enum { MalformedMessage, InternalServerError };
+const WebsocketAPIError = error{ MalformedMessage, InternalServerError } || uwu_tasks.Errors;
 
-const CreateTaskMessage = struct {
-    project_id: i32,
-    task_type: []const u8,
-};
 const DeleteTaskMessage = struct {
     task_id: i32,
 };
-const WebsocketRequest = union(enum) { create_task: CreateTaskMessage, delete_task: DeleteTaskMessage };
-const WebsocketResponse = union(enum) { err: WebsocketAPIError };
+const WebsocketRequest = union(enum) { create_task: uwu_tasks.CreateTaskRequest, delete_task: DeleteTaskMessage };
+const WebsocketResponse = union(enum) { err: WebsocketAPIError, create_task: uwu_tasks.CreateTaskResponse };
 
 fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []const u8, is_text: bool) void {
     _ = is_text;
@@ -178,19 +177,40 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
 
             if (uwu_lib.errIsFromUnion(err, std.json.ParseFromValueError)) {
                 uwu_log.logInfo("The message payload is malformed, responding with invalid request...").log();
-                const server_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = .MalformedMessage }) catch unreachable;
+                const server_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.MalformedMessage }) catch unreachable;
                 defer conn.allocator.free(server_error);
                 WebsocketHandler.write(handle, server_error, true) catch unreachable;
             } else {
                 uwu_log.logInfo("The error is internal to the server...").log();
-                const server_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = .InternalServerError }) catch unreachable;
+                const server_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.InternalServerError }) catch unreachable;
                 defer conn.allocator.free(server_error);
                 WebsocketHandler.write(handle, server_error, true) catch unreachable;
             }
             return;
         };
         defer parsed.deinit();
+        uwu_log.logInfo("Received a valid message!").string("message", message).log();
 
-        uwu_log.logInfo("Received a message!").string("message", message).log();
+        const request = parsed.value;
+        switch (request) {
+            .create_task => {
+                const task_response = uwu_tasks.create_task(conn.allocator, conn.pool, request.create_task) catch |err| {
+                    uwu_log.logErr("An error occurred creating a task!").err(err).string("message", message).log();
+                    const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.CreateTaskError }) catch unreachable;
+                    defer conn.allocator.free(serve_error);
+
+                    WebsocketHandler.write(handle, serve_error, true) catch unreachable;
+                    return;
+                };
+
+                const response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .create_task = task_response }) catch unreachable;
+                defer conn.allocator.free(response);
+
+                WebsocketHandler.publish(.{ .channel = conn.project_id, .message = response });
+            },
+            else => {
+                uwu_log.logWarn("Request type not implemented!").log();
+            },
+        }
     }
 }

@@ -1,12 +1,12 @@
 const std = @import("std");
 const zap = @import("zap");
 const pg = @import("pg");
-pub const ws = @import("ws.zig");
+pub const ws = @import("ws/root.zig");
 pub const log = @import("log.zig");
 
 /// Checks if a given error belongs to a given error union.
-pub fn errIsFromUnion(err: anyerror, comptime ErrorUnion: type) bool {
-    return inline for (comptime std.meta.fields(ErrorUnion)) |f| {
+pub fn errIsFromUnion(err: anyerror, comptime ErrorSet: type) bool {
+    return inline for (comptime std.meta.fields(ErrorSet)) |f| {
         if (@field(anyerror, f.name) == err) break true;
     } else false;
 }

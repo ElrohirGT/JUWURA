@@ -1,9 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { API_HOST, generateClient } from "../jsLib/ws.js";
-
-function genURL(email, projectId) {
-	return encodeURI(`${API_HOST}?email=${email}&projectId=${projectId}`);
-}
+import { API_HOST, generateClient, genURL } from "../jsLib/ws.js";
 
 describe("Websocket Implementation tests", () => {
 	test("Can connect successfully", async () => {

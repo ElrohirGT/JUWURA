@@ -71,10 +71,6 @@ pub fn main() !void {
     try uwu_log.init(allocator);
     defer uwu_log.deinit();
 
-    uwu_log.logInfo("Initializing WS connection manager...").log();
-    GlobalWsConnectionManager = uwu_ws.ConnectionManager.init(allocator);
-    uwu_log.logInfo("Done!").log();
-
     uwu_log.logInfo("Initializing env variables...").log();
     dotenv.load(allocator, .{ .override = false }) catch |err| {
         uwu_log.logErr("Error initializing env variables").err(err).log();
@@ -94,6 +90,10 @@ pub fn main() !void {
         std.posix.exit(1);
     };
     defer pool.deinit();
+
+    uwu_log.logInfo("Initializing WS connection manager...").log();
+    GlobalWsConnectionManager = uwu_ws.ConnectionManager.init(allocator, pool);
+    uwu_log.logInfo("Done!").log();
 
     var listener = zap.Endpoint.Listener.init(allocator, .{
         .port = 3000,
