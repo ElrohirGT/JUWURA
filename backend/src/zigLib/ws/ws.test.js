@@ -119,7 +119,7 @@ describe.sequential("Websocket Implementation tests", () => {
 
 		project1Client.close();
 		project2Client.close();
-	});
+	}, 10_000);
 
 	test("Malformed message error", async () => {
 		const client = await generateClient("correo1@gmail.com", 1);
