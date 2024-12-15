@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { generateClient, genURL } from "../jsLib/ws.js";
+import { generateClient, genURL } from "../../jsLib/ws.js";
 
 describe("Websocket Implementation tests", () => {
 	test("Can connect successfully", async () => {
