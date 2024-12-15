@@ -73,7 +73,7 @@ describe.sequential("Websocket Implementation tests", () => {
 	// NOTE: Tested this behaviour manually and it worked!
 	// But when I tried making an automated test it fails because the handlers seem to not be called!
 	//
-	test.only("Messages dont get shared across projects", async () => {
+	test("Messages dont get shared across projects", async () => {
 		const project1Client = await generateClient("correo1@gmail.com", 1);
 		const project2Client = await generateClient("correo2@gmail.com", 2);
 

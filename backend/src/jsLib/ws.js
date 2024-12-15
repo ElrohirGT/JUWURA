@@ -29,7 +29,7 @@ export function genURL(email, projectId) {
  */
 export async function generateClient(email, projectId) {
 	const url = genURL(email, projectId);
-	var rejected = null;
+	let rejected = null;
 	const wrapper = new Promise((res, rej) => {
 		rejected = rej;
 
