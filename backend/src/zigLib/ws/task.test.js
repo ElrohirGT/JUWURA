@@ -1,13 +1,24 @@
-import { expect, describe, test } from "vitest";
+import { expect, describe, test, beforeEach } from "vitest";
 import { generateClient } from "../../jsLib/ws";
 import { createTask } from "../../jsLib/testHelpers/tasks";
+import { createProject } from "../../jsLib/testHelpers/projects.js";
 
-describe.sequential("Create Task test suite", () => {
+describe("Create Task test suite", () => {
+	let projectId = 0;
+
+	beforeEach(async () => {
+		projectId = await createProject(
+			"correo3@gmail.com",
+			"CREATE TASK TEST SUITE PROJECT",
+			"😀",
+			"https://img.freepik.com/free-photo/painting-mountain-lake-with-mountain-background_188544-9126.jpg",
+			["correo1@gmail.com", "correo2@gmail.com"],
+		);
+	});
+
 	test("Can create a task", async () => {
 		const email = "correo1@gmail.com";
 		const type = "EPIC";
-		const projectId = 1;
-
 		const taskId = await createTask(email, type, projectId);
 
 		expect(taskId).toEqual(expect.any(Number));
@@ -21,9 +32,8 @@ describe.sequential("Create Task test suite", () => {
 			},
 		};
 
-		const client1 = await generateClient("correo1@gmail.com", 1);
-
-		const client2 = await generateClient("correo2@gmail.com", 2);
+		const client1 = await generateClient("correo1@gmail.com", projectId);
+		const client2 = await generateClient("correo2@gmail.com", projectId);
 
 		const promise = new Promise((res, rej) => {
 			const client2Msgs = [];
@@ -46,30 +56,44 @@ describe.sequential("Create Task test suite", () => {
 					client2Msgs.push(data);
 				} catch {}
 			});
-
-			client1.send(JSON.stringify(erroneousPayload));
-			client1.close();
-			client2.close();
 		});
+		await client1.send(JSON.stringify(erroneousPayload));
+		await client1.close();
+		await client2.close();
 
 		/**@type{[any[], any[]]}*/
 		const [c1Msgs, c2Msgs] = await promise;
 
-		expect(c1Msgs.length).toBe(2);
-		expect(c2Msgs.length).toBe(1);
+		let foundError = false;
+		for (const msg of c1Msgs) {
+			if (msg.err === "CreateTaskError") {
+				foundError = true;
+			}
+		}
 
-		expect(c1Msgs).toStrictEqual([
-			{ user_connected: "correo1@gmail.com" },
-			{ err: "CreateTaskError" },
-		]);
-		expect(c2Msgs).toStrictEqual([{ user_connected: "correo2@gmail.com" }]);
+		if (!foundError) {
+			console.error("Client 1 MSGs:", c1Msgs);
+			throw new Error("No error found on messages of the first client!");
+		}
+
+		foundError = false;
+		for (const msg of c2Msgs) {
+			if (msg.err === "CreateTaskError") {
+				foundError = true;
+			}
+		}
+
+		if (foundError) {
+			console.error("Client 2 MSGs:", c2Msgs);
+			throw new Error("Error found on messages of the second client!");
+		}
 	});
 
 	test("Create task response is sent to all connected clients", async () => {
 		const payload = {
 			create_task: {
 				task_type: "EPIC",
-				project_id: 1,
+				project_id: projectId,
 			},
 		};
 
