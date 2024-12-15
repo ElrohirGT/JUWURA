@@ -43,7 +43,7 @@ describe("Create Task test suite", () => {
 		expect(task.project_id).toEqual(payload.create_task.project_id);
 	});
 
-	test.only("Create task response is sent to all connected clients", async () => {
+	test("Create task response is sent to all connected clients", async () => {
 		const payload = {
 			create_task: {
 				task_type: "EPIC",
@@ -92,12 +92,12 @@ describe("Create Task test suite", () => {
 			},
 		};
 
-		responses.forEach((response) => {
+		for (const response of responses) {
 			expect(response).toEqual(expectedResponse);
 
 			const { task } = response.create_task;
 			expect(task.type).toEqual(payload.create_task.task_type);
 			expect(task.project_id).toEqual(payload.create_task.project_id);
-		});
+		}
 	});
 });

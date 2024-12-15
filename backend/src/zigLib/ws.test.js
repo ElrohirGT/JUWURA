@@ -12,7 +12,7 @@ describe("Websocket Implementation tests", () => {
 
 		const client1 = await generateClient(genURL(clientEmail1, projectId));
 		const promise = new Promise((res, rej) => {
-			let msgs = [];
+			const msgs = [];
 			client1.configureHandlers(rej, (ev) => {
 				/**@type {string}*/
 				const data = ev.utf8Data;
