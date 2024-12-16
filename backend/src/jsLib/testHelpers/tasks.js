@@ -31,7 +31,7 @@ export async function createTask(email, type, projectId) {
 	await client.send(JSON.stringify(payload));
 
 	const response = await promise;
-	client.close();
+	await client.close();
 
 	const expectedResponse = {
 		create_task: {
@@ -93,7 +93,7 @@ export async function updateTask(email, projectId, taskData) {
 	await client.send(JSON.stringify(payload));
 
 	const response = await promise;
-	client.close();
+	await client.close();
 
 	const expectedResponse = {
 		update_task: {

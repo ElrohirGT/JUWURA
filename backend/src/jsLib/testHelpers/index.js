@@ -173,6 +173,9 @@ export function messageIsSentToAllClients(
 		await client1.send(JSON.stringify(payload));
 		const responses = await Promise.all([client1Waiter, client2Waiter]);
 
+		await client1.close();
+		await client2.close();
+
 		for (const response of responses) {
 			// console.log("SERVER:", response, "EXPECTED:", expectedResponse);
 			// console.log("EXPECTED: ", response);
