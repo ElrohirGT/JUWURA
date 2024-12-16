@@ -31,6 +31,8 @@ export async function createTask(email, type, projectId) {
 	await client.send(JSON.stringify(payload));
 
 	const response = await promise;
+	client.close();
+
 	const expectedResponse = {
 		create_task: {
 			task: {
@@ -51,5 +53,55 @@ export async function createTask(email, type, projectId) {
 	expect(task.project_id).toBe(projectId);
 	expect(task.type).toBe(type);
 
+	return task.id;
+}
+
+/**
+ * @typedef {Object} TaskData
+ * @property {number}id
+ * @property {number}project_id
+ * @property {string}type
+ * @property {number|null}due_date
+ * @property {string|null}name
+ * @property {string|null}priority
+ * @property {number|null}sprint
+ * @property {string|null}status
+ */
+
+/**
+ * Creates a task given the auth and minimum data.
+ * @param {string} email - The email of the user
+ * @param {number} projectId - The project ID for the connection
+ * @param {TaskData} taskData - The data of the task to create
+ * @returns {Promise<number>} The updated task id
+ */
+export async function updateTask(email, projectId, taskData) {
+	const payload = { update_task: taskData };
+	const client = await generateClient(email, projectId);
+
+	const promise = new Promise((res, rej) => {
+		client.configureHandlers(rej, (rev) => {
+			try {
+				const data = JSON.parse(rev.toString());
+
+				if (data.update_task) {
+					res(data);
+				}
+			} catch {}
+		});
+	});
+	await client.send(JSON.stringify(payload));
+
+	const response = await promise;
+	client.close();
+
+	const expectedResponse = {
+		update_task: {
+			task: taskData,
+		},
+	};
+	expect(response).toEqual(expectedResponse);
+
+	const { task } = response.update_task;
 	return task.id;
 }
