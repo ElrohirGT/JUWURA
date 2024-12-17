@@ -52,12 +52,12 @@ pub fn main() !void {
             const project_id = uwu_lib.getQueryParam(alloc, &r, "projectId") orelse return;
 
             const conn = GlobalWsConnectionManager.newConnection(email, project_id) catch |err| {
-                uwu_log.logErr("Error creating ws connection!").err(err).log();
+                uwu_log.logErr("Error creating ws connection!").src(@src()).err(err).log();
                 return;
             };
 
             uwu_ws.WebsocketHandler.upgrade(r.h, &conn.settings) catch |err| {
-                uwu_log.logErr("Error upgrading the connection to websocket!").err(err).log();
+                uwu_log.logErr("Error upgrading the connection to websocket!").src(@src()).err(err).log();
                 return;
             };
 
@@ -73,7 +73,7 @@ pub fn main() !void {
 
     uwu_log.logInfo("Initializing env variables...").log();
     dotenv.load(allocator, .{ .override = false }) catch |err| {
-        uwu_log.logErr("Error initializing env variables").err(err).log();
+        uwu_log.logErr("Error initializing env variables").src(@src()).err(err).log();
     };
     uwu_log.logInfo("Env variables initialized!").log();
 
@@ -86,7 +86,7 @@ pub fn main() !void {
     };
     const uri = try std.Uri.parse(postgres_url);
     const pool = pg.Pool.initUri(allocator, uri, pool_size, conn_timeout_ms) catch |err| {
-        uwu_log.logErr("Failed to connect to DB!").err(err).string("url", postgres_url).log();
+        uwu_log.logErr("Failed to connect to DB!").src(@src()).err(err).string("url", postgres_url).log();
         std.posix.exit(1);
     };
     defer pool.deinit();

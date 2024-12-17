@@ -41,7 +41,7 @@ fn get_user(e: *zap.Endpoint, r: zap.Request) void {
     r.parseQuery();
 
     const maybeEmail = r.getParamStr(self.alloc, "email", false) catch |err| {
-        uwu_log.logErr("Couldn't retrieve `email` GET param!").err(err).log();
+        uwu_log.logErr("Couldn't retrieve `email` GET param!").src(@src()).err(err).log();
         r.setStatus(.bad_request);
         r.sendBody("BAD REQUEST PARAMS") catch unreachable;
         return;
@@ -68,7 +68,7 @@ fn get_user(e: *zap.Endpoint, r: zap.Request) void {
 
     uwu_log.logInfo("Getting DB connection...").log();
     const conn = self.pool.acquire() catch |err| {
-        uwu_log.logErr("Error in DB connection").err(err).log();
+        uwu_log.logErr("Error in DB connection").src(@src()).err(err).log();
         r.setStatus(.internal_server_error);
         r.sendBody("NO DB CONNECTION AQUIRED") catch unreachable;
         return;
@@ -85,7 +85,9 @@ fn get_user(e: *zap.Endpoint, r: zap.Request) void {
             .string("email", get_params.email)
             .log();
         var dataRow = conn.row(query, params) catch |err| {
-            uwu_lib.manageQueryError(&r, conn, err);
+            uwu_lib.manageQueryError(conn, err);
+            r.setStatus(.bad_request);
+            r.sendBody("QUERY ERROR") catch unreachable;
             return;
         } orelse {
             uwu_log.logErr("No user found with email found!").string("email", get_params.email).log();

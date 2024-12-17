@@ -1,6 +1,8 @@
 const std = @import("std");
 const pg = @import("pg");
-const uwu_log = @import("../log.zig");
+const uwu_lib = @import("../root.zig");
+const uwu_log = uwu_lib.log;
+const uwu_db = uwu_lib.utils.db;
 
 pub const Errors = error{ CreateTaskError, DeleteTaskError, UpdateTaskError };
 
@@ -60,10 +62,8 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
             .log();
 
         var dataRow = conn.row(query, params) catch |err| {
-            var l = uwu_log.logErr("Internal error creating task!").err(err);
-            if (conn.err) |pg_err| {
-                l = l.string("PGError", pg_err.message);
-            }
+            var l = uwu_log.logErr("Internal error creating task!").src(@src());
+            uwu_db.logPgError(l, err, conn);
             l.log();
             return err;
         } orelse unreachable;
@@ -112,10 +112,16 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
             .string("priority", req.priority)
             .log();
 
-        var dataRow = try conn.row(query, params) orelse unreachable;
-        defer dataRow.deinit() catch unreachable;
+        var dataRow = conn.row(query, params) catch |err| {
+            var l = uwu_log.logErr("Internal error updating task!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+            return err;
+        } orelse unreachable;
 
-        break :task_creation_block try taskFromDB(alloc, &dataRow);
+        // var dataRow = try conn.row(query, params) orelse unreachable;
+        defer dataRow.deinit() catch unreachable;
+        break :task_creation_block taskFromDB(alloc, &dataRow) catch unreachable;
     };
     uwu_log.logInfo("Task updated!")
         .int("id", task.id)
