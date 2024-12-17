@@ -23,7 +23,7 @@
     nixpkgsFor = forAllSystems (system: import nixpkgs {inherit system;});
 
     # System packages...
-    backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.yarn-berry];
+    backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.yarn-berry pkgs.websocat];
     dbPkgs = pkgs: [pkgs.sqlfluff];
     frontendPkgs = pkgs: [pkgs.nodejs pkgs.yarn-berry pkgs.elmPackages.elm pkgs.elmPackages.elm-format pkgs.biome pkgs.elmPackages.elm-review];
     orquestrationPkgs = pkgs: [pkgs.process-compose pkgs.coreutils];

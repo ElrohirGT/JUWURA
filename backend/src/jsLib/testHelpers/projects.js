@@ -48,5 +48,5 @@ export async function createProject(userEmail, name, icon, url, members) {
 	expect(project.icon).toBe(payload.icon);
 	expect(project.photo_url).toBe(payload.photo_url);
 
-	return response.data.project.id;
+	return project.id;
 }
