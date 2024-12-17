@@ -239,12 +239,16 @@ func main() {
 
 	// Generate tasks...
 	taskCount := 10
-	fmt.Println("INSERT INTO task (project_id, short_title) VALUES")
+	fmt.Println("INSERT INTO task (project_id, parent_id, short_title) VALUES")
 	for projectIdx := range projectCount {
 		for i := range taskCount {
 			projectId := projectIdx + 1
-			shortName := fmt.Sprintf("T-%d", i+1)
-			fmt.Printf("(%d, '%s')", projectId, shortName)
+			parentId := "NULL"
+			if i != 0 {
+				parentId = nullEveryPercent(random, 0.5, fmt.Sprintf("%d", random.Intn(i)+1+projectIdx*taskCount))
+			}
+			shortTitle := fmt.Sprintf("T-%d", i+1)
+			fmt.Printf("(%d, %s, '%s')", projectId, parentId, shortTitle)
 
 			endInserts((projectIdx+1)*(i+1)-1, projectCount*taskCount)
 		}

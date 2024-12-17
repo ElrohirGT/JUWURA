@@ -24,6 +24,7 @@ COMMENT ON TABLE project_member IS
 
 CREATE TABLE task (
     id SERIAL PRIMARY KEY,
+    parent_id INTEGER REFERENCES task (id),
     project_id INTEGER REFERENCES project (id) NOT NULL,
     short_title VARCHAR(16) NOT NULL
 );
