@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -102,7 +103,6 @@ func main() {
 		"https://image-0.uhdpaper.com/wallpaper/anime-girl-vampire-nun-smoking-hd-wallpaper-uhdpaper.com-608@0@j.jpg",
 	}
 
-	taskTypes := []string{"EPIC", "TASK", "SUBTASK"}
 	taskNames := []string{
 		"Programar endpoints del backend",
 		"Programar a tu mami",
@@ -113,6 +113,7 @@ func main() {
 		"POC: ¿Qué audífonos gamer comprar?",
 		"POC: ¿Cogerse un trapito es gay?",
 	}
+
 	taskStatuses := []string{
 		"TODO",
 		"DOING",
@@ -123,7 +124,15 @@ func main() {
 		"MEDIUM",
 		"LOW",
 	}
-	taskFieldTypes := []string{"TEXT", "DATE", "SELECT", "NUMBER"}
+	taskFieldTypes := []string{"TEXT", "DATE", "CHOICE", "NUMBER", "ASSIGNEE"}
+	defaultTaskFields := [][]string{
+		{"TEXT", "Name"},
+		{"DATE", "Due Date"},
+		{"CHOICE", "Status"},
+		{"CHOICE", "Priority"},
+		{"NUMBER", "Sprint"},
+		{"ASSIGNEE", "Assignees"},
+	}
 
 	// Changing to DB...
 	fmt.Println("\\c juwura")
@@ -176,25 +185,105 @@ func main() {
 	}
 	fmt.Println()
 
-	// Generate task_types...
-	// taskTypesCount := 3
-	fmt.Println("INSERT INTO task_type VALUES ('EPIC'), ('TASK'), ('SUBTASK');")
+	// Generate task field types...
+	fmt.Println("INSERT INTO task_field_type (name, project_id) VALUES")
+	for projecIdx := range projectCount {
+		projectId := projecIdx + 1
+
+		for idx, name := range taskFieldTypes {
+			fmt.Printf("('%s', %d)", name, projectId)
+
+			endInserts((idx+1)*(projecIdx+1)-1, projectCount*len(taskFieldTypes))
+		}
+	}
+	fmt.Println()
+
+	// Generate custom task fields...
+	fmt.Println("INSERT INTO task_field (project_id, task_field_type_id, name) VALUES")
+	for projecIdx := range projectCount {
+		projectId := projecIdx + 1
+
+		for taskFieldIdx, taskFieldInfo := range defaultTaskFields {
+			i := slices.Index(taskFieldTypes, taskFieldInfo[0])
+			taskFieldTypeId := i + 1 + projecIdx*len(taskFieldTypes)
+			taskFieldName := taskFieldInfo[1]
+
+			fmt.Printf("(%d, %d, '%s')", projectId, taskFieldTypeId, taskFieldName)
+			endInserts((projecIdx+1)*(taskFieldIdx+1)-1, projectCount*len(defaultTaskFields))
+		}
+	}
+	fmt.Println()
+
+	// Generate custom task field options...
+	fmt.Println("INSERT INTO task_field_option (task_field, value) VALUES")
+	for projecIdx := range projectCount {
+		taskFieldId := projecIdx*3 + 3
+
+		for _, status := range taskStatuses {
+			fmt.Printf("(%d, '%s')", taskFieldId, status)
+			fmt.Println(",")
+		}
+
+		for i, priority := range taskPriorities {
+			fmt.Printf("(%d, '%s')", taskFieldId, priority)
+			if i+1 == len(taskPriorities) && projecIdx+1 == projectCount {
+				fmt.Println(";")
+			} else {
+				fmt.Println(",")
+			}
+		}
+
+	}
 	fmt.Println()
 
 	// Generate tasks...
 	taskCount := 10
-	fmt.Println("INSERT INTO task (project_id, type, name, due_date, status, sprint, priority) VALUES")
+	fmt.Println("INSERT INTO task (project_id, short_name) VALUES")
 	for projectIdx := range projectCount {
 		for i := range taskCount {
-			tType := from(random, taskTypes)
-			name := nullEveryPercent(random, 0.3, from(random, taskNames))
-			dueDate := nullEveryPercent(random, 0.5, "NOW()")
-			status := nullEveryPercent(random, 0.5, from(random, taskStatuses))
-			sprint := nullEveryPercent(random, 0.5, fmt.Sprintf("%d", random.Intn(10)))
-			priority := nullEveryPercent(random, 0.8, from(random, taskPriorities))
-			fmt.Printf("(%d, '%s', %s, %s, %s, %s, %s)", projectIdx+1, tType, name, dueDate, status, sprint, priority)
+			projectId := projectIdx + 1
+			shortName := fmt.Sprintf("T-%d", i+1)
+			fmt.Printf("(%d, '%s')", projectId, shortName)
 
 			endInserts((projectIdx+1)*(i+1)-1, projectCount*taskCount)
+		}
+	}
+	fmt.Println()
+
+	// Populate tasks randomly...
+	fmt.Println("INSERT INTO task_fields_for_task (task_id, task_field_id, value) VALUES")
+	for projectIdx := range projectCount {
+		for taskIdx := range taskCount {
+			taskId := taskIdx + 1 + projectIdx*taskCount
+
+			for i := range defaultTaskFields {
+				taskFieldId := i + 1 + len(defaultTaskFields)*projectIdx
+				value := "NULL"
+				switch i {
+				case 0:
+					okValue := fmt.Sprintf("'%s'", from(random, taskNames))
+					value = nullEveryPercent(random, 0.5, okValue)
+				case 1:
+					okValue := fmt.Sprintf("NOW() + interval '%d day'", random.Intn(20))
+					value = nullEveryPercent(random, 0.5, okValue)
+				case 2:
+					okValue := fmt.Sprintf("'%s'", from(random, taskStatuses))
+					value = nullEveryPercent(random, 0.5, okValue)
+				case 3:
+					okValue := fmt.Sprintf("'%s'", from(random, taskPriorities))
+					value = nullEveryPercent(random, 0.5, okValue)
+				case 4:
+					okValue := fmt.Sprintf("%d", random.Intn(15)+1)
+					value = nullEveryPercent(random, 0.5, okValue)
+				}
+				fmt.Printf("(%d, %d, %s)", taskId, taskFieldId, value)
+
+				if projectIdx+1 == projectCount && taskIdx+1 == taskCount && i+1 == len(defaultTaskFields) {
+					fmt.Println(";")
+				} else {
+					fmt.Println(",")
+				}
+			}
 		}
 	}
 	fmt.Println()
@@ -233,39 +322,23 @@ func main() {
 		}
 	}
 	fmt.Println()
-
-	// Generate task field types...
-	fmt.Println("INSERT INTO task_field_type (name, project_id) VALUES")
-	for projecIdx := range projectCount {
-		projectId := projecIdx + 1
-
-		for idx, name := range taskFieldTypes {
-			fmt.Printf("('%s', %d)", name, projectId)
-
-			endInserts((idx+1)*(projecIdx+1)-1, projectCount*len(taskFieldTypes))
-		}
-	}
-
-	// TODO: Generate custom fields for some projects...
 }
 
 func endInserts(i int, count int) {
 	if i+1 == count {
-		fmt.Print(";")
+		fmt.Println(";")
 	} else {
-		fmt.Print(",")
+		fmt.Println(",")
 	}
-
-	fmt.Println()
 }
 
 func nullEveryPercent(r *rand.Rand, percent float32, okValue string) string {
-	okMapped := fmt.Sprintf("'%s'", okValue)
+	okMapped := fmt.Sprintf("%s", okValue)
 	return everyPercent(r, percent, "NULL", okMapped)
 }
 
 func defaultEveryPercent(r *rand.Rand, percent float32, okValue string) string {
-	okMapped := fmt.Sprintf("'%s'", okValue)
+	okMapped := fmt.Sprintf("%s", okValue)
 	return everyPercent(r, percent, "default", okMapped)
 }
 

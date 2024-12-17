@@ -22,16 +22,10 @@ CREATE TABLE project_member (
 COMMENT ON TABLE project_member IS
 'Stores all the members of a specific project';
 
-CREATE TABLE task_type (
-    name VARCHAR(16) PRIMARY KEY
-);
-COMMENT ON TABLE task_type IS
-'Stores all the types a task can be, only contains EPIC, TASK, SUBTASK';
-
 CREATE TABLE task (
     id SERIAL PRIMARY KEY,
     project_id INTEGER REFERENCES project (id) NOT NULL,
-    type VARCHAR(16) REFERENCES task_type (name) NOT NULL,
+    short_name VARCHAR(16) NOT NULL,
 
     -- Optional task fields...
     name VARCHAR(64),
@@ -69,8 +63,7 @@ for example DATE, TEXT, SELECT, etc';
 CREATE TABLE task_field (
     id SERIAL PRIMARY KEY,
     project_id INTEGER REFERENCES project (id) NOT NULL,
-    task_type VARCHAR(16) REFERENCES task_type (name) NOT NULL,
-    task_field_type INTEGER REFERENCES task_field_type (id) NOT NULL,
+    task_field_type_id INTEGER REFERENCES task_field_type (id) NOT NULL,
     name VARCHAR(16) NOT NULL
 );
 COMMENT ON TABLE task_field IS
