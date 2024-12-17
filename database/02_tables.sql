@@ -25,14 +25,7 @@ COMMENT ON TABLE project_member IS
 CREATE TABLE task (
     id SERIAL PRIMARY KEY,
     project_id INTEGER REFERENCES project (id) NOT NULL,
-    short_name VARCHAR(16) NOT NULL,
-
-    -- Optional task fields...
-    name VARCHAR(64),
-    due_date TIMESTAMP,
-    status VARCHAR(16),
-    sprint INTEGER,
-    priority VARCHAR(16)
+    short_name VARCHAR(16) NOT NULL
 );
 COMMENT ON TABLE task IS
 'Stores all the task of all the projects, only some fields are required';
