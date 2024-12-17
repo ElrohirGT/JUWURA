@@ -25,7 +25,7 @@ COMMENT ON TABLE project_member IS
 CREATE TABLE task (
     id SERIAL PRIMARY KEY,
     project_id INTEGER REFERENCES project (id) NOT NULL,
-    short_name VARCHAR(16) NOT NULL
+    short_title VARCHAR(16) NOT NULL
 );
 COMMENT ON TABLE task IS
 'Stores all the task of all the projects, only some fields are required';

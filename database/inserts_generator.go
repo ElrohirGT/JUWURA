@@ -239,7 +239,7 @@ func main() {
 
 	// Generate tasks...
 	taskCount := 10
-	fmt.Println("INSERT INTO task (project_id, short_name) VALUES")
+	fmt.Println("INSERT INTO task (project_id, short_title) VALUES")
 	for projectIdx := range projectCount {
 		for i := range taskCount {
 			projectId := projectIdx + 1
