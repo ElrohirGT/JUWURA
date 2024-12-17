@@ -37,13 +37,6 @@ CREATE TABLE task_unblock (
 COMMENT ON TABLE task_unblock IS
 'Stores all the tasks that unblock once target_task is completed';
 
-CREATE TABLE task_assignee (
-    task_id INTEGER REFERENCES task (id) NOT NULL,
-    user_id VARCHAR(100) REFERENCES app_user (email) NOT NULL
-);
-COMMENT ON TABLE task_assignee IS
-'Stores all the asigness for a given task';
-
 CREATE TABLE task_field_type (
     id SERIAL PRIMARY KEY,
     project_id INTEGER REFERENCES project (id),

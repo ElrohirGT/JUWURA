@@ -275,6 +275,9 @@ func main() {
 				case 4:
 					okValue := fmt.Sprintf("%d", random.Intn(15)+1)
 					value = nullEveryPercent(random, 0.5, okValue)
+				case 5:
+					okValue := fmt.Sprintf("'[\"%s\"]'", from(random, membersByProject[projectIdx]))
+					value = nullEveryPercent(random, 0.5, okValue)
 				}
 				fmt.Printf("(%d, %d, %s)", taskId, taskFieldId, value)
 
@@ -301,24 +304,6 @@ func main() {
 			fmt.Printf("(%d, %d)", blockingTask, unblockedTask)
 
 			endInserts((projectIdx+1)*(relIdx+1)-1, projectCount*relationCount)
-		}
-	}
-	fmt.Println()
-
-	// Generate task assignees...
-	fmt.Println("INSERT INTO task_assignee (task_id, user_id) VALUES")
-	assigneeCount := taskCount * 3 / 2
-	for projectIdx, members := range membersByProject {
-		tasksIdxs := random.Perm(taskCount)
-		membersIdxs := random.Perm(len(members))
-
-		for assIdx := range assigneeCount {
-			userId := members[membersIdxs[assIdx%len(membersIdxs)]]
-			taskId := tasksIdxs[assIdx%len(tasksIdxs)] + 1 + projectIdx*taskCount
-
-			fmt.Printf("(%d, '%s')", taskId, userId)
-
-			endInserts((projectIdx+1)*(assIdx+1)-1, assigneeCount*len(membersByProject))
 		}
 	}
 	fmt.Println()
