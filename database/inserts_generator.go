@@ -126,7 +126,7 @@ func main() {
 	}
 	taskFieldTypes := []string{"TEXT", "DATE", "CHOICE", "NUMBER", "ASSIGNEE"}
 	defaultTaskFields := [][]string{
-		{"TEXT", "Name"},
+		{"TEXT", "Title"},
 		{"DATE", "Due Date"},
 		{"CHOICE", "Status"},
 		{"CHOICE", "Priority"},
