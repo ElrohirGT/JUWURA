@@ -132,6 +132,7 @@ func main() {
 		{"CHOICE", "Priority"},
 		{"NUMBER", "Sprint"},
 		{"ASSIGNEE", "Assignees"},
+		{"TEXT", "Description"},
 	}
 
 	// Changing to DB...
@@ -277,6 +278,9 @@ func main() {
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 5:
 					okValue := fmt.Sprintf("'[\"%s\"]'", from(random, membersByProject[projectIdx]))
+					value = nullEveryPercent(random, 0.5, okValue)
+				case 6:
+					okValue := fmt.Sprintf("'%s'", "This is a test description!")
 					value = nullEveryPercent(random, 0.5, okValue)
 				}
 				fmt.Printf("(%d, %d, %s)", taskId, taskFieldId, value)
