@@ -6,15 +6,18 @@ const uwu_db = uwu_lib.utils.db;
 
 pub const Errors = error{ CreateTaskError, DeleteTaskError, UpdateTaskError };
 
+pub const TaskField = struct {
+    id: i32,
+    type: []const u8,
+    value: []const u8,
+};
 pub const Task = struct {
     id: i32,
+    parent_id: ?i32 = null,
     project_id: i32,
-    type: []const u8,
-    name: ?[]const u8 = null,
-    due_date: ?i64 = null,
-    status: ?[]const u8 = null,
-    sprint: ?i32 = null,
-    priority: ?[]const u8 = null,
+    short_title: []const u8,
+    icon: []const u8,
+    fields: []TaskField,
 };
 
 /// Duplicates an array of `ValueType`s if the `value` is not null.
@@ -31,20 +34,26 @@ fn dupeIfNotNull(comptime ValueType: type, alloc: std.mem.Allocator, value: ?[]V
 
 fn taskFromDB(alloc: std.mem.Allocator, row: *pg.QueryRow) !Task {
     const id = row.get(i32, 0);
-    const p_id = row.get(i32, 1);
-    const t_type = try alloc.dupe(u8, row.get([]u8, 2));
-    const name = try dupeIfNotNull(u8, alloc, row.get(?[]u8, 3));
-    const due_date = row.get(?i64, 4);
-    const status = try dupeIfNotNull(u8, alloc, row.get(?[]u8, 5));
-    const sprint = row.get(?i32, 6);
-    const priority = try dupeIfNotNull(u8, alloc, row.get(?[]u8, 7));
+    const parent_id = row.get(?i32, 1);
+    const project_id = row.get(i32, 2);
+    const short_title = try alloc.dupe(u8, row.get([]const u8, 3));
+    const icon = row.get([]const u8, 4);
+    const fields = &[_]TaskField{};
 
-    return Task{ .id = id, .project_id = p_id, .type = t_type, .name = name, .due_date = due_date, .status = status, .sprint = sprint, .priority = priority };
+    return Task{
+        .id = id,
+        .project_id = project_id,
+        .parent_id = parent_id,
+        .short_title = short_title,
+        .icon = icon,
+        .fields = fields,
+    };
 }
 
 pub const CreateTaskRequest = struct {
     project_id: i32,
-    task_type: []const u8,
+    parent_id: ?i32 = null,
+    icon: []const u8,
 };
 pub const CreateTaskResponse = struct { task: Task };
 pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequest) !CreateTaskResponse {
@@ -53,35 +62,97 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
     defer conn.release();
     uwu_log.logInfo("Connection aquired!").log();
 
+    conn.begin() catch |err| {
+        var l = uwu_log.logErr("Error beginning transaction!").src(@src());
+        uwu_db.logPgError(l, err, conn);
+        l.log();
+        return err;
+    };
     const task: Task = task_creation_block: {
-        const query = "INSERT INTO task (project_id, type) VALUES ($1, $2) RETURNING *";
-        const params = .{ req.project_id, req.task_type };
+        const display_id = id_obtaining_block: {
+            const query =
+                \\ UPDATE project SET
+                \\ next_task_id = (SELECT next_task_id FROM project WHERE id=$1)+1
+                \\ WHERE id=$1
+                \\ RETURNING next_task_id;
+            ;
+            const params = .{req.project_id};
+            uwu_log.logInfo("Obtaining new task ID...")
+                .int("projectId", req.project_id)
+                .log();
+
+            var dataRow = conn.row(query, params) catch |err| {
+                var l = uwu_log.logErr("Internal error creating task!").src(@src());
+                uwu_db.logPgError(l, err, conn);
+                l.log();
+
+                conn.rollback() catch |rollBackErr| {
+                    var lo = uwu_log.logErr("Error rolling back transaction!").src(@src());
+                    uwu_db.logPgError(lo, rollBackErr, conn);
+                    lo.log();
+                    return rollBackErr;
+                };
+
+                return err;
+            } orelse unreachable;
+            defer dataRow.deinit() catch unreachable;
+
+            break :id_obtaining_block dataRow.get(i32, 0);
+        };
+        uwu_log.logInfo("New task ID obtained!").int("display_id", display_id).log();
+
+        const short_title = std.fmt.allocPrint(alloc, "T-{d}", .{display_id}) catch unreachable;
+        defer alloc.free(short_title);
+
+        const query = "INSERT INTO task (parent_id, project_id, short_title, icon) VALUES ($1, $2, $3, $4) RETURNING *";
+        const params = .{ req.parent_id, req.project_id, short_title, req.icon };
         uwu_log.logInfo("Creating task in project!")
             .int("projectId", req.project_id)
-            .string("type", req.task_type)
+            .int("parentId", req.parent_id)
+            .string("short_title", short_title)
+            .string("icon", req.icon)
             .log();
 
         var dataRow = conn.row(query, params) catch |err| {
             var l = uwu_log.logErr("Internal error creating task!").src(@src());
             uwu_db.logPgError(l, err, conn);
             l.log();
+
+            conn.rollback() catch |rollbackErr| {
+                var lo = uwu_log.logErr("Error rolling back transaction!").src(@src());
+                uwu_db.logPgError(lo, rollbackErr, conn);
+                lo.log();
+                return rollbackErr;
+            };
+
             return err;
         } orelse unreachable;
         defer dataRow.deinit() catch unreachable;
 
         break :task_creation_block try taskFromDB(alloc, &dataRow);
     };
+    defer alloc.free(task.short_title);
+    conn.commit() catch |err| {
+        var l = uwu_log.logErr("Error committing transaction!").src(@src());
+        uwu_db.logPgError(l, err, conn);
+        l.log();
+        return err;
+    };
 
     uwu_log.logInfo("Task created!")
         .int("id", task.id)
-        .int("project_id", task.project_id)
-        .string("type", task.type)
+        .int("projectId", task.project_id)
+        .int("parentId", task.parent_id)
         .log();
 
     return CreateTaskResponse{ .task = task };
 }
 
-pub const UpdateTaskRequest = struct { id: i32, project_id: i32, type: []const u8, name: ?[]const u8, due_date: ?i64, status: ?[]const u8, sprint: ?i32, priority: ?[]const u8 };
+pub const UpdateTaskRequest = struct {
+    task_id: i32,
+    parent_id: i32,
+    short_title: []const u8,
+};
 pub const UpdateTaskResponse = struct { task: Task };
 pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequest) !UpdateTaskResponse {
     uwu_log.logInfo("Getting DB connection...").log();
@@ -92,45 +163,33 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
     const task: Task = task_creation_block: {
         const query =
             \\ UPDATE task SET
-            \\ type = $1,
-            \\ name = $2,
-            \\ due_date = $3,
-            \\ status = $4,
-            \\ sprint = $5,
-            \\ priority = $6
-            \\ WHERE id = $7
+            \\ parent_id = $2,
+            \\ short_title = $3,
+            \\ WHERE id = $1
             \\ RETURNING *
         ;
-        const params = .{ req.type, req.name, req.due_date, req.status, req.sprint, req.priority, req.id };
+        const params = .{ req.task_id, req.parent_id, req.short_title };
         uwu_log.logInfo("Updating task in project...")
-            .int("id", req.id)
-            .string("type", req.type)
-            .string("name", req.name)
-            .int("due_date", req.due_date)
-            .string("status", req.status)
-            .int("sprint", req.sprint)
-            .string("priority", req.priority)
+            .int("task_id", req.task_id)
+            .int("parent_id", req.parent_id)
+            .string("short_title", req.short_title)
             .log();
 
         var dataRow = conn.row(query, params) catch |err| {
-            var l = uwu_log.logErr("Internal error updating task!").src(@src());
+            var l = uwu_log.logErr("Error updating task!").src(@src());
             uwu_db.logPgError(l, err, conn);
             l.log();
             return err;
         } orelse unreachable;
 
-        // var dataRow = try conn.row(query, params) orelse unreachable;
         defer dataRow.deinit() catch unreachable;
         break :task_creation_block taskFromDB(alloc, &dataRow) catch unreachable;
     };
+    defer alloc.free(task.short_title);
     uwu_log.logInfo("Task updated!")
-        .int("id", task.id)
-        .string("type", task.type)
-        .string("name", task.name)
-        .int("due_date", task.due_date)
-        .string("status", task.status)
-        .int("sprint", task.sprint)
-        .string("priority", task.priority)
+        .int("task_id", task.id)
+        .int("parent_id", task.parent_id)
+        .string("short_title", task.short_title)
         .log();
 
     return UpdateTaskResponse{ .task = task };

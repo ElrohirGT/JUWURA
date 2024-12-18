@@ -169,7 +169,13 @@ fn on_close_base(connection: ?*Connection, uuid: isize) void {
 const WebsocketAPIError = error{ MalformedMessage, InternalServerError } || uwu_tasks.Errors;
 
 const WebsocketRequest = union(enum) { create_task: uwu_tasks.CreateTaskRequest, update_task: uwu_tasks.UpdateTaskRequest };
-const WebsocketResponse = union(enum) { err: WebsocketAPIError, user_connected: []const u8, user_disconnected: []const u8, create_task: uwu_tasks.CreateTaskResponse, update_task: uwu_tasks.UpdateTaskResponse };
+const WebsocketResponse = union(enum) {
+    err: WebsocketAPIError,
+    user_connected: []const u8,
+    user_disconnected: []const u8,
+    create_task: uwu_tasks.CreateTaskResponse,
+    update_task: uwu_tasks.UpdateTaskResponse,
+};
 
 fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []const u8, is_text: bool) void {
     _ = is_text;

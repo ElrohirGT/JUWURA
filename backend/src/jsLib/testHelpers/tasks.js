@@ -4,15 +4,17 @@ import { generateClient } from "../ws";
 /**
  * Creates a task given the auth and minimum data.
  * @param {string} email - The email of the user
- * @param {string} type - The task type
- * @param {number} projectId The id of the project
+ * @param {number} projectId - The id of the project
+ * @param {number|null} parentId - The ID of the parent task
+ * @param {string} icon - The task type
  * @returns {Promise<number>} The created task id
  */
-export async function createTask(email, type, projectId) {
+export async function createTask(email, projectId, parentId, icon) {
 	const payload = {
 		create_task: {
-			task_type: type,
 			project_id: projectId,
+			parent_id: parentId,
+			icon,
 		},
 	};
 
@@ -38,12 +40,10 @@ export async function createTask(email, type, projectId) {
 			task: {
 				id: expect.any(Number),
 				project_id: expect.any(Number),
-				type: expect.any(String),
-				due_date: null,
-				name: null,
-				priority: null,
-				sprint: null,
-				status: null,
+				parent_id: parentId,
+				short_title: expect.any(String),
+				icon: expect.any(String),
+				fields: [],
 			},
 		},
 	};
@@ -51,7 +51,9 @@ export async function createTask(email, type, projectId) {
 
 	const { task } = response.create_task;
 	expect(task.project_id).toBe(projectId);
-	expect(task.type).toBe(type);
+	expect(task.parent_id).toBe(parentId);
+	expect(task.icon).toBe(icon);
+	expect(task.fields).toEqual([]);
 
 	return task.id;
 }

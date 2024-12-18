@@ -156,12 +156,12 @@ func main() {
 
 	// Generate projects...
 	projectCount := 5
-	fmt.Println("INSERT INTO project (name, photo_url, icon) VALUES")
+	fmt.Println("INSERT INTO project (name, photo_url, icon, next_task_id) VALUES")
 	for i := range projectCount {
 		name := fmt.Sprintf("Proyecto %s", from(random, names))
 		photo := from(random, projectBanners)
 		icon := from(random, emojis)
-		fmt.Printf("('%s', '%s', '%s')", name, photo, icon)
+		fmt.Printf("('%s', '%s', '%s', DEFAULT)", name, photo, icon)
 
 		endInserts(i, projectCount)
 	}
@@ -239,7 +239,7 @@ func main() {
 
 	// Generate tasks...
 	taskCount := 10
-	fmt.Println("INSERT INTO task (project_id, parent_id, short_title) VALUES")
+	fmt.Println("INSERT INTO task (project_id, parent_id, short_title, icon) VALUES")
 	for projectIdx := range projectCount {
 		for i := range taskCount {
 			projectId := projectIdx + 1
@@ -248,7 +248,8 @@ func main() {
 				parentId = nullEveryPercent(random, 0.5, fmt.Sprintf("%d", random.Intn(i)+1+projectIdx*taskCount))
 			}
 			shortTitle := fmt.Sprintf("T-%d", i+1)
-			fmt.Printf("(%d, %s, '%s')", projectId, parentId, shortTitle)
+			icon := from(random, emojis)
+			fmt.Printf("(%d, %s, '%s', '%s')", projectId, parentId, shortTitle, icon)
 
 			endInserts((projectIdx+1)*(i+1)-1, projectCount*taskCount)
 		}

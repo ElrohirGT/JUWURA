@@ -8,6 +8,7 @@ const zap = @import("zap");
 const pg = @import("pg");
 const uwu_lib = @import("juwura");
 const uwu_log = uwu_lib.log;
+const uwu_db = uwu_lib.utils.db;
 
 pub const Self = @This();
 
@@ -85,7 +86,10 @@ fn get_user(e: *zap.Endpoint, r: zap.Request) void {
             .string("email", get_params.email)
             .log();
         var dataRow = conn.row(query, params) catch |err| {
-            uwu_lib.manageQueryError(conn, err);
+            var l = uwu_log.logErr("Error selecting user in DB...").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
             r.setStatus(.bad_request);
             r.sendBody("QUERY ERROR") catch unreachable;
             return;

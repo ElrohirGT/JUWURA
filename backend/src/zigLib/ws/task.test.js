@@ -115,10 +115,10 @@ describe("Create Task test suite", () => {
 		console.log("Created project with ID", projectId);
 	});
 
-	test("Can create a task", async () => {
+	test.only("Can create a task", async () => {
 		const email = "correo1@gmail.com";
-		const type = "EPIC";
-		const taskId = await createTask(email, type, projectId);
+		const parentId = null;
+		const taskId = await createTask(email, projectId, parentId, "😀");
 
 		expect(taskId).toEqual(expect.any(Number));
 	});

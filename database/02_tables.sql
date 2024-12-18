@@ -9,7 +9,8 @@ CREATE TABLE project (
     id SERIAL PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
     photo_url TEXT NOT NULL,
-    icon CHAR(1) NOT NULL
+    icon CHAR(1) NOT NULL,
+    next_task_id INTEGER NOT NULL DEFAULT 0
 );
 COMMENT ON TABLE project IS 'Stores all projects in JUWURA';
 
@@ -26,7 +27,8 @@ CREATE TABLE task (
     id SERIAL PRIMARY KEY,
     parent_id INTEGER REFERENCES task (id),
     project_id INTEGER REFERENCES project (id) NOT NULL,
-    short_title VARCHAR(16) NOT NULL
+    short_title VARCHAR(16) NOT NULL,
+    icon CHAR(1) NOT NULL
 );
 COMMENT ON TABLE task IS
 'Stores all the task of all the projects, only some fields are required';
