@@ -94,7 +94,7 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
                 };
 
                 return err;
-            } orelse unreachable;
+            } orelse return error.ProjectDoesntExists;
             defer dataRow.deinit() catch unreachable;
 
             break :id_obtaining_block dataRow.get(i32, 0);

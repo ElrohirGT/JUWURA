@@ -115,7 +115,7 @@ describe("Create Task test suite", () => {
 		console.log("Created project with ID", projectId);
 	});
 
-	test.only("Can create a task", async () => {
+	test("Can create a task", async () => {
 		const email = "correo1@gmail.com";
 		const parentId = null;
 		const taskId = await createTask(email, projectId, parentId, "😀");
@@ -131,8 +131,9 @@ describe("Create Task test suite", () => {
 			projectId,
 			{
 				create_task: {
-					task_type: "EPIC",
 					project_id: 0, // This project id doesn't exist!
+					parent_id: null,
+					icon: "😀",
 				},
 			},
 			"CreateTaskError",
@@ -148,8 +149,9 @@ describe("Create Task test suite", () => {
 				projectId,
 				{
 					create_task: {
-						task_type: "TASK",
 						project_id: projectId,
+						parent_id: null,
+						icon: "😀",
 					},
 				},
 				{
@@ -157,19 +159,16 @@ describe("Create Task test suite", () => {
 						task: {
 							id: expect.any(Number),
 							project_id: expect.any(Number),
-							type: expect.any(String),
-							due_date: null,
-							name: null,
-							priority: null,
-							sprint: null,
-							status: null,
+							parent_id: null,
+							short_title: expect.any(String),
+							icon: "😀",
+							fields: [],
 						},
 					},
 				},
 				(response) => {
 					const { task } = response.create_task;
 					expect(task.project_id).toBe(projectId);
-					expect(task.type).toBe("TASK");
 				},
 			)(),
 		7000,

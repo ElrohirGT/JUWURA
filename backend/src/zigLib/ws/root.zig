@@ -208,7 +208,12 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
         const request = parsed.value;
         switch (request) {
             .create_task => {
-                const task_response = uwu_db.retryOperation(.{}, uwu_tasks.create_task, .{ conn.allocator, conn.pool, request.create_task }) catch |err| {
+                const task_response = uwu_db.retryOperation(
+                    .{ .max_retries = 3 },
+                    uwu_tasks.create_task,
+                    .{ conn.allocator, conn.pool, request.create_task },
+                    &[_]anyerror{error.ProjectDoesntExists},
+                ) catch |err| {
                     uwu_log.logErr("An error occurred creating a task!").src(@src()).err(err).string("message", message).log();
                     const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.CreateTaskError }) catch unreachable;
                     defer conn.allocator.free(serve_error);
@@ -223,7 +228,12 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                 WebsocketHandler.publish(.{ .channel = conn.project_id, .message = response });
             },
             .update_task => {
-                const task_response = uwu_db.retryOperation(.{}, uwu_tasks.update_task, .{ conn.allocator, conn.pool, request.update_task }) catch |err| {
+                const task_response = uwu_db.retryOperation(
+                    .{ .max_retries = 3 },
+                    uwu_tasks.update_task,
+                    .{ conn.allocator, conn.pool, request.update_task },
+                    &[_]anyerror{error.ProjectDoesntExists},
+                ) catch |err| {
                     uwu_log.logErr("An error occurred updating a task!").src(@src()).err(err).string("message", message).log();
                     const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.UpdateTaskError }) catch unreachable;
                     defer conn.allocator.free(serve_error);

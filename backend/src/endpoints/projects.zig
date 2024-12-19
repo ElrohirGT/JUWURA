@@ -58,7 +58,12 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     const request = parsed.value;
     uwu_log.logInfo("Body parsed!").log();
 
-    const response = uwu_db.retryOperation(.{ .max_retries = 5 }, uwu_projects.create_project, .{ self.alloc, self.pool, request }) catch |err| switch (err) {
+    const response = uwu_db.retryOperation(
+        .{ .max_retries = 5 },
+        uwu_projects.create_project,
+        .{ self.alloc, self.pool, request },
+        &[_]anyerror{},
+    ) catch |err| switch (err) {
         uwu_projects.CreateProjectErrors.NoDBConnectionAquired => {
             r.setStatus(.internal_server_error);
             r.sendBody("NO DB CONNECTION AQUIRED") catch unreachable;
