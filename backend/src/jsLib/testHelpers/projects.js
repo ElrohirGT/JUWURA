@@ -37,6 +37,56 @@ export async function createProject(userEmail, name, icon, url, members) {
 			name: expect.any(String),
 			photo_url: expect.any(String),
 			icon: expect.any(String),
+			owner: expect.any(String),
+		},
+	};
+
+	expect(response.status).toBe(200);
+	expect(response.data).toEqual(expectedStructure);
+
+	const { project } = response.data;
+	expect(project.name).toBe(payload.name);
+	expect(project.icon).toBe(payload.icon);
+	expect(project.photo_url).toBe(payload.photo_url);
+	expect(project.owner).toBe(payload.email);
+
+	return project.id;
+}
+
+/**
+ * Updates a project with.
+ * @param {number} id
+ * @param {string} name
+ * @param {string} icon
+ * @param {string[]} members
+ * @param {string} photo_url
+ * @returns {Promise<number>} The project ID
+ */
+export async function updateProject(id, name, photo_url, icon, members) {
+	const payload = {
+		id,
+		name,
+		photo_url,
+		icon,
+		members,
+		now_timestamp: new Date().getTime(),
+	};
+
+	const response = await axios.put(API_URL, payload, {
+		validateStatus: () => true,
+	});
+
+	if (response.status !== 200) {
+		console.error(response.data);
+	}
+
+	const expectedStructure = {
+		project: {
+			id: expect.any(Number),
+			name: expect.any(String),
+			photo_url: expect.any(String),
+			icon: expect.any(String),
+			owner: expect.any(String),
 		},
 	};
 
