@@ -172,7 +172,10 @@ fn on_close_base(connection: ?*Connection, uuid: isize) void {
 
 const WebsocketAPIError = error{ MalformedMessage, InternalServerError } || uwu_tasks.Errors;
 
-const WebsocketRequest = union(enum) { create_task: uwu_tasks.CreateTaskRequest, update_task: uwu_tasks.UpdateTaskRequest };
+const WebsocketRequest = union(enum) {
+    create_task: uwu_tasks.CreateTaskRequest,
+    update_task: uwu_tasks.UpdateTaskRequest,
+};
 const WebsocketResponse = union(enum) {
     err: WebsocketAPIError,
     user_connected: []const u8,
@@ -241,7 +244,7 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                 WebsocketHandler.publish(.{ .channel = conn.project_id, .message = response });
             },
             .update_task => {
-                const task_response = uwu_db.retryOperation(
+                const task_response: uwu_tasks.UpdateTaskResponse = uwu_db.retryOperation(
                     .{ .max_retries = 3 },
                     uwu_tasks.update_task,
                     .{ conn.allocator, conn.pool, request.update_task },
@@ -254,6 +257,8 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                     WebsocketHandler.write(handle, serve_error, true) catch unreachable;
                     return;
                 };
+                defer conn.allocator.free(task_response.task.short_title);
+                defer conn.allocator.free(task_response.task.icon);
 
                 const response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .update_task = task_response }) catch unreachable;
                 defer conn.allocator.free(response);

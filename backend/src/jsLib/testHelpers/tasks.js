@@ -112,7 +112,14 @@ export async function updateTask(email, projectId, taskData) {
 
 	const expectedResponse = {
 		update_task: {
-			task: taskData,
+			task: {
+				id: taskData.task_id,
+				icon: taskData.icon,
+				parent_id: taskData.parent_id,
+				short_title: taskData.short_title,
+				project_id: projectId,
+				fields: [],
+			},
 		},
 	};
 	expect(response).toEqual(expectedResponse);

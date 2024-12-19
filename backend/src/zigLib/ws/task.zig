@@ -150,7 +150,7 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
 
 pub const UpdateTaskRequest = struct {
     task_id: i32,
-    parent_id: i32,
+    parent_id: ?i32 = null,
     short_title: []const u8,
     icon: []const u8,
 };
@@ -166,7 +166,7 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
             \\ UPDATE task SET
             \\ parent_id = $2,
             \\ short_title = $3,
-            \\ icon = $4,
+            \\ icon = $4
             \\ WHERE id = $1
             \\ RETURNING *
         ;
@@ -188,7 +188,6 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
         defer dataRow.deinit() catch unreachable;
         break :task_creation_block taskFromDB(alloc, &dataRow) catch unreachable;
     };
-    defer alloc.free(task.short_title);
     uwu_log.logInfo("Task updated!")
         .int("task_id", task.id)
         .int("parent_id", task.parent_id)

@@ -26,7 +26,7 @@ describe("Update Task test suite", () => {
 		console.log("Task created with ID", taskId);
 	});
 
-	test("Can update a task", async () => {
+	test.only("Can update a task", async () => {
 		/**@type {import("../../jsLib/testHelpers/tasks").TaskData}*/
 		const data = {
 			task_id: taskId,
@@ -109,7 +109,7 @@ describe("Create Task test suite", () => {
 		console.log("Created project with ID", projectId);
 	});
 
-	test.only("Can create a task", async () => {
+	test("Can create a task", async () => {
 		const email = "correo1@gmail.com";
 		const parentId = null;
 		const taskId = await createTask(email, projectId, parentId, "😀");
