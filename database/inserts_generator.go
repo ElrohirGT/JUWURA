@@ -156,12 +156,13 @@ func main() {
 
 	// Generate projects...
 	projectCount := 5
-	fmt.Println("INSERT INTO project (name, photo_url, icon, next_task_id) VALUES")
+	fmt.Println("INSERT INTO project (name, photo_url, icon, owner, next_task_id) VALUES")
 	for i := range projectCount {
 		name := fmt.Sprintf("Proyecto %s", from(random, names))
 		photo := from(random, projectBanners)
 		icon := from(random, emojis)
-		fmt.Printf("('%s', '%s', '%s', DEFAULT)", name, photo, icon)
+		owner := from(random, generatedEmails)
+		fmt.Printf("('%s', '%s', '%s', '%s', DEFAULT)", name, photo, icon, owner)
 
 		endInserts(i, projectCount)
 	}

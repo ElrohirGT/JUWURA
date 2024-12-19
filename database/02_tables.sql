@@ -10,6 +10,7 @@ CREATE TABLE project (
     name VARCHAR(64) NOT NULL,
     photo_url TEXT NOT NULL,
     icon CHAR(1) NOT NULL,
+    owner VARCHAR(100) REFERENCES app_user (email) NOT NULL,
     next_task_id INTEGER NOT NULL DEFAULT 0
 );
 COMMENT ON TABLE project IS 'Stores all projects in JUWURA';

@@ -12,13 +12,17 @@ export const API_HOST = "http://127.0.0.1:3000";
 
 /**
  * Generates a test case that POSTs a request to the supplied URL with no body attached!
- * @param {string} url The HTTP url endpoint to check when no payload is supplied
+ * @param {string} url - The HTTP url endpoint to check when no payload is supplied
+ * @param {"get"|"post"|"put"|"patch"|"delete"} [method="get"] - The method for the request
  * @returns {TestCase} The test implemented test case.
  */
-export function noPayloadSupplied(url) {
+export function noPayloadSupplied(url, method = "get") {
 	return async () => {
 		const payload = null;
-		const response = await axios.post(url, payload, {
+		const response = await axios({
+			method,
+			url,
+			data: payload,
 			validateStatus: () => true,
 		});
 
