@@ -16,9 +16,6 @@ alloc: std.mem.Allocator = undefined,
 ep: zap.Endpoint = undefined,
 pool: *pg.Pool,
 
-/// Struct that represents a project in JUWURA
-const Project = struct { id: i32, name: []u8, photo_url: []u8, icon: []u8 };
-
 pub fn init(a: std.mem.Allocator, pool: *pg.Pool, path: []const u8) Self {
     return .{ .alloc = a, .pool = pool, .ep = zap.Endpoint.init(.{ .path = path, .post = post_project }) };
 }
@@ -58,7 +55,7 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     const request = parsed.value;
     uwu_log.logInfo("Body parsed!").log();
 
-    const response = uwu_db.retryOperation(
+    const response: uwu_projects.CreateProjectResponse = uwu_db.retryOperation(
         .{ .max_retries = 5 },
         uwu_projects.create_project,
         .{ self.alloc, self.pool, request },
@@ -75,6 +72,7 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
             return;
         },
     };
+
     const responseBody = uwu_lib.toJson(self.alloc, response) catch unreachable;
     defer self.alloc.free(responseBody);
     defer response.project.deinit(self.alloc);

@@ -18,6 +18,17 @@ pub const Task = struct {
     short_title: []const u8,
     icon: []const u8,
     fields: []TaskField,
+
+    /// Frees all the memory associated with the task...
+    pub fn deinit(self: Task, alloc: std.mem.Allocator) void {
+        alloc.free(self.short_title);
+        alloc.free(self.icon);
+
+        for (self.fields) |field| {
+            alloc.free(field.value);
+            alloc.free(field.type);
+        }
+    }
 };
 
 /// Duplicates an array of `ValueType`s if the `value` is not null.

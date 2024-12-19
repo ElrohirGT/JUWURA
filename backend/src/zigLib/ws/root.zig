@@ -235,8 +235,7 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                     WebsocketHandler.write(handle, serve_error, true) catch unreachable;
                     return;
                 };
-                defer conn.allocator.free(task_response.task.short_title);
-                defer conn.allocator.free(task_response.task.icon);
+                defer task_response.task.deinit(conn.allocator);
 
                 const response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .create_task = task_response }) catch unreachable;
                 defer conn.allocator.free(response);
@@ -257,8 +256,7 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                     WebsocketHandler.write(handle, serve_error, true) catch unreachable;
                     return;
                 };
-                defer conn.allocator.free(task_response.task.short_title);
-                defer conn.allocator.free(task_response.task.icon);
+                defer task_response.task.deinit(conn.allocator);
 
                 const response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .update_task = task_response }) catch unreachable;
                 defer conn.allocator.free(response);

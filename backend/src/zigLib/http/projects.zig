@@ -7,9 +7,9 @@ const uwu_db = uwu_lib.utils.db;
 
 pub const Project = struct {
     id: i32,
-    name: []u8,
-    photo_url: []u8,
-    icon: []u8,
+    name: []const u8,
+    photo_url: []const u8,
+    icon: []const u8,
 
     pub fn deinit(self: Project, alloc: std.mem.Allocator) void {
         alloc.free(self.name);
@@ -23,7 +23,14 @@ pub const CreateProjectErrors = error{
     QueryError,
 };
 
-pub const CreateProjectRequest = struct { email: []u8, name: []u8, photo_url: []u8, now_timestamp: i64, icon: [4]u8, members: [][]u8 };
+pub const CreateProjectRequest = struct {
+    email: []const u8,
+    name: []const u8,
+    photo_url: []const u8,
+    now_timestamp: i64,
+    icon: [4]u8,
+    members: [][]const u8,
+};
 pub const CreateProjectResponse = struct { project: Project };
 pub fn create_project(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateProjectRequest) CreateProjectErrors!CreateProjectResponse {
     uwu_log.logInfo("Getting DB connection...").log();
@@ -100,7 +107,7 @@ pub fn create_project(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateProje
     return response;
 }
 
-fn add_member_to_project(memberEmail: []u8, conn: *pg.Conn, projectId: i32, now_timestamp: i64) !void {
+fn add_member_to_project(memberEmail: []const u8, conn: *pg.Conn, projectId: i32, now_timestamp: i64) !void {
     const query = "INSERT INTO project_member (project_id, user_id, last_visited) VALUES ($1, $2, $3)";
     const params = .{ projectId, memberEmail, now_timestamp };
 
