@@ -3,12 +3,13 @@ const pg = @import("pg");
 const zap = @import("zap");
 const uwu_lib = @import("../root.zig");
 const uwu_log = uwu_lib.log;
+const uwu_db = uwu_lib.utils.db;
 
 pub const Project = struct {
     id: i32,
-    name: []u8,
-    photo_url: []u8,
-    icon: []u8,
+    name: []const u8,
+    photo_url: []const u8,
+    icon: []const u8,
 
     pub fn deinit(self: Project, alloc: std.mem.Allocator) void {
         alloc.free(self.name);
@@ -22,7 +23,14 @@ pub const CreateProjectErrors = error{
     QueryError,
 };
 
-pub const CreateProjectRequest = struct { email: []u8, name: []u8, photo_url: []u8, now_timestamp: i64, icon: [4]u8, members: [][]u8 };
+pub const CreateProjectRequest = struct {
+    email: []const u8,
+    name: []const u8,
+    photo_url: []const u8,
+    now_timestamp: i64,
+    icon: [4]u8,
+    members: [][]const u8,
+};
 pub const CreateProjectResponse = struct { project: Project };
 pub fn create_project(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateProjectRequest) CreateProjectErrors!CreateProjectResponse {
     uwu_log.logInfo("Getting DB connection...").log();
@@ -34,7 +42,9 @@ pub fn create_project(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateProje
     uwu_log.logInfo("Connection aquired!").log();
 
     conn.begin() catch |err| {
-        uwu_lib.manageQueryError(conn, err);
+        var l = uwu_log.logErr("Error while beginning transaction!").src(@src());
+        uwu_db.logPgError(l, err, conn);
+        l.log();
         return error.QueryError;
     };
     const project: Project = project_creation_block: {
@@ -48,8 +58,14 @@ pub fn create_project(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateProje
             .log();
 
         var dataRow = conn.row(query, params) catch |err| {
-            uwu_lib.manageTransactionError(conn, err) catch {
-                return error.QueryError;
+            var l = uwu_log.logErr("Error while creating DB project!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            conn.rollback() catch |rollBackErr| {
+                var lo = uwu_log.logErr("Error while creating DB project!").src(@src());
+                uwu_db.logPgError(lo, rollBackErr, conn);
+                lo.log();
             };
             return error.QueryError;
         } orelse unreachable;
@@ -73,33 +89,25 @@ pub fn create_project(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateProje
 
     uwu_log.logInfo("Adding members to project...").log();
     for (req.members) |memberEmail| {
-        add_member_to_project(memberEmail, conn, project.id, req.now_timestamp) catch |err| {
-            uwu_lib.manageTransactionError(conn, err) catch {
-                return error.QueryError;
-            };
-            return error.QueryError;
-        };
+        add_member_to_project(memberEmail, conn, project.id, req.now_timestamp) catch return error.QueryError;
     }
     uwu_log.logInfo("Members added!").log();
 
     uwu_log.logInfo("Adding creator to project...").log();
-    add_member_to_project(req.email, conn, project.id, req.now_timestamp) catch |err| {
-        uwu_lib.manageTransactionError(conn, err) catch {
-            return error.QueryError;
-        };
-        return error.QueryError;
-    };
+    add_member_to_project(req.email, conn, project.id, req.now_timestamp) catch return error.QueryError;
     uwu_log.logInfo("Creator added!").log();
 
     conn.commit() catch |err| {
-        uwu_lib.manageQueryError(conn, err);
+        var l = uwu_log.logErr("Error while committing transaction!").src(@src());
+        uwu_db.logPgError(l, err, conn);
+        l.log();
         return error.QueryError;
     };
 
     return response;
 }
 
-fn add_member_to_project(memberEmail: []u8, conn: *pg.Conn, projectId: i32, now_timestamp: i64) !void {
+fn add_member_to_project(memberEmail: []const u8, conn: *pg.Conn, projectId: i32, now_timestamp: i64) !void {
     const query = "INSERT INTO project_member (project_id, user_id, last_visited) VALUES ($1, $2, $3)";
     const params = .{ projectId, memberEmail, now_timestamp };
 
@@ -109,6 +117,12 @@ fn add_member_to_project(memberEmail: []u8, conn: *pg.Conn, projectId: i32, now_
         .string("userEmail", memberEmail)
         .int("last_visited", now_timestamp)
         .log();
-    _ = try conn.exec(query, params);
+    _ = conn.exec(query, params) catch |err| {
+        var l = uwu_log.logErr("Error while adding member to project!").src(@src());
+        uwu_db.logPgError(l, err, conn);
+        l.log();
+
+        return err;
+    };
     uwu_log.logDebug("Member added to project!").log();
 }

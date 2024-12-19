@@ -61,6 +61,7 @@ export function malformedJSON(url) {
  * @param {number} projectId - The project id to connect to
  * @param {string} errorToCheck - The error value to check for
  * @param {any} erroneousPayload The payload to send in the websocket
+ * @returns {TestCase} - The test case
  */
 export function errorOnlyOnSameClient(
 	c1Email,
@@ -135,11 +136,13 @@ export function errorOnlyOnSameClient(
  * @param {number} projectId - The project id to connect to
  * @param {any} payload - The payload to send through connection 1
  * @param {any} expectedResponse - The response that both connection 1 and 2 must receive
+ * @param {string} responseVariant - The response variant to listen for inside the ws messages.
  * @param {(response: any) => void} additionalChecks - Additional checks to make on the websocket response
  */
 export function messageIsSentToAllClients(
 	c1Email,
 	c2Email,
+	responseVariant,
 	projectId,
 	payload,
 	expectedResponse,
@@ -153,7 +156,7 @@ export function messageIsSentToAllClients(
 			client1.configureHandlers(rej, (rev) => {
 				try {
 					const response = JSON.parse(rev);
-					if (response.create_task) {
+					if (response[responseVariant]) {
 						res(response);
 					}
 				} catch {}
@@ -163,7 +166,7 @@ export function messageIsSentToAllClients(
 			client2.configureHandlers(rej, (rev) => {
 				try {
 					const response = JSON.parse(rev);
-					if (response.create_task) {
+					if (response[responseVariant]) {
 						res(response);
 					}
 				} catch {}
@@ -180,7 +183,7 @@ export function messageIsSentToAllClients(
 			// console.log("SERVER:", response, "EXPECTED:", expectedResponse);
 			// console.log("EXPECTED: ", response);
 			expect(response).toEqual(expectedResponse);
-			additionalChecks(response);
+			additionalChecks ? additionalChecks(response) : {};
 		}
 	};
 }

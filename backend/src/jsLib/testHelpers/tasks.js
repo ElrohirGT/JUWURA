@@ -4,15 +4,17 @@ import { generateClient } from "../ws";
 /**
  * Creates a task given the auth and minimum data.
  * @param {string} email - The email of the user
- * @param {string} type - The task type
- * @param {number} projectId The id of the project
+ * @param {number} projectId - The id of the project
+ * @param {number|null} parentId - The ID of the parent task
+ * @param {string} icon - The task type
  * @returns {Promise<number>} The created task id
  */
-export async function createTask(email, type, projectId) {
+export async function createTask(email, projectId, parentId, icon) {
 	const payload = {
 		create_task: {
-			task_type: type,
 			project_id: projectId,
+			parent_id: parentId,
+			icon,
 		},
 	};
 
@@ -38,12 +40,10 @@ export async function createTask(email, type, projectId) {
 			task: {
 				id: expect.any(Number),
 				project_id: expect.any(Number),
-				type: expect.any(String),
-				due_date: null,
-				name: null,
-				priority: null,
-				sprint: null,
-				status: null,
+				parent_id: parentId,
+				short_title: expect.any(String),
+				icon: expect.any(String),
+				fields: [],
 			},
 		},
 	};
@@ -51,28 +51,43 @@ export async function createTask(email, type, projectId) {
 
 	const { task } = response.create_task;
 	expect(task.project_id).toBe(projectId);
-	expect(task.type).toBe(type);
+	expect(task.parent_id).toBe(parentId);
+	expect(task.icon).toBe(icon);
+	expect(task.fields).toEqual([]);
 
 	return task.id;
 }
 
 /**
+ * @typedef {Object} TaskField
+ * @property {number} id
+ * @property {"TEXT"|"DATE"|"CHOICE"|"NUMBER"|"ASSIGNEE"} type
+ * @property {string} value
+ */
+
+/**
  * @typedef {Object} TaskData
- * @property {number}id
- * @property {number}project_id
- * @property {string}type
- * @property {number|null}due_date
- * @property {string|null}name
- * @property {string|null}priority
- * @property {number|null}sprint
- * @property {string|null}status
+ * @property {number} id
+ * @property {number} project_id
+ * @property {number|null} parent_id
+ * @property {string} short_title
+ * @property {string} icon
+ * @property {[]TaskField} fields
+ */
+
+/**
+ * @typedef {Object} UpdateTaskRequest
+ * @property{number} task_id
+ * @property{number|null} parent_id
+ * @property{string} short_title
+ * @property{string} icon
  */
 
 /**
  * Creates a task given the auth and minimum data.
  * @param {string} email - The email of the user
  * @param {number} projectId - The project ID for the connection
- * @param {TaskData} taskData - The data of the task to create
+ * @param {UpdateTaskRequest} taskData - The data of the task to update
  * @returns {Promise<number>} The updated task id
  */
 export async function updateTask(email, projectId, taskData) {
@@ -97,7 +112,14 @@ export async function updateTask(email, projectId, taskData) {
 
 	const expectedResponse = {
 		update_task: {
-			task: taskData,
+			task: {
+				id: taskData.task_id,
+				icon: taskData.icon,
+				parent_id: taskData.parent_id,
+				short_title: taskData.short_title,
+				project_id: projectId,
+				fields: [],
+			},
 		},
 	};
 	expect(response).toEqual(expectedResponse);

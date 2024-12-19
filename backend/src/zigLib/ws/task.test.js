@@ -22,21 +22,17 @@ describe("Update Task test suite", () => {
 		console.log("Created project with ID", projectId);
 
 		console.log("Creating task for test...");
-		taskId = await createTask("correo1@gmail.com", "TASK", projectId);
+		taskId = await createTask("correo1@gmail.com", projectId, null, "😀");
 		console.log("Task created with ID", taskId);
 	});
 
 	test("Can update a task", async () => {
 		/**@type {import("../../jsLib/testHelpers/tasks").TaskData}*/
 		const data = {
-			id: taskId,
-			project_id: projectId,
-			type: "TASK",
-			due_date: new Date().getTime(),
-			name: "Task updated!",
-			priority: "HIGH",
-			sprint: null,
-			status: null,
+			task_id: taskId,
+			parent_id: null,
+			short_title: "Task Title",
+			icon: "💀",
 		};
 		const updatedTaskId = await updateTask(
 			"correo1@gmail.com",
@@ -47,53 +43,70 @@ describe("Update Task test suite", () => {
 		expect(updatedTaskId).toEqual(expect.any(Number));
 	});
 
-	test(
-		"Create task error is sent only to request client",
-		errorOnlyOnSameClient(
+	test("Can add a parent id for task", async () => {
+		/**@type {import("../../jsLib/testHelpers/tasks").TaskData}*/
+		const parentId = await createTask(
+			"correo1@gmail.com",
+			projectId,
+			null,
+			"😀",
+		);
+		const data = {
+			task_id: taskId,
+			parent_id: parentId,
+			short_title: "Task Title",
+			icon: "💀",
+		};
+		const updatedTaskId = await updateTask(
+			"correo1@gmail.com",
+			projectId,
+			data,
+		);
+
+		expect(updatedTaskId).toEqual(expect.any(Number));
+	});
+
+	test("Update task error is sent to only request client", async () =>
+		await errorOnlyOnSameClient(
 			"correo1@gmail.com",
 			"correo2@gmail.com",
 			projectId,
 			{
-				create_task: {
-					task_type: "EPIC",
-					project_id: 0, // This project id doesn't exist!
+				// Invalid task payload
+				update_task: {
+					project_id: 0,
 				},
 			},
-			"CreateTaskError",
-		),
-	);
+			"UpdateTaskError",
+		));
 
 	test(
-		"Create task response is sent to all connected clients",
+		"Update task response is sent to all connected clients",
 		async () =>
 			await messageIsSentToAllClients(
 				"correo1@gmail.com",
 				"correo2@gmail.com",
+				"update_task",
 				projectId,
 				{
-					create_task: {
-						task_type: "TASK",
-						project_id: projectId,
+					update_task: {
+						task_id: taskId,
+						parent_id: null,
+						short_title: "SHORT TITLE",
+						icon: "🤣",
 					},
 				},
 				{
-					create_task: {
+					update_task: {
 						task: {
-							id: expect.any(Number),
-							project_id: expect.any(Number),
-							type: expect.any(String),
-							due_date: null,
-							name: null,
-							priority: null,
-							sprint: null,
-							status: null,
+							id: taskId,
+							icon: "🤣",
+							parent_id: null,
+							short_title: "SHORT TITLE",
+							project_id: projectId,
+							fields: [],
 						},
 					},
-				},
-				(response) => {
-					const { task } = response.create_task;
-					expect(task.project_id).toBe(projectId);
-					expect(task.type).toBe("TASK");
 				},
 			)(),
 		7000,
@@ -117,27 +130,26 @@ describe("Create Task test suite", () => {
 
 	test("Can create a task", async () => {
 		const email = "correo1@gmail.com";
-		const type = "EPIC";
-		const taskId = await createTask(email, type, projectId);
+		const parentId = null;
+		const taskId = await createTask(email, projectId, parentId, "😀");
 
 		expect(taskId).toEqual(expect.any(Number));
 	});
 
-	test(
-		"Create task error is sent only to request client",
-		errorOnlyOnSameClient(
+	test("Create task error is sent only to request client", async () =>
+		await errorOnlyOnSameClient(
 			"correo1@gmail.com",
 			"correo2@gmail.com",
 			projectId,
 			{
 				create_task: {
-					task_type: "EPIC",
 					project_id: 0, // This project id doesn't exist!
+					parent_id: null,
+					icon: "😀",
 				},
 			},
 			"CreateTaskError",
-		),
-	);
+		));
 
 	test(
 		"Create task response is sent to all connected clients",
@@ -145,11 +157,13 @@ describe("Create Task test suite", () => {
 			await messageIsSentToAllClients(
 				"correo1@gmail.com",
 				"correo2@gmail.com",
+				"create_task",
 				projectId,
 				{
 					create_task: {
-						task_type: "TASK",
 						project_id: projectId,
+						parent_id: null,
+						icon: "😀",
 					},
 				},
 				{
@@ -157,19 +171,16 @@ describe("Create Task test suite", () => {
 						task: {
 							id: expect.any(Number),
 							project_id: expect.any(Number),
-							type: expect.any(String),
-							due_date: null,
-							name: null,
-							priority: null,
-							sprint: null,
-							status: null,
+							parent_id: null,
+							short_title: expect.any(String),
+							icon: "😀",
+							fields: [],
 						},
 					},
 				},
 				(response) => {
 					const { task } = response.create_task;
 					expect(task.project_id).toBe(projectId);
-					expect(task.type).toBe("TASK");
 				},
 			)(),
 		7000,

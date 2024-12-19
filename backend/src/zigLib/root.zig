@@ -20,41 +20,7 @@ pub fn toJson(alloc: std.mem.Allocator, value: anytype) ![]u8 {
     defer buffer.deinit();
 
     try std.json.stringify(value, .{}, buffer.writer());
-    // for (buffer.items) |char| {
-    //     std.log.debug("{c}", .{char});
-    // }
-
     return buffer.toOwnedSlice();
-}
-
-/// Common logic for managing errors inside DB queries.
-/// This method responds to the HTTP request, so no longer action is needed.
-pub fn manageQueryError(conn: *const pg.Conn, err: anyerror) void {
-    var l = log.logErr("Error in query").err(err);
-    if (err == error.PG) {
-        if (conn.err) |pge| {
-            l = l.string("pg_error", pge.message);
-        }
-    }
-
-    l.log();
-}
-
-/// Common logic for managing errors inside DB queries in transactions.
-/// This method responds to the HTTP request, so no longer action is needed.
-pub fn manageTransactionError(conn: *pg.Conn, err: anyerror) !void {
-    manageQueryError(conn, err);
-    conn.rollback() catch |rollbackErr| {
-        var l = log.logErr("Error in rollback").err(rollbackErr);
-        if (err == error.PG) {
-            if (conn.err) |pge| {
-                l = l.string("pg_error", pge.message);
-            }
-        }
-        l.log();
-        return rollbackErr;
-    };
-    // utils.db.retryOperation(.{}, pg.Conn.rollback, .{conn}) catch unreachable;
 }
 
 /// Gets a query parameter from the request URL. Checks if is not null and not empty!
