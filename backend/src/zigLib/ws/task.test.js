@@ -26,11 +26,34 @@ describe("Update Task test suite", () => {
 		console.log("Task created with ID", taskId);
 	});
 
-	test.only("Can update a task", async () => {
+	test("Can update a task", async () => {
 		/**@type {import("../../jsLib/testHelpers/tasks").TaskData}*/
 		const data = {
 			task_id: taskId,
 			parent_id: null,
+			short_title: "Task Title",
+			icon: "💀",
+		};
+		const updatedTaskId = await updateTask(
+			"correo1@gmail.com",
+			projectId,
+			data,
+		);
+
+		expect(updatedTaskId).toEqual(expect.any(Number));
+	});
+
+	test("Can add a parent id for task", async () => {
+		/**@type {import("../../jsLib/testHelpers/tasks").TaskData}*/
+		const parentId = await createTask(
+			"correo1@gmail.com",
+			projectId,
+			null,
+			"😀",
+		);
+		const data = {
+			task_id: taskId,
+			parent_id: parentId,
 			short_title: "Task Title",
 			icon: "💀",
 		};
@@ -49,12 +72,12 @@ describe("Update Task test suite", () => {
 			"correo2@gmail.com",
 			projectId,
 			{
-				create_task: {
-					task_type: "EPIC",
-					project_id: 0, // This project id doesn't exist!
+				// Invalid task payload
+				update_task: {
+					project_id: 0,
 				},
 			},
-			"CreateTaskError",
+			"UpdateTaskError",
 		));
 
 	test(
@@ -63,31 +86,27 @@ describe("Update Task test suite", () => {
 			await messageIsSentToAllClients(
 				"correo1@gmail.com",
 				"correo2@gmail.com",
+				"update_task",
 				projectId,
 				{
-					create_task: {
-						task_type: "TASK",
-						project_id: projectId,
+					update_task: {
+						task_id: taskId,
+						parent_id: null,
+						short_title: "SHORT TITLE",
+						icon: "🤣",
 					},
 				},
 				{
-					create_task: {
+					update_task: {
 						task: {
-							id: expect.any(Number),
-							project_id: expect.any(Number),
-							type: expect.any(String),
-							due_date: null,
-							name: null,
-							priority: null,
-							sprint: null,
-							status: null,
+							id: taskId,
+							icon: "🤣",
+							parent_id: null,
+							short_title: "SHORT TITLE",
+							project_id: projectId,
+							fields: [],
 						},
 					},
-				},
-				(response) => {
-					const { task } = response.create_task;
-					expect(task.project_id).toBe(projectId);
-					expect(task.type).toBe("TASK");
 				},
 			)(),
 		7000,
@@ -138,6 +157,7 @@ describe("Create Task test suite", () => {
 			await messageIsSentToAllClients(
 				"correo1@gmail.com",
 				"correo2@gmail.com",
+				"create_task",
 				projectId,
 				{
 					create_task: {
