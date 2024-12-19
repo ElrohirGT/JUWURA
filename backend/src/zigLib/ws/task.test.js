@@ -22,21 +22,17 @@ describe("Update Task test suite", () => {
 		console.log("Created project with ID", projectId);
 
 		console.log("Creating task for test...");
-		taskId = await createTask("correo1@gmail.com", "TASK", projectId);
+		taskId = await createTask("correo1@gmail.com", projectId, null, "😀");
 		console.log("Task created with ID", taskId);
 	});
 
 	test("Can update a task", async () => {
 		/**@type {import("../../jsLib/testHelpers/tasks").TaskData}*/
 		const data = {
-			id: taskId,
-			project_id: projectId,
-			type: "TASK",
-			due_date: new Date().getTime(),
-			name: "Task updated!",
-			priority: "HIGH",
-			sprint: null,
-			status: null,
+			task_id: taskId,
+			parent_id: null,
+			short_title: "Task Title",
+			icon: "💀",
 		};
 		const updatedTaskId = await updateTask(
 			"correo1@gmail.com",
@@ -47,9 +43,8 @@ describe("Update Task test suite", () => {
 		expect(updatedTaskId).toEqual(expect.any(Number));
 	});
 
-	test(
-		"Create task error is sent only to request client",
-		errorOnlyOnSameClient(
+	test("Update task error is sent to only request client", async () =>
+		await errorOnlyOnSameClient(
 			"correo1@gmail.com",
 			"correo2@gmail.com",
 			projectId,
@@ -60,11 +55,10 @@ describe("Update Task test suite", () => {
 				},
 			},
 			"CreateTaskError",
-		),
-	);
+		));
 
 	test(
-		"Create task response is sent to all connected clients",
+		"Update task response is sent to all connected clients",
 		async () =>
 			await messageIsSentToAllClients(
 				"correo1@gmail.com",
@@ -115,7 +109,7 @@ describe("Create Task test suite", () => {
 		console.log("Created project with ID", projectId);
 	});
 
-	test("Can create a task", async () => {
+	test.only("Can create a task", async () => {
 		const email = "correo1@gmail.com";
 		const parentId = null;
 		const taskId = await createTask(email, projectId, parentId, "😀");

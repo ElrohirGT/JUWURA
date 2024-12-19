@@ -37,7 +37,7 @@ fn taskFromDB(alloc: std.mem.Allocator, row: *pg.QueryRow) !Task {
     const parent_id = row.get(?i32, 1);
     const project_id = row.get(i32, 2);
     const short_title = try alloc.dupe(u8, row.get([]const u8, 3));
-    const icon = row.get([]const u8, 4);
+    const icon = try alloc.dupe(u8, row.get([]const u8, 4));
     const fields = &[_]TaskField{};
 
     return Task{
@@ -131,7 +131,6 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
 
         break :task_creation_block try taskFromDB(alloc, &dataRow);
     };
-    defer alloc.free(task.short_title);
     conn.commit() catch |err| {
         var l = uwu_log.logErr("Error committing transaction!").src(@src());
         uwu_db.logPgError(l, err, conn);
@@ -140,9 +139,10 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
     };
 
     uwu_log.logInfo("Task created!")
-        .int("id", task.id)
         .int("projectId", task.project_id)
         .int("parentId", task.parent_id)
+        .string("short_title", task.short_title)
+        .string("icon", task.icon)
         .log();
 
     return CreateTaskResponse{ .task = task };
@@ -152,6 +152,7 @@ pub const UpdateTaskRequest = struct {
     task_id: i32,
     parent_id: i32,
     short_title: []const u8,
+    icon: []const u8,
 };
 pub const UpdateTaskResponse = struct { task: Task };
 pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequest) !UpdateTaskResponse {
@@ -165,14 +166,16 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
             \\ UPDATE task SET
             \\ parent_id = $2,
             \\ short_title = $3,
+            \\ icon = $4,
             \\ WHERE id = $1
             \\ RETURNING *
         ;
-        const params = .{ req.task_id, req.parent_id, req.short_title };
+        const params = .{ req.task_id, req.parent_id, req.short_title, req.icon };
         uwu_log.logInfo("Updating task in project...")
             .int("task_id", req.task_id)
             .int("parent_id", req.parent_id)
             .string("short_title", req.short_title)
+            .string("icon", req.icon)
             .log();
 
         var dataRow = conn.row(query, params) catch |err| {
@@ -180,7 +183,7 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
             uwu_db.logPgError(l, err, conn);
             l.log();
             return err;
-        } orelse unreachable;
+        } orelse return error.NoTaskFoundWithID;
 
         defer dataRow.deinit() catch unreachable;
         break :task_creation_block taskFromDB(alloc, &dataRow) catch unreachable;

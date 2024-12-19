@@ -43,7 +43,11 @@ pub const ConnectionManager = struct {
     const Self = @This();
 
     pub fn init(allocator: std.mem.Allocator, pool: *pg.Pool) Self {
-        return .{ .alloc = allocator, .pool = pool, .active_projects = UsersConnectionsByProject.init(allocator) };
+        return .{
+            .alloc = allocator,
+            .pool = pool,
+            .active_projects = UsersConnectionsByProject.init(allocator),
+        };
     }
 
     pub fn deinit(self: *Self) void {
@@ -208,19 +212,28 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
         const request = parsed.value;
         switch (request) {
             .create_task => {
-                const task_response = uwu_db.retryOperation(
+                const task_response: uwu_tasks.CreateTaskResponse = uwu_db.retryOperation(
                     .{ .max_retries = 3 },
                     uwu_tasks.create_task,
                     .{ conn.allocator, conn.pool, request.create_task },
                     &[_]anyerror{error.ProjectDoesntExists},
                 ) catch |err| {
-                    uwu_log.logErr("An error occurred creating a task!").src(@src()).err(err).string("message", message).log();
-                    const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.CreateTaskError }) catch unreachable;
+                    uwu_log.logErr("An error occurred creating a task!")
+                        .src(@src())
+                        .err(err)
+                        .string("message", message)
+                        .log();
+                    const serve_error = uwu_lib.toJson(
+                        conn.allocator,
+                        WebsocketResponse{ .err = WebsocketAPIError.CreateTaskError },
+                    ) catch unreachable;
                     defer conn.allocator.free(serve_error);
 
                     WebsocketHandler.write(handle, serve_error, true) catch unreachable;
                     return;
                 };
+                defer conn.allocator.free(task_response.task.short_title);
+                defer conn.allocator.free(task_response.task.icon);
 
                 const response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .create_task = task_response }) catch unreachable;
                 defer conn.allocator.free(response);
@@ -232,7 +245,7 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                     .{ .max_retries = 3 },
                     uwu_tasks.update_task,
                     .{ conn.allocator, conn.pool, request.update_task },
-                    &[_]anyerror{error.ProjectDoesntExists},
+                    &[_]anyerror{error.NoTaskFoundWithID},
                 ) catch |err| {
                     uwu_log.logErr("An error occurred updating a task!").src(@src()).err(err).string("message", message).log();
                     const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.UpdateTaskError }) catch unreachable;

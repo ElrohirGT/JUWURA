@@ -59,22 +59,35 @@ export async function createTask(email, projectId, parentId, icon) {
 }
 
 /**
+ * @typedef {Object} TaskField
+ * @property {number} id
+ * @property {"TEXT"|"DATE"|"CHOICE"|"NUMBER"|"ASSIGNEE"} type
+ * @property {string} value
+ */
+
+/**
  * @typedef {Object} TaskData
- * @property {number}id
- * @property {number}project_id
- * @property {string}type
- * @property {number|null}due_date
- * @property {string|null}name
- * @property {string|null}priority
- * @property {number|null}sprint
- * @property {string|null}status
+ * @property {number} id
+ * @property {number} project_id
+ * @property {number|null} parent_id
+ * @property {string} short_title
+ * @property {string} icon
+ * @property {[]TaskField} fields
+ */
+
+/**
+ * @typedef {Object} UpdateTaskRequest
+ * @property{number} task_id
+ * @property{number|null} parent_id
+ * @property{string} short_title
+ * @property{string} icon
  */
 
 /**
  * Creates a task given the auth and minimum data.
  * @param {string} email - The email of the user
  * @param {number} projectId - The project ID for the connection
- * @param {TaskData} taskData - The data of the task to create
+ * @param {UpdateTaskRequest} taskData - The data of the task to update
  * @returns {Promise<number>} The updated task id
  */
 export async function updateTask(email, projectId, taskData) {
