@@ -123,9 +123,8 @@ describe("Create Task test suite", () => {
 		expect(taskId).toEqual(expect.any(Number));
 	});
 
-	test(
-		"Create task error is sent only to request client",
-		errorOnlyOnSameClient(
+	test("Create task error is sent only to request client", async () =>
+		await errorOnlyOnSameClient(
 			"correo1@gmail.com",
 			"correo2@gmail.com",
 			projectId,
@@ -137,8 +136,7 @@ describe("Create Task test suite", () => {
 				},
 			},
 			"CreateTaskError",
-		),
-	);
+		));
 
 	test(
 		"Create task response is sent to all connected clients",

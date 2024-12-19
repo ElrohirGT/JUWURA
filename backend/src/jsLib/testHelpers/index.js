@@ -61,6 +61,7 @@ export function malformedJSON(url) {
  * @param {number} projectId - The project id to connect to
  * @param {string} errorToCheck - The error value to check for
  * @param {any} erroneousPayload The payload to send in the websocket
+ * @returns {TestCase} - The test case
  */
 export function errorOnlyOnSameClient(
 	c1Email,
