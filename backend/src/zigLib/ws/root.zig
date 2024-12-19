@@ -215,7 +215,7 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
         const request = parsed.value;
         switch (request) {
             .create_task => {
-                const task_response: uwu_tasks.CreateTaskResponse = uwu_db.retryOperation(
+                const response: uwu_tasks.CreateTaskResponse = uwu_db.retryOperation(
                     .{ .max_retries = 3 },
                     uwu_tasks.create_task,
                     .{ conn.allocator, conn.pool, request.create_task },
@@ -235,15 +235,15 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                     WebsocketHandler.write(handle, serve_error, true) catch unreachable;
                     return;
                 };
-                defer task_response.task.deinit(conn.allocator);
+                defer response.task.deinit(conn.allocator);
 
-                const response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .create_task = task_response }) catch unreachable;
-                defer conn.allocator.free(response);
+                const json_response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .create_task = response }) catch unreachable;
+                defer conn.allocator.free(json_response);
 
-                WebsocketHandler.publish(.{ .channel = conn.project_id, .message = response });
+                WebsocketHandler.publish(.{ .channel = conn.project_id, .message = json_response });
             },
             .update_task => {
-                const task_response: uwu_tasks.UpdateTaskResponse = uwu_db.retryOperation(
+                const response: uwu_tasks.UpdateTaskResponse = uwu_db.retryOperation(
                     .{ .max_retries = 3 },
                     uwu_tasks.update_task,
                     .{ conn.allocator, conn.pool, request.update_task },
@@ -256,12 +256,12 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                     WebsocketHandler.write(handle, serve_error, true) catch unreachable;
                     return;
                 };
-                defer task_response.task.deinit(conn.allocator);
+                defer response.task.deinit(conn.allocator);
 
-                const response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .update_task = task_response }) catch unreachable;
-                defer conn.allocator.free(response);
+                const json_response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .update_task = response }) catch unreachable;
+                defer conn.allocator.free(json_response);
 
-                WebsocketHandler.publish(.{ .channel = conn.project_id, .message = response });
+                WebsocketHandler.publish(.{ .channel = conn.project_id, .message = json_response });
             },
         }
     }
