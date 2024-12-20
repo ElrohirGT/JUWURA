@@ -42,6 +42,68 @@ describe("Edit Task Field test suite", () => {
 			"This is an example title!",
 		);
 	});
+
+	test("Edit field error is sent only to request client", async () =>
+		await errorOnlyOnSameClient(
+			"correo1@gmail.com",
+			"correo2@gmail.com",
+			projectId,
+			{
+				edit_task_field: {
+					// Both ids don't exist!
+					task_id: 0,
+					task_field_id: 0,
+					value: null,
+				},
+			},
+			"EditTaskFieldError",
+		)());
+
+	test("Edit task field response is sent to all connected clients", async () => {
+		const taskInfo = await getTask(taskId);
+		await messageIsSentToAllClients(
+			"correo1@gmail.com",
+			"correo2@gmail.com",
+			"edit_task_field",
+			projectId,
+			{
+				edit_task_field: {
+					task_id: taskId,
+					task_field_id: taskInfo.fields[0].id,
+					value: "😀",
+				},
+			},
+			{
+				edit_task_field: {
+					task: {
+						id: taskId,
+						project_id: projectId,
+						parent_id: null,
+						short_title: expect.any(String),
+						icon: "😀",
+						fields: expect.anything(),
+					},
+				},
+			},
+			(response) => {
+				/** @type {import("../jsLib/testHelpers/tasks.js").APITask} */
+				const task = response.edit_task_field.task;
+				let found = false;
+				for (const field of task.fields) {
+					if (field.value === "😀") {
+						found = true;
+						break;
+					}
+				}
+
+				if (!found) {
+					console.error(response);
+				}
+
+				expect(found).toBe(true);
+			},
+		)();
+	});
 });
 
 describe("Update Task test suite", () => {
@@ -112,11 +174,14 @@ describe("Update Task test suite", () => {
 			{
 				// Invalid task payload
 				update_task: {
-					project_id: 0,
+					task_id: 0,
+					parent_id: null,
+					short_title: "Task Title",
+					icon: "💀",
 				},
 			},
 			"UpdateTaskError",
-		));
+		)());
 
 	test(
 		"Update task response is sent to all connected clients",
@@ -187,7 +252,7 @@ describe("Create Task test suite", () => {
 				},
 			},
 			"CreateTaskError",
-		));
+		)());
 
 	test(
 		"Create task response is sent to all connected clients",
