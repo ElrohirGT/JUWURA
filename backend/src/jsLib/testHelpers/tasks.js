@@ -1,5 +1,62 @@
 import { expect } from "vitest";
+import axios from "axios";
 import { generateClient } from "../ws";
+import { API_HOST } from ".";
+
+export const API_URL = `${API_HOST}/tasks`;
+
+/**
+ * @typedef {Object} APITaskField
+ * @property {number} id
+ * @property {string} name
+ * @property {string} type
+ * @property {string|null} value
+ */
+
+/**
+ * @typedef {Object} APITask
+ *@property {number} id
+ *@property {number|null} parent_id
+ *@property {number} project_id
+ *@property {string} short_title
+ *@property {string} icon
+ *@property {APITaskField[]} fields
+ */
+
+/**
+ * Gets a task from from the backend with a given id.
+ * It also retrieves all the fields from it.
+ * @param {number} taskId - The ID of the task to get
+ * @returns {Promise<APITask>} The task in question.
+ */
+export async function getTask(taskId) {
+	const params = { taskId };
+	const response = await axios.get(API_URL, {
+		params,
+		validateStatus: () => true,
+	});
+
+	if (response.status !== 200) {
+		console.error(response.data);
+	}
+
+	expect(response.status).toBe(200);
+
+	/** @type {APITask} */
+	const task = response.data.task;
+	expect(task.id).toBe(taskId);
+	expect(task.project_id).toEqual(expect.any(Number));
+	expect(task.short_title).toEqual(expect.any(String));
+	expect(task.icon).toEqual(expect.any(String));
+
+	for (const field of task.fields) {
+		expect(field.id).toEqual(expect.any(Number));
+		expect(field.type).toEqual(expect.any(String));
+		expect(field.name).toEqual(expect.any(String));
+	}
+
+	return response.data;
+}
 
 /**
  * Edits a field in a task from a given project.

@@ -11,6 +11,7 @@ const uwu_ws = @import("./ws/root.zig");
 
 const ProjectsHttp = @import("endpoints/projects.zig");
 const UsersHttp = @import("endpoints/users.zig");
+const TasksHttp = @import("endpoints/tasks.zig");
 
 fn on_request(r: zap.Request) void {
     r.setHeader("Server", "JUWURA") catch unreachable;
@@ -114,6 +115,9 @@ pub fn main() !void {
 
     var users = UsersHttp.init(allocator, pool, "/users");
     try listener.register(users.endpoint());
+
+    var tasks = TasksHttp.init(allocator, pool, "/tasks");
+    try listener.register(tasks.endpoint());
 
     uwu_log.logInfo("Endpoints initialized!").log();
 
