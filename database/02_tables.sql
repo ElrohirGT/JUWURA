@@ -44,9 +44,9 @@ COMMENT ON TABLE task_unblock IS
 CREATE TABLE task_field_type (
     id SERIAL PRIMARY KEY,
     project_id INTEGER REFERENCES project (id),
-    name VARCHAR(16) NOT NULL
+    name VARCHAR(16) NOT NULL,
 
-		UNIQUE (project_id, name)
+    UNIQUE (project_id, name)
 );
 COMMENT ON TABLE task_field_type IS
 'Stores all the types of fields a task can have,
