@@ -71,7 +71,9 @@ the options to that task_field are saved here';
 CREATE TABLE task_fields_for_task (
     task_id INTEGER REFERENCES task (id) NOT NULL,
     task_field_id INTEGER REFERENCES task_field (id) NOT NULL,
-    value TEXT
+    value TEXT,
+
+    UNIQUE (task_id, task_field_id)
 );
 COMMENT ON TABLE task_fields_for_task IS
 'Relates all the custom task fields to a task';

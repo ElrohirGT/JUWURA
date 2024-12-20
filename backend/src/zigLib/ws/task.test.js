@@ -1,10 +1,41 @@
 import { expect, describe, test, beforeEach } from "vitest";
-import { createTask, updateTask } from "../../jsLib/testHelpers/tasks";
+import {
+	createTask,
+	editTaskField,
+	updateTask,
+} from "../../jsLib/testHelpers/tasks";
 import { createProject } from "../../jsLib/testHelpers/projects.js";
 import {
 	errorOnlyOnSameClient,
 	messageIsSentToAllClients,
 } from "../../jsLib/testHelpers/index.js";
+
+describe("Edit Task Field test suite", () => {
+	const userEmail = "correo3@gmail.com";
+	let projectId = 0;
+	let taskId = 0;
+
+	beforeEach(async () => {
+		console.log("Creating project for test...");
+		projectId = await createProject(
+			userEmail,
+			"UPDATE TASK TEST SUITE PROJECT",
+			"😀",
+			"https://img.freepik.com/free-photo/painting-mountain-lake-with-mountain-background_188544-9126.jpg",
+			["correo1@gmail.com", "correo2@gmail.com"],
+		);
+		console.log("Created project with ID", projectId);
+
+		console.log("Creating task for test...");
+		taskId = await createTask(userEmail, projectId, null, "😀");
+		console.log("Task created with ID", taskId);
+	});
+
+	test("Edit field of task", async () => {
+		// FIXME: this test doesn't work!
+		await editTaskField(userEmail, projectId, taskId, 1);
+	});
+});
 
 describe("Update Task test suite", () => {
 	let projectId = 0;

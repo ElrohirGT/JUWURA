@@ -4,12 +4,24 @@ const uwu_lib = @import("../root.zig");
 const uwu_log = uwu_lib.log;
 const uwu_db = uwu_lib.utils.db;
 
-pub const Errors = error{ CreateTaskError, DeleteTaskError, UpdateTaskError };
+pub const Errors = error{
+    CreateTaskError,
+    DeleteTaskError,
+    UpdateTaskError,
+    EditTaskFieldError,
+};
 
 pub const TaskField = struct {
     id: i32,
+    name: []const u8,
     type: []const u8,
     value: []const u8,
+
+    pub fn deinit(self: TaskField, alloc: std.mem.Allocator) void {
+        alloc.free(self.name);
+        alloc.free(self.type);
+        alloc.free(self.value);
+    }
 };
 pub const Task = struct {
     id: i32,
@@ -25,8 +37,7 @@ pub const Task = struct {
         alloc.free(self.icon);
 
         for (self.fields) |field| {
-            alloc.free(field.value);
-            alloc.free(field.type);
+            field.deinit(alloc);
         }
     }
 };
@@ -59,6 +70,91 @@ fn taskFromDB(alloc: std.mem.Allocator, row: *pg.QueryRow) !Task {
         .icon = icon,
         .fields = fields,
     };
+}
+
+fn taskfieldFromDB(alloc: std.mem.Allocator, row: *pg.QueryRow) !TaskField {
+    const id = row.get(i32, 0);
+    const name = try alloc.dupe(u8, row.get([]const u8, 1));
+    const field_type = try alloc.dupe(u8, row.get([]const u8, 2));
+    const value = try alloc.dupe(u8, row.get([]const u8, 3));
+
+    return TaskField{
+        .id = id,
+        .name = name,
+        .type = field_type,
+        .value = value,
+    };
+}
+pub const GetTaskRequest = struct { task_id: i32 };
+pub const GetTaskResponse = struct { task: Task };
+pub fn get_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetTaskRequest) !GetTaskResponse {
+    uwu_log.logInfo("Getting DB connection...").log();
+    const conn = try pool.acquire();
+    defer conn.release();
+    uwu_log.logInfo("Connection aquired!").log();
+
+    const task: Task = get_task_block: {
+        const query =
+            \\ SELECT * FROM task WHERE id = $1
+        ;
+        const params = .{req.task_id};
+        uwu_log.logInfo("Getting task from DB...")
+            .int("task_id", req.task_id)
+            .log();
+
+        var row: pg.QueryRow = conn.row(query, params) catch |err| {
+            var l = uwu_log.logErr("Error getting task!").src(@src()).int("task_id", req.task_id);
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+            return err;
+        } orelse return error.NoTaskFound;
+        row.deinit();
+
+        break :get_task_block try taskFromDB(alloc, row);
+    };
+
+    const task_fields: []TaskField = get_task_fields: {
+        const query =
+            \\ SELECT tf.id, tf.name, tft.name, tfst.value FROM task_fields_for_task tfst
+            \\ INNER JOIN task_field tf ON tf.id = tfst.task_field_id
+            \\ INNER JOIN task_field_type tft ON tf.task_field_type_id = tft.id
+            \\ WHERE tfst.task_id = $1
+        ;
+        const params = .{req.task_id};
+        uwu_log.logInfo("Getting task fields...")
+            .string("query", query)
+            .int("task_id", req.task_id)
+            .log();
+
+        var result = conn.query(query, params) catch |err| {
+            var l = uwu_log.logErr("Error getting task fields!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+            return err;
+        };
+        defer result.deinit();
+
+        const assumed_fields_per_task = 8;
+        var field_list = try std.ArrayList(TaskField).initCapacity(alloc, assumed_fields_per_task);
+        defer field_list.deinit();
+
+        while (result.next() catch |err| {
+            var l = uwu_log.logErr("Error getting next task field!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+            return err;
+        }) |row| {
+            const field = taskfieldFromDB(row);
+            field_list.append(field);
+        }
+
+        break :get_task_fields try field_list.toOwnedSlice();
+    };
+
+    uwu_log.logInfo("Got task fields!").int("quantity", task_fields.len).log();
+
+    task.fields = task_fields;
+    return GetTaskResponse{ .task = task };
 }
 
 pub const CreateTaskRequest = struct {
@@ -206,4 +302,57 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
         .log();
 
     return UpdateTaskResponse{ .task = task };
+}
+
+pub const EditTaskFieldRequest = struct { task_id: i32, task_field_id: i32, value: []const u8 };
+pub const EditTaskFieldResponse = struct { task: Task };
+pub fn edit_task_field(alloc: std.mem.Allocator, pool: *pg.Pool, req: EditTaskFieldRequest) !EditTaskFieldResponse {
+    uwu_log.logInfo("Getting DB connection...").log();
+    const conn = try pool.acquire();
+    defer conn.release();
+    uwu_log.logInfo("Connection aquired!").log();
+
+    conn.begin() catch |err| {
+        var l = uwu_log.logErr("Error beginning transaction!").src(@src());
+        uwu_db.logPgError(l, err, conn);
+        l.log();
+        return err;
+    };
+
+    {
+        const query =
+            \\ INSERT INTO task_fields_for_task (task_id, task_field_id, value)
+            \\ VALUES ($1, $2, $3)
+            \\ ON CONFLICT DO UPDATE SET
+            \\ value = $3
+            \\ WHERE task_id = $1 AND task_field_id = $2
+        ;
+        const params = .{ req.task_id, req.task_field_id, req.value };
+        uwu_log.logInfo("Inserting/Updating task field...")
+            .string("query", query)
+            .int("task_id", req.task_id)
+            .int("task_field_id", req.task_field_id)
+            .string("value", req.value)
+            .log();
+
+        _ = conn.exec(query, params) catch |err| {
+            var l = uwu_log.logErr("Internal error inserting/updating task field!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            conn.rollback() catch |rollBackErr| {
+                var lo = uwu_log.logErr("Error rolling back transaction!").src(@src());
+                uwu_db.logPgError(lo, rollBackErr, conn);
+                lo.log();
+                return rollBackErr;
+            };
+
+            return err;
+        };
+    }
+
+    uwu_log.logInfo("Task updated/inserted!").log();
+
+    const task: Task = try get_task(alloc, pool, GetTaskRequest{ .task_id = req.task_id });
+    return EditTaskFieldResponse{ .task = task };
 }
