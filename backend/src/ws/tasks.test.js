@@ -32,10 +32,9 @@ describe("Edit Task Field test suite", () => {
 		console.log("Task created with ID", taskId);
 	});
 
-	test.only("Edit field of task", async () => {
+	test("Edit field of task", async () => {
 		// FIXME: this test doesn't work!
 		const taskInfo = await getTask(taskId);
-		console.log(taskInfo);
 		await editTaskField(
 			userEmail,
 			projectId,
