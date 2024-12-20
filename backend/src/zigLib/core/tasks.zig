@@ -110,23 +110,28 @@ pub fn get_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetTaskRequest) !
     };
 
     const task_fields: []TaskField = get_task_fields: {
+        // Selects:
+        // - task_field_id
+        // - task_field_name
+        // - task_field_type_name
+        // - task_field_value
         const query =
             \\ SELECT
-            \\ TF.ID,
-            \\ TF."NAME",
-            \\ TFT."NAME",
-            \\ TFFT.VALUE
+            \\  TF.ID,
+            \\  TF."NAME",
+            \\  TFT."NAME",
+            \\  TFFT.VALUE
             \\ FROM
-            \\ TASK_FIELD TF
-            \\ LEFT JOIN TASK_FIELDS_FOR_TASK TFFT ON
-            \\ TF.ID = TFFT.TASK_FIELD_ID
-            \\ LEFT JOIN TASK_FIELD_TYPE TFT ON
-            \\ TFT.ID = TF.TASK_FIELD_TYPE_ID
-            \\ LEFT JOIN TASK T ON
-            \\ T.ID = TFFT.TASK_ID
+            \\  TASK_FIELD TF
+            \\  LEFT JOIN TASK_FIELDS_FOR_TASK TFFT ON
+            \\      TF.ID = TFFT.TASK_FIELD_ID
+            \\  LEFT JOIN TASK_FIELD_TYPE TFT ON
+            \\      TFT.ID = TF.TASK_FIELD_TYPE_ID
+            \\  LEFT JOIN TASK T ON
+            \\      T.ID = TFFT.TASK_ID
             \\ WHERE
-            \\ TFFT.TASK_ID = $1
-            \\ AND TF.PROJECT_ID = T.PROJECT_ID
+            \\  TFFT.TASK_ID = $1
+            \\  AND TF.PROJECT_ID = T.PROJECT_ID
         ;
         const params = .{req.task_id};
         uwu_log.logInfo("Getting task fields...")
