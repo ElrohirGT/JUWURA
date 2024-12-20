@@ -80,6 +80,11 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
             r.sendBody("QUERY ERROR") catch unreachable;
             return;
         },
+        else => {
+            r.setStatus(.internal_server_error);
+            r.sendBody("INTERNAL ERROR") catch unreachable;
+            return;
+        },
     };
 
     const responseBody = uwu_lib.toJson(self.alloc, response) catch unreachable;

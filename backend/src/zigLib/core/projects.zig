@@ -101,6 +101,100 @@ pub fn create_project(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateProje
 
     const response = CreateProjectResponse{ .project = project };
 
+    const default_types = [_][]const u8{ "TEXT", "DATE", "CHOICE", "NUMBER", "ASSIGNEE" };
+    var default_fields = std.StringArrayHashMap(usize).init(alloc);
+    try default_fields.put("Title", 0); // The title field is of type TEXT!
+    try default_fields.put("Due Date", 1); // The title field is of type DATE!
+    try default_fields.put("Status", 2); // And so on...
+    try default_fields.put("Priority", 2);
+    try default_fields.put("Sprint", 3);
+    try default_fields.put("Assignees", 4);
+    try default_fields.put("Description", 0);
+
+    uwu_log.logInfo("Adding default fields types...").log();
+    const task_field_type_ids: [default_types.len]i32 = field_ids: {
+        var query_buff = std.ArrayList(u8).init(alloc);
+        defer query_buff.deinit();
+
+        var writer = query_buff.writer();
+        _ = try writer.write("INSERT INTO task_field_type (name, project_id) VALUES ");
+        for (default_types, 0..) |type_name, i| {
+            try writer.print("('{s}', {d})", .{ type_name, project.id });
+            if (i + 1 == default_types.len) {
+                _ = try writer.write(",");
+            }
+            _ = try writer.write("\n");
+        }
+        _ = try writer.write("RETURNING *");
+        const query = try query_buff.toOwnedSlice();
+        const result = conn.query(query, .{}) catch |err| {
+            var l = uwu_log.logErr("Error while creating DB project!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            conn.rollback() catch |rollBackErr| {
+                var lo = uwu_log.logErr("Error while rolling back transaction!").src(@src());
+                uwu_db.logPgError(lo, rollBackErr, conn);
+                lo.log();
+            };
+            return error.QueryError;
+        };
+        defer result.deinit();
+
+        var types_ids = std.mem.zeroes([default_types.len]i32);
+        var idx: usize = 0;
+        while (result.next() catch |err| {
+            var l = uwu_log.logErr("Error while adding default field types!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            conn.rollback() catch |rollBackErr| {
+                var lo = uwu_log.logErr("Error while rolling back transaction!").src(@src());
+                uwu_db.logPgError(lo, rollBackErr, conn);
+                lo.log();
+            };
+            return error.QueryError;
+        }) |row| : (idx += 1) {
+            types_ids[idx] = row.get(i32, 0);
+        }
+
+        break :field_ids types_ids;
+    };
+    uwu_log.logInfo("Default fields types added!").log();
+
+    uwu_log.logInfo("Adding default fields...").log();
+    {
+        var query_buff = std.ArrayList(u8).init(alloc);
+        defer query_buff.deinit();
+
+        var writer = query_buff.writer();
+        _ = try writer.write("INSERT INTO task_field (project_id, task_field_type_id, name) VALUES ");
+        for (default_fields.keys(), 0..) |field_name, i| {
+            const type_id = task_field_type_ids[default_fields.get(field_name).?];
+            try writer.print("({d}, {d}, '{s}')", .{ project.id, type_id, field_name });
+
+            if (i + 1 == default_fields.keys().len) {
+                _ = try writer.write(",");
+            }
+            _ = try writer.write("\n");
+        }
+
+        const query = try query_buff.toOwnedSlice();
+        _ = conn.exec(query, .{}) catch |err| {
+            var l = uwu_log.logErr("Error while adding default fields!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            conn.rollback() catch |rollBackErr| {
+                var lo = uwu_log.logErr("Error while rolling back transaction!").src(@src());
+                uwu_db.logPgError(lo, rollBackErr, conn);
+                lo.log();
+            };
+            return error.QueryError;
+        };
+    }
+    uwu_log.logInfo("Default fields added!").log();
+
     uwu_log.logInfo("Adding members to project...").log();
     for (req.members) |memberEmail| {
         add_member_to_project(memberEmail, conn, project.id, req.now_timestamp) catch return error.QueryError;
