@@ -1,10 +1,23 @@
 const std = @import("std");
 const zap = @import("zap");
 const pg = @import("pg");
-pub const ws = @import("ws/root.zig");
-pub const http = @import("http/root.zig");
+
+// Modules
+pub const core = @import("core/root.zig");
 pub const log = @import("log.zig");
-pub const utils = @import("./utils/root.zig");
+pub const db = @import("db.zig");
+
+/// Duplicates an array of `ValueType`s if the `value` is not null.
+/// The caller owns the memory so make sure to call `free` afterwards.
+///
+/// It can fail because it needs to allocate.
+pub fn dupeIfNotNull(comptime ValueType: type, alloc: std.mem.Allocator, value: ?[]ValueType) !?[]ValueType {
+    if (value) |inner| {
+        return try alloc.dupe(ValueType, inner);
+    } else {
+        return null;
+    }
+}
 
 /// Checks if a given error belongs to a given error union.
 pub fn errIsFromUnion(err: anyerror, comptime ErrorSet: type) bool {
@@ -58,4 +71,35 @@ pub fn getQueryParam(alloc: std.mem.Allocator, r: *const zap.Request, name: []co
     }
 
     return paramValue;
+}
+
+/// Configuration for retrying an operation with the function `retryOperation`.
+pub const RetryConfig = struct {
+    max_retries: usize = 3,
+};
+
+/// Retries a general operation according to the config.
+pub fn retryOperation(config: RetryConfig, comptime okFunc: anytype, okArgs: anytype, comptime breakOnErrors: []const anyerror) @TypeOf(@call(.auto, okFunc, okArgs)) {
+    for (0..~@as(usize, 0)) |i| {
+        if (i != 0) {
+            log.logWarn("Retrying operation!").log();
+        }
+        return @call(.auto, okFunc, okArgs) catch |e| {
+            log.logErr("Error in operation!").err(e).log();
+
+            for (0..breakOnErrors.len) |j| {
+                const current = breakOnErrors[j];
+
+                if (current == e) {
+                    return e;
+                }
+            }
+
+            if (i == config.max_retries) {
+                log.logErr("Operation reached max retries!").log();
+                return e;
+            }
+            continue;
+        };
+    } else unreachable;
 }

@@ -2,10 +2,12 @@ const std = @import("std");
 const dotenv = @import("dotenv");
 const zap = @import("zap");
 const pg = @import("pg");
-const uwu_lib = @import("juwura");
-const uwu_ws = uwu_lib.ws;
-const uwu_log = uwu_lib.log;
 const logz = @import("logz");
+
+const uwu_lib = @import("juwura");
+const uwu_log = uwu_lib.log;
+
+const uwu_ws = @import("./ws/root.zig");
 
 const ProjectsHttp = @import("endpoints/projects.zig");
 const UsersHttp = @import("endpoints/users.zig");

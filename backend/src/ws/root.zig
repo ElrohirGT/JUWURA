@@ -3,10 +3,11 @@ const std = @import("std");
 const zap = @import("zap");
 const pg = @import("pg");
 const WebSockets = zap.WebSockets;
-const uwu_lib = @import("../root.zig");
-const uwu_tasks = @import("task.zig");
+
+const uwu_lib = @import("juwura");
+const uwu_tasks = uwu_lib.core.tasks;
 const uwu_log = uwu_lib.log;
-const uwu_db = uwu_lib.utils.db;
+const uwu_db = uwu_lib.db;
 
 /// Hashmap to store connectinos by user.
 /// * Key: User email.
@@ -175,7 +176,7 @@ const WebsocketAPIError = error{ MalformedMessage, InternalServerError } || uwu_
 const WebsocketRequest = union(enum) {
     create_task: uwu_tasks.CreateTaskRequest,
     update_task: uwu_tasks.UpdateTaskRequest,
-    edit_task_fields: uwu_tasks.EditTaskFieldRequest,
+    edit_task_field: uwu_tasks.EditTaskFieldRequest,
 };
 const WebsocketResponse = union(enum) {
     err: WebsocketAPIError,
@@ -183,7 +184,7 @@ const WebsocketResponse = union(enum) {
     user_disconnected: []const u8,
     create_task: uwu_tasks.CreateTaskResponse,
     update_task: uwu_tasks.UpdateTaskResponse,
-    edit_task_fields: uwu_tasks.EditTaskFieldResponse,
+    edit_task_field: uwu_tasks.EditTaskFieldResponse,
 };
 
 fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []const u8, is_text: bool) void {
@@ -217,7 +218,7 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
         const request = parsed.value;
         switch (request) {
             .create_task => {
-                const response: uwu_tasks.CreateTaskResponse = uwu_db.retryOperation(
+                const response: uwu_tasks.CreateTaskResponse = uwu_lib.retryOperation(
                     .{ .max_retries = 3 },
                     uwu_tasks.create_task,
                     .{ conn.allocator, conn.pool, request.create_task },
@@ -245,7 +246,7 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                 WebsocketHandler.publish(.{ .channel = conn.project_id, .message = json_response });
             },
             .update_task => {
-                const response: uwu_tasks.UpdateTaskResponse = uwu_db.retryOperation(
+                const response: uwu_tasks.UpdateTaskResponse = uwu_lib.retryOperation(
                     .{ .max_retries = 3 },
                     uwu_tasks.update_task,
                     .{ conn.allocator, conn.pool, request.update_task },
@@ -265,8 +266,8 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
 
                 WebsocketHandler.publish(.{ .channel = conn.project_id, .message = json_response });
             },
-            .edit_task_fields => {
-                const response: uwu_tasks.EditTaskFieldResponse = uwu_db.retryOperation(.{ .max_retries = 3 }, uwu_tasks.edit_task_field, .{ conn.allocator, conn.pool, request.edit_task_fields }, &[_]anyerror{}) catch |err| {
+            .edit_task_field => {
+                const response: uwu_tasks.EditTaskFieldResponse = uwu_lib.retryOperation(.{ .max_retries = 3 }, uwu_tasks.edit_task_field, .{ conn.allocator, conn.pool, request.edit_task_field }, &[_]anyerror{}) catch |err| {
                     uwu_log.logErr("An error occurred updating a task field!").src(@src()).err(err).string("message", message).log();
                     const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.EditTaskFieldError }) catch unreachable;
                     defer conn.allocator.free(serve_error);
@@ -275,7 +276,7 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                     return;
                 };
 
-                const json_response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .edit_task_fields = response }) catch unreachable;
+                const json_response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .edit_task_field = response }) catch unreachable;
                 defer conn.allocator.free(json_response);
 
                 WebsocketHandler.publish(.{ .channel = conn.project_id, .message = json_response });

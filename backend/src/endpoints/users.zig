@@ -6,9 +6,10 @@
 const std = @import("std");
 const zap = @import("zap");
 const pg = @import("pg");
+
 const uwu_lib = @import("juwura");
 const uwu_log = uwu_lib.log;
-const uwu_db = uwu_lib.utils.db;
+const uwu_db = uwu_lib.db;
 
 pub const Self = @This();
 

@@ -1,8 +1,9 @@
 const std = @import("std");
 const pg = @import("pg");
+
 const uwu_lib = @import("../root.zig");
 const uwu_log = uwu_lib.log;
-const uwu_db = uwu_lib.utils.db;
+const uwu_db = uwu_lib.db;
 
 pub const Errors = error{
     CreateTaskError,
@@ -11,18 +12,37 @@ pub const Errors = error{
     EditTaskFieldError,
 };
 
+/// Represents a field for a given task.
 pub const TaskField = struct {
     id: i32,
     name: []const u8,
     type: []const u8,
-    value: []const u8,
+    value: ?[]const u8 = null,
 
+    /// Deallocates all strings from this TaskField instance.
     pub fn deinit(self: TaskField, alloc: std.mem.Allocator) void {
         alloc.free(self.name);
         alloc.free(self.type);
-        alloc.free(self.value);
+        if (self.value) |inner| {
+            alloc.free(inner);
+        }
+    }
+
+    pub fn fromDB(alloc: std.mem.Allocator, row: pg.Row) !TaskField {
+        const id = row.get(i32, 0);
+        const name = try alloc.dupe(u8, row.get([]const u8, 1));
+        const field_type = try alloc.dupe(u8, row.get([]const u8, 2));
+        const value = try uwu_lib.dupeIfNotNull(u8, alloc, row.get(?[]u8, 3));
+
+        return TaskField{
+            .id = id,
+            .name = name,
+            .type = field_type,
+            .value = value,
+        };
     }
 };
+/// Container for all task data.
 pub const Task = struct {
     id: i32,
     parent_id: ?i32 = null,
@@ -31,7 +51,8 @@ pub const Task = struct {
     icon: []const u8,
     fields: []TaskField,
 
-    /// Frees all the memory associated with the task...
+    /// Frees all the memory associated with the task.
+    /// This includes the task fields!
     pub fn deinit(self: Task, alloc: std.mem.Allocator) void {
         alloc.free(self.short_title);
         alloc.free(self.icon);
@@ -40,51 +61,26 @@ pub const Task = struct {
             field.deinit(alloc);
         }
     }
+
+    pub fn fromDB(alloc: std.mem.Allocator, row: pg.QueryRow) !Task {
+        const id = row.get(i32, 0);
+        const parent_id = row.get(?i32, 1);
+        const project_id = row.get(i32, 2);
+        const short_title = try alloc.dupe(u8, row.get([]const u8, 3));
+        const icon = try alloc.dupe(u8, row.get([]const u8, 4));
+        const fields = &[_]TaskField{};
+
+        return Task{
+            .id = id,
+            .project_id = project_id,
+            .parent_id = parent_id,
+            .short_title = short_title,
+            .icon = icon,
+            .fields = fields,
+        };
+    }
 };
 
-/// Duplicates an array of `ValueType`s if the `value` is not null.
-/// The caller owns the memory so make sure to call `free` afterwards.
-///
-/// It can fail because it needs to allocate.
-fn dupeIfNotNull(comptime ValueType: type, alloc: std.mem.Allocator, value: ?[]ValueType) !?[]ValueType {
-    if (value) |inner| {
-        return try alloc.dupe(ValueType, inner);
-    } else {
-        return null;
-    }
-}
-
-fn taskFromDB(alloc: std.mem.Allocator, row: *pg.QueryRow) !Task {
-    const id = row.get(i32, 0);
-    const parent_id = row.get(?i32, 1);
-    const project_id = row.get(i32, 2);
-    const short_title = try alloc.dupe(u8, row.get([]const u8, 3));
-    const icon = try alloc.dupe(u8, row.get([]const u8, 4));
-    const fields = &[_]TaskField{};
-
-    return Task{
-        .id = id,
-        .project_id = project_id,
-        .parent_id = parent_id,
-        .short_title = short_title,
-        .icon = icon,
-        .fields = fields,
-    };
-}
-
-fn taskfieldFromDB(alloc: std.mem.Allocator, row: *pg.QueryRow) !TaskField {
-    const id = row.get(i32, 0);
-    const name = try alloc.dupe(u8, row.get([]const u8, 1));
-    const field_type = try alloc.dupe(u8, row.get([]const u8, 2));
-    const value = try alloc.dupe(u8, row.get([]const u8, 3));
-
-    return TaskField{
-        .id = id,
-        .name = name,
-        .type = field_type,
-        .value = value,
-    };
-}
 pub const GetTaskRequest = struct { task_id: i32 };
 pub const GetTaskResponse = struct { task: Task };
 pub fn get_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetTaskRequest) !GetTaskResponse {
@@ -93,7 +89,7 @@ pub fn get_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetTaskRequest) !
     defer conn.release();
     uwu_log.logInfo("Connection aquired!").log();
 
-    const task: Task = get_task_block: {
+    var task: Task = get_task_block: {
         const query =
             \\ SELECT * FROM task WHERE id = $1
         ;
@@ -102,23 +98,35 @@ pub fn get_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetTaskRequest) !
             .int("task_id", req.task_id)
             .log();
 
-        var row: pg.QueryRow = conn.row(query, params) catch |err| {
+        var row = conn.row(query, params) catch |err| {
             var l = uwu_log.logErr("Error getting task!").src(@src()).int("task_id", req.task_id);
             uwu_db.logPgError(l, err, conn);
             l.log();
             return err;
         } orelse return error.NoTaskFound;
-        row.deinit();
+        defer row.deinit() catch {};
 
-        break :get_task_block try taskFromDB(alloc, row);
+        break :get_task_block try Task.fromDB(alloc, row);
     };
 
     const task_fields: []TaskField = get_task_fields: {
         const query =
-            \\ SELECT tf.id, tf.name, tft.name, tfst.value FROM task_fields_for_task tfst
-            \\ INNER JOIN task_field tf ON tf.id = tfst.task_field_id
-            \\ INNER JOIN task_field_type tft ON tf.task_field_type_id = tft.id
-            \\ WHERE tfst.task_id = $1
+            \\ SELECT
+            \\ TF.ID,
+            \\ TF."NAME",
+            \\ TFT."NAME",
+            \\ TFFT.VALUE
+            \\ FROM
+            \\ TASK_FIELD TF
+            \\ LEFT JOIN TASK_FIELDS_FOR_TASK TFFT ON
+            \\ TF.ID = TFFT.TASK_FIELD_ID
+            \\ LEFT JOIN TASK_FIELD_TYPE TFT ON
+            \\ TFT.ID = TF.TASK_FIELD_TYPE_ID
+            \\ LEFT JOIN TASK T ON
+            \\ T.ID = TFFT.TASK_ID
+            \\ WHERE
+            \\ TFFT.TASK_ID = $1
+            \\ AND TF.PROJECT_ID = T.PROJECT_ID
         ;
         const params = .{req.task_id};
         uwu_log.logInfo("Getting task fields...")
@@ -144,8 +152,8 @@ pub fn get_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetTaskRequest) !
             l.log();
             return err;
         }) |row| {
-            const field = taskfieldFromDB(row);
-            field_list.append(field);
+            const field = try TaskField.fromDB(alloc, row);
+            try field_list.append(field);
         }
 
         break :get_task_fields try field_list.toOwnedSlice();
@@ -236,7 +244,7 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
         } orelse unreachable;
         defer dataRow.deinit() catch unreachable;
 
-        break :task_creation_block try taskFromDB(alloc, &dataRow);
+        break :task_creation_block try Task.fromDB(alloc, dataRow);
     };
     conn.commit() catch |err| {
         var l = uwu_log.logErr("Error committing transaction!").src(@src());
@@ -293,7 +301,7 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
         } orelse return error.NoTaskFoundWithID;
 
         defer dataRow.deinit() catch unreachable;
-        break :task_creation_block taskFromDB(alloc, &dataRow) catch unreachable;
+        break :task_creation_block Task.fromDB(alloc, dataRow) catch unreachable;
     };
     uwu_log.logInfo("Task updated!")
         .int("task_id", task.id)
@@ -304,7 +312,11 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
     return UpdateTaskResponse{ .task = task };
 }
 
-pub const EditTaskFieldRequest = struct { task_id: i32, task_field_id: i32, value: []const u8 };
+pub const EditTaskFieldRequest = struct {
+    task_id: i32,
+    task_field_id: i32,
+    value: ?[]const u8 = null,
+};
 pub const EditTaskFieldResponse = struct { task: Task };
 pub fn edit_task_field(alloc: std.mem.Allocator, pool: *pg.Pool, req: EditTaskFieldRequest) !EditTaskFieldResponse {
     uwu_log.logInfo("Getting DB connection...").log();
@@ -353,6 +365,6 @@ pub fn edit_task_field(alloc: std.mem.Allocator, pool: *pg.Pool, req: EditTaskFi
 
     uwu_log.logInfo("Task updated/inserted!").log();
 
-    const task: Task = try get_task(alloc, pool, GetTaskRequest{ .task_id = req.task_id });
-    return EditTaskFieldResponse{ .task = task };
+    const response: GetTaskResponse = try get_task(alloc, pool, GetTaskRequest{ .task_id = req.task_id });
+    return EditTaskFieldResponse{ .task = response.task };
 }

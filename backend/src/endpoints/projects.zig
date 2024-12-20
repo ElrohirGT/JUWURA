@@ -5,10 +5,11 @@
 const std = @import("std");
 const zap = @import("zap");
 const pg = @import("pg");
+
 const uwu_lib = @import("juwura");
 const uwu_log = uwu_lib.log;
-const uwu_db = uwu_lib.utils.db;
-const uwu_projects = uwu_lib.http.projects;
+const uwu_db = uwu_lib.db;
+const uwu_projects = uwu_lib.core.projects;
 
 pub const Self = @This();
 
@@ -63,7 +64,7 @@ fn post_project(e: *zap.Endpoint, r: zap.Request) void {
     const request = parsed.value;
     uwu_log.logInfo("Body parsed!").log();
 
-    const response: uwu_projects.CreateProjectResponse = uwu_db.retryOperation(
+    const response: uwu_projects.CreateProjectResponse = uwu_lib.retryOperation(
         .{ .max_retries = 5 },
         uwu_projects.create_project,
         .{ self.alloc, self.pool, request },
@@ -120,7 +121,7 @@ fn put_project(e: *zap.Endpoint, r: zap.Request) void {
     const request = parsed.value;
     uwu_log.logInfo("Body parsed!").log();
 
-    const response: uwu_projects.UpdateProjectResponse = uwu_db.retryOperation(
+    const response: uwu_projects.UpdateProjectResponse = uwu_lib.retryOperation(
         .{ .max_retries = 5 },
         uwu_projects.update_project,
         .{ self.alloc, self.pool, request },
