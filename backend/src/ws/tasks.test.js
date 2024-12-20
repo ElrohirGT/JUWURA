@@ -33,7 +33,6 @@ describe("Edit Task Field test suite", () => {
 	});
 
 	test("Edit field of task", async () => {
-		// FIXME: this test doesn't work!
 		const taskInfo = await getTask(taskId);
 		await editTaskField(
 			userEmail,
