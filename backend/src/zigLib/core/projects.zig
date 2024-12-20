@@ -1,9 +1,10 @@
 const std = @import("std");
 const pg = @import("pg");
 const zap = @import("zap");
+
 const uwu_lib = @import("../root.zig");
 const uwu_log = uwu_lib.log;
-const uwu_db = uwu_lib.utils.db;
+const uwu_db = uwu_lib.db;
 
 pub const Project = struct {
     id: i32,

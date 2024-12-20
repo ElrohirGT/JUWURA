@@ -2,6 +2,57 @@ import { expect } from "vitest";
 import { generateClient } from "../ws";
 
 /**
+ * Edits a field in a task from a given project.
+ * @param {string} email - User email, to establish WS connection
+ * @param {string} projectId - The project id, to establish WS connection
+ * @param {string} task_id - The ID of the task with the field
+ * @param {string} task_field_id - The ID of the task field
+ * @param {string} value - The new value of the task field
+ */
+export async function editTaskField(
+	email,
+	projectId,
+	task_id,
+	task_field_id,
+	value,
+) {
+	const payload = {
+		task_id,
+		task_field_id,
+		value,
+	};
+
+	const client = await generateClient(email, projectId);
+	const promise = new Promise((res, rej) => {
+		client.configureHandlers(rej, (rev) => {
+			try {
+				const data = JSON.parse(rev.toString());
+
+				if (data.edit_task_field) {
+					res(data);
+				}
+			} catch {}
+		});
+	});
+	await client.send(JSON.stringify(payload));
+
+	const response = await promise;
+	const { task } = response.edit_task_field;
+	expect(task.fields).toBeDefined();
+
+	const expectedField = {
+		id: expect.any(Number),
+		name: expect.any(String),
+		type: expect.any(String),
+		value: expect.any(String),
+	};
+	for (const field of task.fields) {
+		expect(field).toEqual(expectedField);
+		expect(field.value).toBe(value);
+	}
+}
+
+/**
  * Creates a task given the auth and minimum data.
  * @param {string} email - The email of the user
  * @param {number} projectId - The id of the project

@@ -34,7 +34,7 @@ describe("Project PUT integration tests", () => {
 		);
 	});
 
-	test.only("Successfully updated a project", async () =>
+	test("Successfully updated a project", async () =>
 		await updateProject(
 			projectId,
 			"PUT UPDATED",
