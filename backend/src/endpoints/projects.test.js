@@ -10,7 +10,7 @@ import {
 } from "../jsLib/testHelpers/projects.js";
 
 describe("Project POST integration tests", () => {
-	test("Successfully creates a project", async () =>
+	test.only("Successfully creates a project", async () =>
 		await createProject(
 			"correo1@gmail.com",
 			"JUWURA test project",

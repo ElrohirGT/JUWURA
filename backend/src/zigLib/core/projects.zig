@@ -120,13 +120,14 @@ pub fn create_project(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateProje
         _ = try writer.write("INSERT INTO task_field_type (name, project_id) VALUES ");
         for (default_types, 0..) |type_name, i| {
             try writer.print("('{s}', {d})", .{ type_name, project.id });
-            if (i + 1 == default_types.len) {
-                _ = try writer.write(",");
+            if (i + 1 != default_types.len) {
+                _ = try writer.write(", ");
             }
-            _ = try writer.write("\n");
         }
         _ = try writer.write("RETURNING *");
         const query = try query_buff.toOwnedSlice();
+        uwu_log.logInfo("Inserting default field types...").string("query", query).log();
+
         const result = conn.query(query, .{}) catch |err| {
             var l = uwu_log.logErr("Error while creating DB project!").src(@src());
             uwu_db.logPgError(l, err, conn);
@@ -173,13 +174,13 @@ pub fn create_project(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateProje
             const type_id = task_field_type_ids[default_fields.get(field_name).?];
             try writer.print("({d}, {d}, '{s}')", .{ project.id, type_id, field_name });
 
-            if (i + 1 == default_fields.keys().len) {
-                _ = try writer.write(",");
+            if (i + 1 != default_fields.keys().len) {
+                _ = try writer.write(", ");
             }
-            _ = try writer.write("\n");
         }
-
         const query = try query_buff.toOwnedSlice();
+        uwu_log.logInfo("Inserting default task fields").string("query", query).log();
+
         _ = conn.exec(query, .{}) catch |err| {
             var l = uwu_log.logErr("Error while adding default fields!").src(@src());
             uwu_db.logPgError(l, err, conn);
