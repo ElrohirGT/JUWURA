@@ -55,7 +55,7 @@ export async function getTask(taskId) {
 		expect(field.name).toEqual(expect.any(String));
 	}
 
-	return response.data;
+	return task;
 }
 
 /**
@@ -74,9 +74,11 @@ export async function editTaskField(
 	value,
 ) {
 	const payload = {
-		task_id,
-		task_field_id,
-		value,
+		edit_task_field: {
+			task_id,
+			task_field_id,
+			value,
+		},
 	};
 
 	const client = await generateClient(email, projectId);
@@ -97,16 +99,18 @@ export async function editTaskField(
 	const { task } = response.edit_task_field;
 	expect(task.fields).toBeDefined();
 
-	const expectedField = {
-		id: expect.any(Number),
-		name: expect.any(String),
-		type: expect.any(String),
-		value: expect.any(String),
-	};
+	let found = false;
 	for (const field of task.fields) {
-		expect(field).toEqual(expectedField);
-		expect(field.value).toBe(value);
+		expect(field.id).toEqual(expect.any(Number));
+		expect(field.name).toEqual(expect.any(String));
+		expect(field.type).toEqual(expect.any(String));
+
+		if (field.value === value) {
+			found = true;
+		}
 	}
+
+	expect(found).toBe(true);
 }
 
 /**

@@ -2,6 +2,7 @@ import { expect, describe, test, beforeEach } from "vitest";
 import {
 	createTask,
 	editTaskField,
+	getTask,
 	updateTask,
 } from "../jsLib/testHelpers/tasks.js";
 import { createProject } from "../jsLib/testHelpers/projects.js";
@@ -31,9 +32,17 @@ describe("Edit Task Field test suite", () => {
 		console.log("Task created with ID", taskId);
 	});
 
-	test("Edit field of task", async () => {
+	test.only("Edit field of task", async () => {
 		// FIXME: this test doesn't work!
-		await editTaskField(userEmail, projectId, taskId, 1);
+		const taskInfo = await getTask(taskId);
+		console.log(taskInfo);
+		await editTaskField(
+			userEmail,
+			projectId,
+			taskId,
+			taskInfo.fields[0].id,
+			"This is an example title!",
+		);
 	});
 });
 

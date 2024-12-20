@@ -128,9 +128,9 @@ pub fn get_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetTaskRequest) !
             \\ left join task_field_type tft on
             \\ 	tft.id = tf.task_field_type_id
             \\ left join task t on
-            \\ 	t.id = tfft.task_id
+            \\ 	t.id = $1
             \\ where
-            \\ 	tfft.task_id = $1
+            \\ 	t.id = $1
             \\ 	and tf.project_id = t.project_id 
         ;
         const params = .{req.task_id};
@@ -340,9 +340,8 @@ pub fn edit_task_field(alloc: std.mem.Allocator, pool: *pg.Pool, req: EditTaskFi
         const query =
             \\ INSERT INTO task_fields_for_task (task_id, task_field_id, value)
             \\ VALUES ($1, $2, $3)
-            \\ ON CONFLICT DO UPDATE SET
-            \\ value = $3
-            \\ WHERE task_id = $1 AND task_field_id = $2
+            \\ ON CONFLICT ON CONSTRAINT one_record_per_task_field DO UPDATE SET
+            \\ value = EXCLUDED.value
         ;
         const params = .{ req.task_id, req.task_field_id, req.value };
         uwu_log.logInfo("Inserting/Updating task field...")
@@ -367,6 +366,12 @@ pub fn edit_task_field(alloc: std.mem.Allocator, pool: *pg.Pool, req: EditTaskFi
             return err;
         };
     }
+    conn.commit() catch |err| {
+        var l = uwu_log.logErr("Error committing transaction!").src(@src());
+        uwu_db.logPgError(l, err, conn);
+        l.log();
+        return err;
+    };
 
     uwu_log.logInfo("Task updated/inserted!").log();
 

@@ -75,7 +75,7 @@ CREATE TABLE task_fields_for_task (
     task_field_id INTEGER REFERENCES task_field (id) NOT NULL,
     value TEXT,
 
-    UNIQUE (task_id, task_field_id)
+    CONSTRAINT one_record_per_task_field UNIQUE (task_id, task_field_id)
 );
 COMMENT ON TABLE task_fields_for_task IS
 'Relates all the custom task fields to a task';
