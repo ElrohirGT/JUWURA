@@ -51,13 +51,6 @@ body =
             ]
             [ text "View Top bar"
             , Icon.view (viteAsset "~icons/fa6-solid/table")
-
-            -- , case toHtml None (viteAsset "~icons/fa6-solid/table") of
-            --     Err err ->
-            --         Debug.log err
-            --
-            --     Ok v ->
-            --         v
             ]
         , -- Sidebar
           div
