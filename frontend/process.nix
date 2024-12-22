@@ -1,4 +1,4 @@
 {
   working_dir = "./frontend";
-  command = "yarn dev";
+  command = "pnpm dev";
 }

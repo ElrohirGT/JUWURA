@@ -41,10 +41,10 @@ jobs:
       - name: Linting ELM
         run: elm-review
       - name: Installing dependencies
-        run: yarn install
+        run: pnpm run install
       - name: Formatting JS
-        run: yarn run format:check
+        run: pnpm run format:check
       - name: Linting JS
-        run: yarn run lint
+        run: pnpm run lint
       - name: E2E Testing
-        run: yarn test
+        run: pnpm run test

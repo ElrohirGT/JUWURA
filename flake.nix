@@ -23,7 +23,7 @@
     nixpkgsFor = forAllSystems (system: import nixpkgs {inherit system;});
 
     # System packages...
-    backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.yarn-berry pkgs.websocat];
+    backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.pnpm pkgs.websocat];
     dbPkgs = pkgs: [pkgs.sqlfluff];
     frontendPkgs = pkgs: [pkgs.nodejs pkgs.pnpm pkgs.elmPackages.elm pkgs.elmPackages.elm-format pkgs.biome pkgs.elmPackages.elm-review];
     orquestrationPkgs = pkgs: [pkgs.process-compose pkgs.coreutils];
@@ -102,7 +102,7 @@
 
                 tests = {
                   working_dir = "backend";
-                  command = "yarn test:ci";
+                  command = "pnpm run test:ci";
                   availability = {
                     exit_on_end = true;
                   };
