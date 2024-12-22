@@ -1,10 +1,10 @@
 module Pages.Senku exposing (view)
 
-import Css exposing (absolute, backgroundColor, borderRadius4, calc, column, displayFlex, flexDirection, height, hidden, int, left, minus, overflowY, paddingLeft, paddingRight, pct, position, px, row, top, transform, translateY, vh, vw, width, zIndex, zero)
+import Css exposing (absolute, backgroundColor, borderRadius4, height, left, paddingLeft, position, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
-import Html.Styled exposing (div, h1, img, node, text)
-import Html.Styled.Attributes exposing (css, src)
-import Theme exposing (colors, cssColors, cssSpacing, spacing)
+import Html.Styled exposing (div, text)
+import Html.Styled.Attributes exposing (css)
+import Theme exposing (cssColors, cssSpacing)
 import Utils exposing (viteAsset)
 
 
@@ -15,10 +15,12 @@ view =
     }
 
 
+sidebardWidthPct : Float
 sidebardWidthPct =
     72.0 / 1728.0 * 100.0
 
 
+topbarHeightPct : Float
 topbarHeightPct =
     64.0 / 1117.0 * 100.0
 
