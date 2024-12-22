@@ -10,6 +10,7 @@ import Pages.Http as HttpPage
 import Pages.Json as JsonPage
 import Pages.NotFound as NotFoundPage
 import Pages.Ports as PortsPage
+import Pages.Senku as SenkuPage
 import Routing
 import Url exposing (Url)
 
@@ -53,6 +54,7 @@ Used to represent the current page and state
 -}
 type AppState
     = NotFound
+    | Senku
     | Details DetailsPage.Model
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
     | Json ( JsonPage.Model, Cmd JsonPage.Msg )
@@ -68,6 +70,9 @@ fromUrlToAppState basePath url =
 
         Routing.NotFound ->
             NotFound
+
+        Routing.Senku ->
+            Senku
 
         Routing.RouteWithParams ->
             Details (DetailsPage.init basePath)
@@ -261,3 +266,6 @@ view model =
 
         NotFound ->
             viewStateLess NotFoundPage.view
+
+        Senku ->
+            viewStateLess SenkuPage.view
