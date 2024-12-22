@@ -1,4 +1,4 @@
-module Theme exposing (colors, cssColors, cssSpacing, fontFamilies, fontSizes, locale, spacing)
+module Theme exposing (colors, cssColors, cssFontSizes, cssSpacing, fontFamilies, fontSizes, locale, spacing)
 
 import Css exposing (hex, px)
 import FormatNumber.Locales exposing (Decimals(..), usLocale)
@@ -118,20 +118,40 @@ fontFamilies =
 {-| The font sizes to use in the application
 -}
 fontSizes =
-    { display_large = "57pt"
-    , display_medium = "45pt"
-    , display_small = "36pt"
-    , headline_large = "32pt"
-    , headline_medium = "28pt"
-    , headline_small = "24pt"
-    , title_large = "22pt"
-    , title_medium = "16pt"
-    , title_small = "14pt"
-    , body_large = "16pt"
-    , body_medium = "14pt"
-    , body_small = "12pt"
-    , label_extraLarge = "16pt"
-    , label_large = "14pt"
-    , label_medium = "12pt"
-    , label_small = "11pt"
+    { display_large = "57px"
+    , display_medium = "45px"
+    , display_small = "36px"
+    , headline_large = "32px"
+    , headline_medium = "28px"
+    , headline_small = "24px"
+    , title_large = "22px"
+    , title_medium = "16px"
+    , title_small = "14px"
+    , body_large = "16px"
+    , body_medium = "14px"
+    , body_small = "12px"
+    , label_extraLarge = "16px"
+    , label_large = "14px"
+    , label_medium = "12px"
+    , label_small = "11px"
+    }
+
+
+cssFontSizes =
+    { display_large = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.display_large)))
+    , display_medium = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.display_medium)))
+    , display_small = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.display_small)))
+    , headline_large = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.headline_large)))
+    , headline_medium = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.headline_medium)))
+    , headline_small = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.headline_small)))
+    , title_large = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.title_large)))
+    , title_medium = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.title_medium)))
+    , title_small = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.title_small)))
+    , body_large = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.body_large)))
+    , body_medium = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.body_medium)))
+    , body_small = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.body_small)))
+    , label_extraLarge = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.label_extraLarge)))
+    , label_large = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.label_large)))
+    , label_medium = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.label_medium)))
+    , label_small = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.label_small)))
     }
