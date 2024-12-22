@@ -1,9 +1,11 @@
 module Pages.Senku exposing (view)
 
 import Css exposing (absolute, backgroundColor, borderRadius4, calc, column, displayFlex, flexDirection, height, hidden, int, left, minus, overflowY, paddingLeft, paddingRight, pct, position, px, row, top, transform, translateY, vh, vw, width, zIndex, zero)
-import Html.Styled exposing (div, h1, text)
-import Html.Styled.Attributes exposing (css)
+import CustomComponents.Icon.Icon as Icon
+import Html.Styled exposing (div, h1, img, node, text)
+import Html.Styled.Attributes exposing (css, src)
 import Theme exposing (colors, cssColors, cssSpacing, spacing)
+import Utils exposing (viteAsset)
 
 
 view : { title : String, body : List (Html.Styled.Html msg) }
@@ -46,6 +48,14 @@ body =
                 ]
             ]
             [ text "View Top bar"
+            , Icon.view (viteAsset "~icons/fa6-solid/table")
+
+            -- , case toHtml None (viteAsset "~icons/fa6-solid/table") of
+            --     Err err ->
+            --         Debug.log err
+            --
+            --     Ok v ->
+            --         v
             ]
         , -- Sidebar
           div

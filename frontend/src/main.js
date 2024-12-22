@@ -1,4 +1,5 @@
 import "./style.css";
+import "./CustomComponents/Icon/Icon.js";
 import { Elm } from "./Main.elm";
 
 // NOTE: We need to use substring to remove the / at the beginning
