@@ -1,22 +1,60 @@
-module Pages.Senku exposing (view)
+module Pages.Senku exposing (Model, init, view)
 
+import Array exposing (Array)
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
+import Data.Issue exposing (Issue)
 import Html.Styled exposing (button, div, text)
 import Html.Styled.Attributes exposing (css)
 import Theme exposing (cssColors, cssFontSizes, cssSpacing, spacing)
 import Utils exposing (viteAsset)
 
 
-view : { title : String, body : List (Html.Styled.Html msg) }
-view =
-    { title = "Senku View"
-    , body = body
+
+-- MODEL
+
+
+type ZoomLevel
+    = Low
+    | Medium
+    | High
+
+
+type alias Cell =
+    Maybe
+        { task : Issue
+        }
+
+
+type alias Model =
+    { cells : Array (Array Cell)
+    , zoomLevel : ZoomLevel
     }
 
 
-body : List (Html.Styled.Html msg)
-body =
+gridSize : number
+gridSize =
+    10
+
+
+init : Model
+init =
+    Model (Array.repeat gridSize <| Array.repeat gridSize Maybe.Nothing) Low
+
+
+
+-- VIEW
+
+
+view : Model -> { title : String, body : List (Html.Styled.Html msg) }
+view model =
+    { title = "Senku View"
+    , body = body model
+    }
+
+
+body : Model -> List (Html.Styled.Html msg)
+body model =
     let
         sidebardWidthPct : Float
         sidebardWidthPct =
@@ -119,7 +157,7 @@ body =
                     ]
                 ]
 
-            -- Buttons
+            -- View Topbar buttons
             , div
                 [ css
                     [ paddingBottom cssSpacing.xs
@@ -151,5 +189,7 @@ body =
                 ]
             ]
             []
+        , -- Main Content
+          div [] []
         ]
     ]

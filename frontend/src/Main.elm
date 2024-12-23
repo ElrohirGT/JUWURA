@@ -54,7 +54,7 @@ Used to represent the current page and state
 -}
 type AppState
     = NotFound
-    | Senku
+    | Senku SenkuPage.Model
     | Details DetailsPage.Model
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
     | Json ( JsonPage.Model, Cmd JsonPage.Msg )
@@ -72,7 +72,7 @@ fromUrlToAppState basePath url =
             NotFound
 
         Routing.Senku ->
-            Senku
+            Senku SenkuPage.init
 
         Routing.RouteWithParams ->
             Details (DetailsPage.init basePath)
@@ -267,5 +267,5 @@ view model =
         NotFound ->
             viewStateLess NotFoundPage.view
 
-        Senku ->
-            viewStateLess SenkuPage.view
+        Senku pageModel ->
+            viewStatic SenkuPage.view pageModel
