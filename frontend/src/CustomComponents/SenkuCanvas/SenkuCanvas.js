@@ -9,7 +9,7 @@ class SenkuCanvas extends HTMLElement {
 	 * Function that runs when the element is added to the page.
 	 */
 	connectedCallback() {
-		console.log("Custom element added to page.");
+		console.log("Senku canvas element added to page.");
 
 		const shadow = this.attachShadow({ mode: "open" });
 		const canvas = document.createElement("canvas");
@@ -18,13 +18,28 @@ class SenkuCanvas extends HTMLElement {
 		canvas.height =
 			(this.getAttribute("heightPct") / 100) * document.body.offsetHeight;
 
-		const ctx = canvas.getContext("2d");
+		const viewTopbar = document.getElementById("viewTopbar");
 
-		ctx.fillStyle = "rgb(200 0 0)";
-		ctx.fillRect(10, 10, 50, 50);
+		// FIXME: This is a programming warcrime!
+		// Since the senku canvas needs to be the length of the rest of the page
+		// but the canvas element needs specific measurements, I have to wait until
+		// all the CSS has loaded! there is no event for this, so I just wait a bit...
+		requestAnimationFrame(() => {
+			setTimeout(() => {
+				canvas.height -= viewTopbar.offsetHeight;
+				console.log(
+					"LOADED! HEIGHT:",
+					`${this.getAttribute("heightPct")} / 100 * ${document.body.offsetHeight} - ${viewTopbar.offsetHeight} = ${canvas.height}`,
+				);
+				const ctx = canvas.getContext("2d");
 
-		ctx.fillStyle = "rgb(0 0 200 / 50%)";
-		ctx.fillRect(30, 30, 50, 50);
+				ctx.fillStyle = "rgb(200 0 0)";
+				ctx.fillRect(10, 10, 50, 50);
+
+				ctx.fillStyle = "rgb(0 0 200 / 50%)";
+				ctx.fillRect(30, 30, 50, 50);
+			}, 1000);
+		});
 
 		shadow.appendChild(canvas);
 	}

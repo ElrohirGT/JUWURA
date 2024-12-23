@@ -6,7 +6,7 @@ import CustomComponents.Icon.Icon as Icon
 import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas
 import Data.Issue exposing (Issue)
 import Html.Styled exposing (button, div, text)
-import Html.Styled.Attributes exposing (css)
+import Html.Styled.Attributes exposing (css, id)
 import Theme exposing (cssColors, cssFontSizes, cssSpacing, spacing)
 import Utils exposing (viteAsset)
 
@@ -137,6 +137,7 @@ body model =
                 , justifyContent spaceBetween
                 , color cssColors.black_300
                 ]
+            , id "viewTopbar"
             ]
             [ div
                 [ css
