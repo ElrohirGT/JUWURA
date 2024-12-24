@@ -1,3 +1,5 @@
+import { clamp } from "../../Utils/math";
+
 class SenkuCanvas extends HTMLElement {
 	static observedAttributes = ["widthPct", "heightPct", "zoom"];
 
@@ -18,6 +20,8 @@ class SenkuCanvas extends HTMLElement {
 		canvas.height =
 			(this.getAttribute("heightPct") / 100) * document.body.offsetHeight;
 
+		this.registerEvents(canvas);
+
 		const viewTopbar = document.getElementById("viewTopbar");
 
 		// FIXME: This is a programming warcrime!
@@ -26,18 +30,15 @@ class SenkuCanvas extends HTMLElement {
 		// all the CSS has loaded! there is no event for this, so I just wait a bit...
 		requestAnimationFrame(() => {
 			setTimeout(() => {
-				canvas.height -= viewTopbar.offsetHeight;
+				canvas.height =
+					(this.getAttribute("heightPct") / 100) * document.body.offsetHeight -
+					viewTopbar.offsetHeight;
 				console.log(
 					"LOADED! HEIGHT:",
 					`${this.getAttribute("heightPct")} / 100 * ${document.body.offsetHeight} - ${viewTopbar.offsetHeight} = ${canvas.height}`,
 				);
-				const ctx = canvas.getContext("2d");
 
-				ctx.fillStyle = "rgb(200 0 0)";
-				ctx.fillRect(10, 10, 50, 50);
-
-				ctx.fillStyle = "rgb(0 0 200 / 50%)";
-				ctx.fillRect(30, 30, 50, 50);
+				this.drawCanvas(canvas, this.getAttribute("zoom") ?? 1, { x: 0, y: 0 });
 			}, 1000);
 		});
 
@@ -63,7 +64,86 @@ class SenkuCanvas extends HTMLElement {
 	 * field is changed!
 	 */
 	attributeChangedCallback(name, oldValue, newValue) {
-		console.log(`Attribute ${name} has changed.`);
+		console.log(`Attribute ${name} has changed. ${oldValue} -> ${newValue}`);
+	}
+
+	/**
+	 * @param {HTMLCanvasElement} canvas
+	 * @param {number} scale - How much scale do we need? Value between 1 and 2.
+	 * @param {{x:number, y:number}} translatePos - The position inside the drawing the center of the canvas should be.
+	 */
+	drawCanvas(canvas, scale, translatePos) {
+		console.log("Drawing canvas with scale:", scale);
+		/**
+		 * Drawing constants
+		 */
+		const CELL_WIDTH = 100;
+		const CELL_HEIGHT = 100;
+		const GRID_OFFSET = 10;
+		const GRID_LINES_COLOR = "#515151";
+
+		const ctx = canvas.getContext("2d");
+		ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+		ctx.save();
+
+		ctx.scale(scale, scale);
+		ctx.translate(translatePos.x, translatePos.y);
+
+		// ctx.fillStyle = GRID_LINES_COLOR;
+		ctx.strokeStyle = GRID_LINES_COLOR;
+		ctx.lineWidth = 1;
+
+		for (let x = -GRID_OFFSET; x < canvas.offsetWidth; x += CELL_WIDTH) {
+			for (let y = -GRID_OFFSET; y < canvas.offsetHeight; y += CELL_WIDTH) {
+				ctx.strokeRect(x, y, CELL_WIDTH, CELL_HEIGHT);
+			}
+		}
+		ctx.restore();
+	}
+
+	/**
+	 * Registers all event callbacks for the canvas element
+	 * @param {HTMLCanvasElement} canvas
+	 */
+	registerEvents(canvas) {
+		let translatePos = {
+			x: 0,
+			y: 0,
+		};
+
+		let scale = 1.0;
+		let scaleMultiplier = 0.8;
+		let startDragOffset = {};
+		let mouseDown = false;
+
+		canvas.addEventListener("mousedown", (ev) => {
+			mouseDown = true;
+			startDragOffset.x = ev.clientX - translatePos.x;
+			startDragOffset.y = ev.clientY - translatePos.y;
+		});
+		canvas.addEventListener("mouseup", () => {
+			mouseDown = false;
+		});
+		canvas.addEventListener("mouseover", () => {
+			mouseDown = false;
+		});
+		canvas.addEventListener("mouseout", () => {
+			mouseDown = false;
+		});
+
+		canvas.addEventListener("mousemove", (ev) => {
+			if (mouseDown) {
+				translatePos.x = ev.clientX - startDragOffset.x;
+				translatePos.y = ev.clientY - startDragOffset.y;
+				this.drawCanvas(canvas, scale, translatePos);
+			}
+		});
+
+		canvas.addEventListener("wheel", (ev) => {
+			scale -= ev.deltaY * 1e-3;
+			scale = clamp(scale, 1, 4);
+			this.drawCanvas(canvas, scale, translatePos);
+		});
 	}
 }
 
