@@ -1,4 +1,4 @@
-import { clamp } from "../../Utils/math";
+import { clamp, lerpColor } from "../../Utils/math";
 
 /**
  * @typedef {Object} TaskData
@@ -6,13 +6,17 @@ import { clamp } from "../../Utils/math";
  * @property {String} title
  * @property {String} status
  * @property {String} icon
- * @property {number} done_pct
+ * @property {number} progress
  */
 
-const CELL_WIDTH = 100;
-const CELL_HEIGHT = 100;
+const CELL_SIZE = 100;
+const CELL_PADDING = CELL_SIZE * 0.15;
+
 const GRID_OFFSET = 10;
 const GRID_LINES_COLOR = "#515151";
+
+const TASK_BACKGROUND = "#6e6e6e";
+const TASK_ICON_PADDING = CELL_PADDING;
 
 class SenkuCanvas extends HTMLElement {
 	static observedAttributes = ["widthPct", "heightPct", "zoom"];
@@ -99,20 +103,64 @@ class SenkuCanvas extends HTMLElement {
 		ctx.strokeStyle = GRID_LINES_COLOR;
 		ctx.lineWidth = 1;
 
-		for (let x = -GRID_OFFSET; x < canvas.offsetWidth; x += CELL_WIDTH) {
-			for (let y = -GRID_OFFSET; y < canvas.offsetHeight; y += CELL_WIDTH) {
-				ctx.strokeRect(x, y, CELL_WIDTH, CELL_HEIGHT);
+		for (let x = -GRID_OFFSET; x < canvas.offsetWidth; x += CELL_SIZE) {
+			for (let y = -GRID_OFFSET; y < canvas.offsetHeight; y += CELL_SIZE) {
+				ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
 			}
 		}
+
+		this.drawMinifiedTask(ctx, { icon: "😎", progress: 0.1 }, 1, 1);
 		ctx.restore();
 	}
 
 	/**
+	 * @param {CanvasRenderingContext2D} ctx
 	 * @param {TaskData} taskData
 	 * @param {number} column
 	 * @param {number} row
 	 */
-	drawTaskOnCell(taskData, column, row) {}
+	drawMinifiedTask(ctx, taskData, column, row) {
+		const topLeft = {
+			x: CELL_SIZE * column + CELL_PADDING - GRID_OFFSET,
+			y: CELL_SIZE * row + CELL_PADDING - GRID_OFFSET,
+		};
+		const dimensions = {
+			width: CELL_SIZE - CELL_PADDING * 2,
+			height: CELL_SIZE - CELL_PADDING * 2,
+		};
+
+		const bottomLeft = {
+			x: topLeft.x,
+			y: topLeft.y + dimensions.height,
+		};
+
+		// DRAW BACKGROUND TASK
+		ctx.fillStyle = TASK_BACKGROUND;
+		ctx.fillRect(topLeft.x, topLeft.y, dimensions.width, dimensions.height);
+
+		// DRAW EMOJI
+		const emojiSize = dimensions.width - TASK_ICON_PADDING * 2;
+		ctx.font = `${emojiSize}px Parkinsans`;
+		ctx.textBaseline = "top";
+		ctx.fillText(
+			taskData.icon,
+			topLeft.x + TASK_ICON_PADDING,
+			topLeft.y + TASK_ICON_PADDING,
+		);
+
+		// DRAW PROGRESS
+		const red_500 = [202, 50, 61];
+		const green = [75, 106, 55];
+		const interpolated = lerpColor(red_500, green, taskData.progress);
+		const barHeight = dimensions.height * 0.1;
+		ctx.fillStyle = `rgb(${interpolated[0]}, ${interpolated[1]}, ${interpolated[2]})`;
+		ctx.fillRect(
+			bottomLeft.x,
+			bottomLeft.y - barHeight,
+			dimensions.width * taskData.progress,
+			dimensions.height * 0.1,
+		);
+	}
 
 	/**
 	 * Registers all event callbacks for the canvas element
@@ -124,8 +172,7 @@ class SenkuCanvas extends HTMLElement {
 			y: 0,
 		};
 
-		let scale = 1.0;
-		let scaleMultiplier = 0.8;
+		let scale = this.getAttribute("zoom") ?? 1;
 		let startDragOffset = {};
 		let mouseDown = false;
 
