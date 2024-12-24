@@ -13,6 +13,21 @@ export function clamp(value, min, max) {
  */
 
 /**
+ * Computes a lerp function between 3 colors.
+ * @param {RGBColor} start
+ * @param {RGBColor} middle
+ * @param {RGBColor} end
+ * @param {number} progress
+ */
+export function lerpColor3(start, middle, end, progress) {
+	if (progress < 0.5) {
+		return lerpColor(start, middle, progress * 2);
+	} else {
+		return lerpColor(middle, end, (progress - 0.5) * 2);
+	}
+}
+
+/**
  * @param {RGBColor} start
  * @param {RGBColor} end
  * @param {number} progress - A number between 0 and 1

@@ -1,4 +1,4 @@
-import { clamp, lerpColor } from "../../Utils/math";
+import { clamp, lerpColor3 } from "../../Utils/math";
 
 /**
  * @typedef {Object} TaskData
@@ -109,7 +109,7 @@ class SenkuCanvas extends HTMLElement {
 			}
 		}
 
-		this.drawMinifiedTask(ctx, { icon: "😎", progress: 0.1 }, 1, 1);
+		this.drawMinifiedTask(ctx, { icon: "😎", progress: 0.9 }, 1, 1);
 		ctx.restore();
 	}
 
@@ -150,8 +150,9 @@ class SenkuCanvas extends HTMLElement {
 
 		// DRAW PROGRESS
 		const red_500 = [202, 50, 61];
+		const yellow = [200, 119, 49];
 		const green = [75, 106, 55];
-		const interpolated = lerpColor(red_500, green, taskData.progress);
+		const interpolated = lerpColor3(red_500, yellow, green, taskData.progress);
 		const barHeight = dimensions.height * 0.1;
 		ctx.fillStyle = `rgb(${interpolated[0]}, ${interpolated[1]}, ${interpolated[2]})`;
 		ctx.fillRect(
