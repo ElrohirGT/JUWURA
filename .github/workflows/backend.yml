@@ -39,10 +39,10 @@ jobs:
       - name: Formatting Zig
         run: zig fmt --check .
       - name: Installing JS dependencies
-        run: yarn install
+        run: pnpm run install
       - name: Formatting JS
-        run: yarn format:check
+        run: pnpm run format:check
       - name: Linting JS
-        run: yarn lint
+        run: pnpm run lint
       - name: Testing
         run: cd .. && nix run .#integrationTests

@@ -11,6 +11,9 @@ import Url.Parser as P exposing ((</>), Parser, s)
 It's a maybe string since the application can be deployed to an environment
 where there is no base path for routing.
 
+The base path should not have any end or start slashes.
+For example: "/JUWURA/" is not a valid value but "JUWURA" is!
+
 -}
 type alias BasePath =
     Maybe String
@@ -27,6 +30,7 @@ type Route
     | Http Int
     | Json Int
     | Ports
+    | Senku
 
 
 {-| Generates a route parser given a base path.
@@ -55,6 +59,9 @@ genRouteParser maybeBasePath =
 
                 -- /${basePath}/ports
                 , P.map Ports (s basePath </> s "ports")
+
+                -- /${basePath}/senku
+                , P.map Senku (s basePath </> s "senku")
                 ]
 
         Nothing ->
@@ -73,6 +80,9 @@ genRouteParser maybeBasePath =
 
                 -- /json
                 , P.map Ports (s "ports")
+
+                -- /json
+                , P.map Senku (s "senku")
                 ]
 
 
@@ -103,6 +113,7 @@ type alias NavigationHrefs msg =
     , goToHttp : Int -> Attribute msg
     , goToRouteWithParams : Attribute msg
     , goToHome : Attribute msg
+    , goToSenku : Attribute msg
     }
 
 
@@ -113,6 +124,7 @@ generateRoutingFuncs basePath =
     , goToHttp = goToHttp basePath
     , goToRouteWithParams = goToRouteWithParams basePath
     , goToHome = goToHome basePath
+    , goToSenku = goToSenku basePath
     }
 
 
@@ -171,6 +183,18 @@ goToHome basePath =
     case basePath of
         Just s ->
             href ("/" ++ s)
+
+        Nothing ->
+            href "/"
+
+
+{-| Generates an href attribute to go to the senku page
+-}
+goToSenku : BasePath -> Attribute msg
+goToSenku basePath =
+    case basePath of
+        Just s ->
+            href (String.concat [ "/", s, "/senku" ])
 
         Nothing ->
             href "/"

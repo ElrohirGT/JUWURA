@@ -1,4 +1,4 @@
-module Theme exposing (colors, cssColors, cssSpacing, fontFamilies, fontSizes, locale, spacing)
+module Theme exposing (colors, cssColors, cssFontSizes, cssSpacing, fontFamilies, fontSizes, locale, spacing)
 
 import Css exposing (hex, px)
 import FormatNumber.Locales exposing (Decimals(..), usLocale)
@@ -22,6 +22,7 @@ colors =
     , black_400 = "#515151"
     , black_450 = "#282828"
     , black_470 = "#363636"
+    , black_490 = "#191919"
     , black_500 = "#010101"
     }
 
@@ -44,6 +45,7 @@ cssColors =
     , black_400 = hex (String.dropLeft 1 colors.black_400)
     , black_450 = hex (String.dropLeft 1 colors.black_450)
     , black_470 = hex (String.dropLeft 1 colors.black_470)
+    , black_490 = hex (String.dropLeft 1 colors.black_490)
     , black_500 = hex (String.dropLeft 1 colors.black_500)
     }
 
@@ -77,20 +79,20 @@ spacing =
 {-| The gaps transformed into values that elm-css can use. This assumes all gaps are rem values
 -}
 cssSpacing =
-    { xs_3 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.xs_3)))
-    , xs_2 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.xs_2)))
-    , xs = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.xs)))
-    , s = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.s)))
-    , m = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.m)))
-    , l = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.l)))
-    , xl = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.xl)))
-    , xl_2 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.xl_2)))
-    , xl_3 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.xl_3)))
-    , xl_4 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.xl_4)))
-    , xl_5 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.xl_5)))
-    , xl_6 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.xl_6)))
-    , xl_7 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.xl_7)))
-    , xl_8 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 3 spacing.xl_8)))
+    { xs_3 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.xs_3)))
+    , xs_2 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.xs_2)))
+    , xs = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.xs)))
+    , s = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.s)))
+    , m = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.m)))
+    , l = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.l)))
+    , xl = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.xl)))
+    , xl_2 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.xl_2)))
+    , xl_3 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.xl_3)))
+    , xl_4 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.xl_4)))
+    , xl_5 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.xl_5)))
+    , xl_6 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.xl_6)))
+    , xl_7 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.xl_7)))
+    , xl_8 = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 spacing.xl_8)))
     }
 
 
@@ -116,20 +118,40 @@ fontFamilies =
 {-| The font sizes to use in the application
 -}
 fontSizes =
-    { display_large = "57pt"
-    , display_medium = "45pt"
-    , display_small = "36pt"
-    , headline_large = "32pt"
-    , headline_medium = "28pt"
-    , headline_small = "24pt"
-    , title_large = "22pt"
-    , title_medium = "16pt"
-    , title_small = "14pt"
-    , body_large = "16pt"
-    , body_medium = "14pt"
-    , body_small = "12pt"
-    , label_extraLarge = "16pt"
-    , label_large = "14pt"
-    , label_medium = "12pt"
-    , label_small = "11pt"
+    { display_large = "57px"
+    , display_medium = "45px"
+    , display_small = "36px"
+    , headline_large = "32px"
+    , headline_medium = "28px"
+    , headline_small = "24px"
+    , title_large = "22px"
+    , title_medium = "16px"
+    , title_small = "14px"
+    , body_large = "16px"
+    , body_medium = "14px"
+    , body_small = "12px"
+    , label_extraLarge = "16px"
+    , label_large = "14px"
+    , label_medium = "12px"
+    , label_small = "11px"
+    }
+
+
+cssFontSizes =
+    { display_large = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.display_large)))
+    , display_medium = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.display_medium)))
+    , display_small = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.display_small)))
+    , headline_large = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.headline_large)))
+    , headline_medium = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.headline_medium)))
+    , headline_small = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.headline_small)))
+    , title_large = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.title_large)))
+    , title_medium = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.title_medium)))
+    , title_small = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.title_small)))
+    , body_large = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.body_large)))
+    , body_medium = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.body_medium)))
+    , body_small = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.body_small)))
+    , label_extraLarge = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.label_extraLarge)))
+    , label_large = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.label_large)))
+    , label_medium = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.label_medium)))
+    , label_small = px (Maybe.withDefault 0.0 (String.toFloat (String.dropRight 2 fontSizes.label_small)))
     }

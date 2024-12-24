@@ -37,9 +37,9 @@ jobs:
         uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@main
       - name: Installing dependencies
-        run: yarn install
+        run: pnpm run install
       - name: Bundling
-        run: yarn build
+        run: pnpm run build
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
