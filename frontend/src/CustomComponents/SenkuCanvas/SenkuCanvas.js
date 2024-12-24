@@ -1,5 +1,19 @@
 import { clamp } from "../../Utils/math";
 
+/**
+ * @typedef {Object} TaskData
+ * @property {Date} due_date
+ * @property {String} title
+ * @property {String} status
+ * @property {String} icon
+ * @property {number} done_pct
+ */
+
+const CELL_WIDTH = 100;
+const CELL_HEIGHT = 100;
+const GRID_OFFSET = 10;
+const GRID_LINES_COLOR = "#515151";
+
 class SenkuCanvas extends HTMLElement {
 	static observedAttributes = ["widthPct", "heightPct", "zoom"];
 
@@ -74,13 +88,6 @@ class SenkuCanvas extends HTMLElement {
 	 */
 	drawCanvas(canvas, scale, translatePos) {
 		console.log("Drawing canvas with scale:", scale);
-		/**
-		 * Drawing constants
-		 */
-		const CELL_WIDTH = 100;
-		const CELL_HEIGHT = 100;
-		const GRID_OFFSET = 10;
-		const GRID_LINES_COLOR = "#515151";
 
 		const ctx = canvas.getContext("2d");
 		ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
@@ -89,7 +96,6 @@ class SenkuCanvas extends HTMLElement {
 		ctx.scale(scale, scale);
 		ctx.translate(translatePos.x, translatePos.y);
 
-		// ctx.fillStyle = GRID_LINES_COLOR;
 		ctx.strokeStyle = GRID_LINES_COLOR;
 		ctx.lineWidth = 1;
 
@@ -100,6 +106,13 @@ class SenkuCanvas extends HTMLElement {
 		}
 		ctx.restore();
 	}
+
+	/**
+	 * @param {TaskData} taskData
+	 * @param {number} column
+	 * @param {number} row
+	 */
+	drawTaskOnCell(taskData, column, row) {}
 
 	/**
 	 * Registers all event callbacks for the canvas element
@@ -147,4 +160,8 @@ class SenkuCanvas extends HTMLElement {
 	}
 }
 
-window.customElements.define("uwu-senku", SenkuCanvas);
+export const SenkuCanvasComponent = {
+	register() {
+		window.customElements.define("uwu-senku", SenkuCanvas);
+	},
+};

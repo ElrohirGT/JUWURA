@@ -29,4 +29,8 @@ class Icon extends HTMLElement {
 	}
 }
 
-window.customElements.define("uwu-icon", Icon);
+export const IconComponent = {
+	register() {
+		window.customElements.define("uwu-icon", Icon);
+	},
+};
