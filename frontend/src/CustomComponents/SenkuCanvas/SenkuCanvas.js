@@ -134,9 +134,46 @@ class SenkuCanvas extends HTMLElement {
 			y: topLeft.y + dimensions.height,
 		};
 
-		// DRAW BACKGROUND TASK
+		// DRAW TASK BACKGROUND
+		// ctx.strokeStyle = "white";
+		// ctx.strokeRect(topLeft.x, topLeft.y, dimensions.width, dimensions.height);
+
+		const radius = 10;
 		ctx.fillStyle = TASK_BACKGROUND;
-		ctx.fillRect(topLeft.x, topLeft.y, dimensions.width, dimensions.height);
+		ctx.beginPath();
+		ctx.moveTo(topLeft.x + radius, topLeft.y);
+
+		ctx.quadraticCurveTo(topLeft.x, topLeft.y, topLeft.x, topLeft.y + radius);
+		ctx.lineTo(topLeft.x, topLeft.y + dimensions.height - radius);
+
+		ctx.quadraticCurveTo(
+			topLeft.x,
+			topLeft.y + dimensions.height,
+			topLeft.x + radius,
+			topLeft.y + dimensions.height,
+		);
+		ctx.lineTo(
+			topLeft.x + dimensions.width - radius,
+			topLeft.y + dimensions.height,
+		);
+
+		ctx.quadraticCurveTo(
+			topLeft.x + dimensions.width,
+			topLeft.y + dimensions.height,
+			topLeft.x + dimensions.width,
+			topLeft.y + dimensions.height - radius,
+		);
+		ctx.lineTo(topLeft.x + dimensions.width, topLeft.y + radius);
+
+		ctx.quadraticCurveTo(
+			topLeft.x + dimensions.width,
+			topLeft.y,
+			topLeft.x + dimensions.width - radius,
+			topLeft.y,
+		);
+		ctx.lineTo(topLeft.x + radius, topLeft.y);
+
+		ctx.fill();
 
 		// DRAW EMOJI
 		const emojiSize = dimensions.width - TASK_ICON_PADDING * 2;
@@ -155,6 +192,7 @@ class SenkuCanvas extends HTMLElement {
 		const interpolated = lerpColor3(red_500, yellow, green, taskData.progress);
 		const barHeight = dimensions.height * 0.1;
 		ctx.fillStyle = `rgb(${interpolated[0]}, ${interpolated[1]}, ${interpolated[2]})`;
+
 		ctx.fillRect(
 			bottomLeft.x,
 			bottomLeft.y - barHeight,
