@@ -24,7 +24,8 @@ type alias BasePath =
 
 
 type Route
-    = Home
+    = Login
+    | Home
     | RouteWithParams
     | NotFound
     | Http Int
@@ -48,6 +49,9 @@ genRouteParser maybeBasePath =
                 -- /${basePath}/
                 [ P.map Home (s basePath </> P.top)
 
+                -- /${basePath}/login
+                , P.map Login (s basePath </> s "login" </> P.top)
+
                 -- /${basePath}/details
                 , P.map RouteWithParams (s basePath </> s "details")
 
@@ -68,6 +72,9 @@ genRouteParser maybeBasePath =
             P.oneOf
                 -- /
                 [ P.map Home P.top
+
+                -- /login
+                , P.map Login (s "login")
 
                 -- /details
                 , P.map RouteWithParams (s "details")

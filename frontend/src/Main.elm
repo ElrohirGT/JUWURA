@@ -5,6 +5,7 @@ import Browser.Navigation as Nav
 import Html
 import Html.Styled exposing (toUnstyled)
 import Pages.Details as DetailsPage
+import Pages.Login as LoginPage
 import Pages.Home as HomePage
 import Pages.Http as HttpPage
 import Pages.Json as JsonPage
@@ -54,6 +55,7 @@ Used to represent the current page and state
 -}
 type AppState
     = NotFound
+    | Login
     | Senku SenkuPage.Model
     | Details DetailsPage.Model
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
@@ -67,6 +69,9 @@ fromUrlToAppState basePath url =
     case Routing.parseUrl basePath url of
         Routing.Home ->
             Home (HomePage.init basePath)
+
+        Routing.Login ->
+            Login
 
         Routing.NotFound ->
             NotFound
@@ -249,6 +254,9 @@ view model =
             }
     in
     case model.state of
+        Login ->
+            viewStateLess LoginPage.view
+
         Home pageModel ->
             viewStatic HomePage.view pageModel
 
