@@ -33,21 +33,24 @@ import { floatEquals } from "../../Utils/math";
  * @property {ConnectionPoint} end
  */
 
-const GRID_SIZE = 10;
-
-const CELL_SIZE = 100;
-const CELL_PADDING = CELL_SIZE * 0.15;
-
-const GRID_OFFSET = CELL_SIZE / 2;
-const GRID_LINES_COLOR = "#515151";
-
-const TASK_BACKGROUND = "#6e6e6e";
-const TASK_ICON_PADDING = CELL_PADDING;
-
-const SCALE_DIM = {
+const SCALE_DIMENSIONS = {
 	min: 1,
 	max: 4,
 };
+const GRID_SIZE = 10;
+const GRID_LINES_COLOR = "#515151";
+
+const TASK_BACKGROUND = "#6e6e6e";
+
+const MINIFIED_VIEW = (() => {
+	const cellSize = 100;
+	return {
+		cellSize,
+		griddOffset: cellSize / 2,
+		cellPadding: cellSize * 0.15,
+		taskIconPadding: cellSize * 0.15,
+	};
+})();
 
 /**
  * @typedef {(TaskData|undefined)[][]} Cells
@@ -133,7 +136,7 @@ class SenkuCanvas extends HTMLElement {
 				this.drawCanvas(
 					canvas,
 					this.getState(),
-					this.getAttribute("zoom") ?? SCALE_DIM.max,
+					this.getAttribute("zoom") ?? SCALE_DIMENSIONS.max,
 					{
 						x: 0,
 						y: 0,
@@ -189,9 +192,9 @@ class SenkuCanvas extends HTMLElement {
 		// console.log("STATE", state);
 		for (let column = 0; column < GRID_SIZE; column += 1) {
 			for (let row = 0; row < GRID_SIZE; row += 1) {
-				let x = column * CELL_SIZE + GRID_OFFSET;
-				let y = row * CELL_SIZE + GRID_OFFSET;
-				ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+				let x = column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset;
+				let y = row * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset;
+				ctx.strokeRect(x, y, MINIFIED_VIEW.cellSize, MINIFIED_VIEW.cellSize);
 
 				const cell = state.cells[row][column];
 				// console.log("CELL: ", { row, column }, cell);
@@ -229,12 +232,18 @@ class SenkuCanvas extends HTMLElement {
 		row += 1;
 
 		const topLeft = {
-			x: CELL_SIZE * column + CELL_PADDING - GRID_OFFSET,
-			y: CELL_SIZE * row + CELL_PADDING - GRID_OFFSET,
+			x:
+				MINIFIED_VIEW.cellSize * column +
+				MINIFIED_VIEW.cellPadding -
+				MINIFIED_VIEW.griddOffset,
+			y:
+				MINIFIED_VIEW.cellSize * row +
+				MINIFIED_VIEW.cellPadding -
+				MINIFIED_VIEW.griddOffset,
 		};
 		const dimensions = {
-			width: CELL_SIZE - CELL_PADDING * 2,
-			height: CELL_SIZE - CELL_PADDING * 2,
+			width: MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2,
+			height: MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2,
 		};
 
 		const bottomLeft = {
@@ -281,13 +290,13 @@ class SenkuCanvas extends HTMLElement {
 		ctx.fill();
 
 		// DRAW EMOJI
-		const emojiSize = dimensions.width - TASK_ICON_PADDING * 2;
+		const emojiSize = dimensions.width - MINIFIED_VIEW.taskIconPadding * 2;
 		ctx.font = `${emojiSize}px Parkinsans`;
 		ctx.textBaseline = "top";
 		ctx.fillText(
 			taskData.icon,
-			topLeft.x + TASK_ICON_PADDING,
-			topLeft.y + TASK_ICON_PADDING,
+			topLeft.x + MINIFIED_VIEW.taskIconPadding,
+			topLeft.y + MINIFIED_VIEW.taskIconPadding,
 		);
 
 		// DRAW PROGRESS
@@ -343,7 +352,7 @@ class SenkuCanvas extends HTMLElement {
 			y: 0,
 		};
 
-		let scale = this.getAttribute("zoom") ?? SCALE_DIM.min;
+		let scale = this.getAttribute("zoom") ?? SCALE_DIMENSIONS.min;
 		let startDragOffset = {};
 		let mouseDown = false;
 
