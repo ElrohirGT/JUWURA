@@ -1,10 +1,10 @@
-module Pages.Home exposing (Model, init, view)
+module Pages.Home exposing (Model, Msg, init, update, view)
 
-import Css exposing (column, displayFlex, flexDirection)
-import Html.Styled exposing (a, div, img, text)
-import Html.Styled.Attributes exposing (css, src)
+import Css exposing (color, column, displayFlex, flexDirection, hex)
+import Html.Styled exposing (a, button, div, input, text)
+import Html.Styled.Attributes exposing (css, placeholder, value)
+import Html.Styled.Events exposing (onClick, onInput)
 import Routing exposing (BasePath, NavigationHrefs, generateRoutingFuncs)
-import Utils exposing (viteAsset)
 
 
 
@@ -17,29 +17,61 @@ import Utils exposing (viteAsset)
 -}
 
 
+type Msg
+    = ChangeText String
+    | Save
+
+
 type alias Model msg =
-    NavigationHrefs msg
+    { navigationHrefs : NavigationHrefs msg
+    , text : String
+    }
 
 
-init : BasePath -> Model msg
+init : BasePath -> ( Model Msg, Cmd Msg )
 init basePath =
-    generateRoutingFuncs basePath
+    ( { navigationHrefs = generateRoutingFuncs basePath
+      , text = ""
+      }
+    , Cmd.none
+    )
 
 
-view : Model msg -> { title : String, body : List (Html.Styled.Html msg) }
+update : Model msg -> Msg -> ( Model msg, Cmd Msg )
+update model msg =
+    case msg of
+        ChangeText newValue ->
+            ( { model | text = newValue }, Cmd.none )
+
+        Save ->
+            let
+                a =
+                    Debug.log "Hellow" 3
+            in
+            ( model, Cmd.none )
+
+
+view : Model Msg -> { title : String, body : List (Html.Styled.Html Msg) }
 view model =
-    { title = "JUWURA"
+    { title = "Juwura"
     , body = body model
     }
 
 
-body : Model msg -> List (Html.Styled.Html msg)
+body : Model Msg -> List (Html.Styled.Html Msg)
 body model =
+    let
+        nav =
+            model.navigationHrefs
+    in
     [ div [ css [ displayFlex, flexDirection column ] ]
-        [ a [ model.goToRouteWithParams ] [ text "Go to details" ]
-        , a [ model.goToHttp 10 ] [ text "Go to HTTP example" ]
-        , a [ model.goToJson 10 ] [ text "Go to JSON example" ]
-        , a [ model.goToPorts ] [ text "Go to PORTS example" ]
-        , img [ src <| viteAsset <| "./javascript.svg" ] []
+        [ a [ nav.goToRouteWithParams ] [ text "Go to details" ]
+        , a [ nav.goToHttp 10 ] [ text "Go to HTTP example" ]
+        , a [ nav.goToJson 10 ] [ text "Go to JSON example" ]
+        , a [ nav.goToPorts ] [ text "Go to PORTS example" ]
+        ]
+    , div [ css [ color <| hex "#FFF" ] ]
+        [ input [ placeholder "localStorage value", value model.text, onInput ChangeText ] []
+        , button [ onClick Save ] [ text "Save" ]
         ]
     ]

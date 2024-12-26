@@ -5,10 +5,10 @@ import Browser.Navigation as Nav
 import Html
 import Html.Styled exposing (toUnstyled)
 import Pages.Details as DetailsPage
-import Pages.Login as LoginPage
 import Pages.Home as HomePage
 import Pages.Http as HttpPage
 import Pages.Json as JsonPage
+import Pages.Login as LoginPage
 import Pages.NotFound as NotFoundPage
 import Pages.Ports as PortsPage
 import Pages.Senku as SenkuPage
@@ -58,9 +58,9 @@ type AppState
     | Login
     | Senku SenkuPage.Model
     | Details DetailsPage.Model
+    | Home ( HomePage.Model HomePage.Msg, Cmd HomePage.Msg )
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
     | Json ( JsonPage.Model, Cmd JsonPage.Msg )
-    | Home (HomePage.Model Msg)
     | Ports ( PortsPage.Model, Cmd PortsPage.Msg )
 
 
@@ -108,6 +108,9 @@ init basePath url navKey =
             fromUrlToAppState basePath url
     in
     case initialAppState of
+        Home ( _, command ) ->
+            ( Model navKey basePath initialAppState, Cmd.map HomeViewMsg command )
+
         Http ( _, command ) ->
             ( Model navKey basePath initialAppState, Cmd.map HttpViewMsg command )
 
@@ -139,6 +142,7 @@ subscriptions model =
 type Msg
     = UrlChanged Url
     | LinkClicked Browser.UrlRequest
+    | HomeViewMsg HomePage.Msg
     | DetailsViewMsg DetailsPage.Msg
     | HttpViewMsg HttpPage.Msg
     | JsonViewMsg JsonPage.Msg
@@ -162,6 +166,18 @@ update msg model =
 
                 Browser.External href ->
                     ( model, Nav.load href )
+
+        HomeViewMsg innerMsg ->
+            case model.state of
+                Home innerModel ->
+                    let
+                        ( newModel, newCmd ) =
+                            HomePage.update (Tuple.first innerModel) innerMsg
+                    in
+                    ( { model | state = Home ( newModel, newCmd ) }, Cmd.map HomeViewMsg newCmd )
+
+                _ ->
+                    ( model, Cmd.none )
 
         DetailsViewMsg innerMsg ->
             case model.state of
@@ -258,7 +274,7 @@ view model =
             viewStateLess LoginPage.view
 
         Home pageModel ->
-            viewStatic HomePage.view pageModel
+            viewWithEffects HomePage.view pageModel HomeViewMsg
 
         Details pageModel ->
             viewWithState DetailsPage.view pageModel DetailsViewMsg
