@@ -1,6 +1,7 @@
 import { clamp } from "../../Utils/math";
 import { lerpColor3 } from "../../Utils/color";
 import { floatEquals } from "../../Utils/math";
+import { search, createNode } from "../../Utils/astar";
 
 /**
  * @typedef {Object} CellCoord
@@ -9,17 +10,8 @@ import { floatEquals } from "../../Utils/math";
  */
 
 /**
- * @typedef {"UP" | "DOWN" | "LEFT" | "RIGHT"} ConnectionDirection
- */
-
-/**
- * @typedef {Object} ConnectionPoint
- * @property {CellCoord} cords
- * @property {ConnectionDirection} dir
- */
-
-/**
  * @typedef {Object} TaskData
+ * @property {number} id
  * @property {Date} due_date
  * @property {String} title
  * @property {String} status
@@ -29,8 +21,8 @@ import { floatEquals } from "../../Utils/math";
 
 /**
  * @typedef {Object} TaskConnection
- * @property {ConnectionPoint} start
- * @property {ConnectionPoint} end
+ * @property {CellCoord} start
+ * @property {CellCoord} end
  */
 
 const SCALE_DIMENSIONS = {
@@ -75,8 +67,8 @@ function generateDummyData() {
 			cells[i].push(undefined);
 		}
 	}
-	cells[0][0] = { icon: "😎", progress: 1.0 };
-	cells[0][2] = { icon: "😎", progress: 1.0 };
+	cells[0][0] = { id: 1, icon: "😎", progress: 1.0 };
+	cells[0][9] = { id: 2, icon: "😎", progress: 1.0 };
 
 	return {
 		cells,
@@ -88,7 +80,7 @@ function generateDummyData() {
 				},
 				end: {
 					row: 0,
-					column: 0,
+					column: 18,
 				},
 			},
 		],
@@ -204,6 +196,27 @@ class SenkuCanvas extends HTMLElement {
 			}
 		}
 
+		// Adds border cells for the pathing algorithm
+		// console.log(state.cells);
+		const connMatrix = [];
+		for (let row = 0; row < 2 * GRID_SIZE - 1; row++) {
+			connMatrix.push([]);
+			for (let column = 0; column < 2 * GRID_SIZE - 1; column++) {
+				if (row % 2 !== 0) {
+					connMatrix[row].push(undefined);
+				} else if (column % 2 === 0) {
+					connMatrix[row].push(state.cells[row / 2][column / 2]);
+				} else {
+					connMatrix[row].push(undefined);
+				}
+			}
+		}
+		// console.log(connMatrix);
+
+		for (const connection of state.connections) {
+			this.drawTaskConnection(ctx, connection, connMatrix);
+		}
+
 		ctx.restore();
 	}
 
@@ -215,9 +228,29 @@ class SenkuCanvas extends HTMLElement {
 	/**
 	 * @param {CanvasRenderingContext2D} ctx
 	 * @param {TaskConnection} connInfo
+	 * @param {Cells} matrix
 	 */
-	drawTaskConnection(ctx, connInfo) {
+	drawTaskConnection(ctx, connInfo, matrix) {
 		const { start, end } = connInfo;
+		const startTask = matrix[start.row][start.column];
+		const endTask = matrix[end.row][end.column];
+		const result = search(
+			matrix,
+			createNode(startTask, start.column, start.row),
+			createNode(endTask, end.column, end.row),
+			false,
+			(a, b) => {
+				console.log("A:", a, "B:", b);
+				if (a && b) {
+					return a.id === b.id;
+				}
+				return false;
+			},
+			(a) => {
+				return a !== undefined && a.id !== endTask.id;
+			},
+		);
+		console.log(result);
 	}
 
 	/**
