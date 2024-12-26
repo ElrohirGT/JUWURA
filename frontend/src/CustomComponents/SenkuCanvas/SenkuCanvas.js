@@ -3,6 +3,22 @@ import { lerpColor3 } from "../../Utils/color";
 import { floatEquals } from "../../Utils/math";
 
 /**
+ * @typedef {Object} CellCoord
+ * @property {number} column
+ * @property {number} row
+ */
+
+/**
+ * @typedef {"UP" | "DOWN" | "LEFT" | "RIGHT"} ConnectionDirection
+ */
+
+/**
+ * @typedef {Object} ConnectionPoint
+ * @property {CellCoord} cords
+ * @property {ConnectionDirection} dir
+ */
+
+/**
  * @typedef {Object} TaskData
  * @property {Date} due_date
  * @property {String} title
@@ -11,10 +27,18 @@ import { floatEquals } from "../../Utils/math";
  * @property {number} progress
  */
 
+/**
+ * @typedef {Object} TaskConnection
+ * @property {ConnectionPoint} start
+ * @property {ConnectionPoint} end
+ */
+
+const GRID_SIZE = 10;
+
 const CELL_SIZE = 100;
 const CELL_PADDING = CELL_SIZE * 0.15;
 
-const GRID_OFFSET = 10;
+const GRID_OFFSET = CELL_SIZE / 2;
 const GRID_LINES_COLOR = "#515151";
 
 const TASK_BACKGROUND = "#6e6e6e";
@@ -24,6 +48,49 @@ const SCALE_DIM = {
 	min: 1,
 	max: 4,
 };
+
+/**
+ * @typedef {(TaskData|undefined)[][]} Cells
+ */
+
+/**
+ * @typedef {Object} SenkuCanvasState
+ * @property {Cells} cells
+ * @property {TaskConnection[]} connections
+ */
+
+/**
+ * Generates dummy data for the graph
+ * @returns {SenkuCanvasState}
+ */
+function generateDummyData() {
+	/** @type {Cells}*/
+	const cells = [];
+	for (let i = 0; i < GRID_SIZE; i++) {
+		cells.push([]);
+		for (let j = 0; j < GRID_SIZE; j++) {
+			cells[i].push(undefined);
+		}
+	}
+	cells[0][0] = { icon: "😎", progress: 1.0 };
+	cells[0][2] = { icon: "😎", progress: 1.0 };
+
+	return {
+		cells,
+		connections: [
+			{
+				start: {
+					row: 0,
+					column: 0,
+				},
+				end: {
+					row: 0,
+					column: 0,
+				},
+			},
+		],
+	};
+}
 
 class SenkuCanvas extends HTMLElement {
 	static observedAttributes = ["widthPct", "heightPct", "zoom"];
@@ -63,10 +130,15 @@ class SenkuCanvas extends HTMLElement {
 					`${this.getAttribute("heightPct")} / 100 * ${document.body.offsetHeight} - ${viewTopbar.offsetHeight} = ${canvas.height}`,
 				);
 
-				this.drawCanvas(canvas, this.getAttribute("zoom") ?? SCALE_DIM.max, {
-					x: 0,
-					y: 0,
-				});
+				this.drawCanvas(
+					canvas,
+					this.getState(),
+					this.getAttribute("zoom") ?? SCALE_DIM.max,
+					{
+						x: 0,
+						y: 0,
+					},
+				);
 			}, 1000);
 		});
 
@@ -97,10 +169,11 @@ class SenkuCanvas extends HTMLElement {
 
 	/**
 	 * @param {HTMLCanvasElement} canvas
+	 * @param {SenkuCanvasState} state - The input for rendering the component.
 	 * @param {number} scale - How much scale do we need? Value between 1 and 2.
 	 * @param {{x:number, y:number}} translatePos - The position inside the drawing the center of the canvas should be.
 	 */
-	drawCanvas(canvas, scale, translatePos) {
+	drawCanvas(canvas, state, scale, translatePos) {
 		console.log("Drawing canvas with scale:", scale);
 
 		const ctx = canvas.getContext("2d");
@@ -113,23 +186,48 @@ class SenkuCanvas extends HTMLElement {
 		ctx.strokeStyle = GRID_LINES_COLOR;
 		ctx.lineWidth = 1;
 
-		for (let x = -GRID_OFFSET; x < canvas.offsetWidth; x += CELL_SIZE) {
-			for (let y = -GRID_OFFSET; y < canvas.offsetHeight; y += CELL_SIZE) {
+		// console.log("STATE", state);
+		for (let column = 0; column < GRID_SIZE; column += 1) {
+			for (let row = 0; row < GRID_SIZE; row += 1) {
+				let x = column * CELL_SIZE + GRID_OFFSET;
+				let y = row * CELL_SIZE + GRID_OFFSET;
 				ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+
+				const cell = state.cells[row][column];
+				// console.log("CELL: ", { row, column }, cell);
+				if (cell) {
+					this.drawMinifiedTask(ctx, cell, { column, row });
+				}
 			}
 		}
 
-		this.drawMinifiedTask(ctx, { icon: "😎", progress: 1.0 }, 1, 1);
 		ctx.restore();
+	}
+
+	getState() {
+		// TODO: This should be computed from a property in JS
+		return generateDummyData();
+	}
+
+	/**
+	 * @param {CanvasRenderingContext2D} ctx
+	 * @param {TaskConnection} connInfo
+	 */
+	drawTaskConnection(ctx, connInfo) {
+		const { start, end } = connInfo;
 	}
 
 	/**
 	 * @param {CanvasRenderingContext2D} ctx
 	 * @param {TaskData} taskData
-	 * @param {number} column
-	 * @param {number} row
+	 * @param {CellCoord} cords
 	 */
-	drawMinifiedTask(ctx, taskData, column, row) {
+	drawMinifiedTask(ctx, taskData, cords) {
+		// Converts from idx to column/row number.
+		let { column, row } = cords;
+		column += 1;
+		row += 1;
+
 		const topLeft = {
 			x: CELL_SIZE * column + CELL_PADDING - GRID_OFFSET,
 			y: CELL_SIZE * row + CELL_PADDING - GRID_OFFSET,
@@ -233,7 +331,6 @@ class SenkuCanvas extends HTMLElement {
 		ctx.lineTo(bottomLeft.x, bottomLeft.y - barHeight);
 
 		ctx.fill();
-		ctx.closePath();
 	}
 
 	/**
@@ -269,14 +366,14 @@ class SenkuCanvas extends HTMLElement {
 			if (mouseDown) {
 				translatePos.x = ev.clientX - startDragOffset.x;
 				translatePos.y = ev.clientY - startDragOffset.y;
-				this.drawCanvas(canvas, scale, translatePos);
+				this.drawCanvas(canvas, this.getState(), scale, translatePos);
 			}
 		});
 
 		canvas.addEventListener("wheel", (ev) => {
 			scale -= ev.deltaY * 1e-3;
 			scale = clamp(scale, 1, 4);
-			this.drawCanvas(canvas, scale, translatePos);
+			this.drawCanvas(canvas, this.getState(), scale, translatePos);
 		});
 	}
 }
