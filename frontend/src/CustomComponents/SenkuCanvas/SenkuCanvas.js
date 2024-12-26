@@ -1,4 +1,6 @@
-import { clamp, lerpColor3 } from "../../Utils/math";
+import { clamp } from "../../Utils/math";
+import { lerpColor3 } from "../../Utils/color";
+import { floatEquals } from "../../Utils/math";
 
 /**
  * @typedef {Object} TaskData
@@ -17,6 +19,11 @@ const GRID_LINES_COLOR = "#515151";
 
 const TASK_BACKGROUND = "#6e6e6e";
 const TASK_ICON_PADDING = CELL_PADDING;
+
+const SCALE_DIM = {
+	min: 1,
+	max: 4,
+};
 
 class SenkuCanvas extends HTMLElement {
 	static observedAttributes = ["widthPct", "heightPct", "zoom"];
@@ -56,7 +63,10 @@ class SenkuCanvas extends HTMLElement {
 					`${this.getAttribute("heightPct")} / 100 * ${document.body.offsetHeight} - ${viewTopbar.offsetHeight} = ${canvas.height}`,
 				);
 
-				this.drawCanvas(canvas, this.getAttribute("zoom") ?? 1, { x: 0, y: 0 });
+				this.drawCanvas(canvas, this.getAttribute("zoom") ?? SCALE_DIM.max, {
+					x: 0,
+					y: 0,
+				});
 			}, 1000);
 		});
 
@@ -109,7 +119,7 @@ class SenkuCanvas extends HTMLElement {
 			}
 		}
 
-		this.drawMinifiedTask(ctx, { icon: "😎", progress: 0.9 }, 1, 1);
+		this.drawMinifiedTask(ctx, { icon: "😎", progress: 1.0 }, 1, 1);
 		ctx.restore();
 	}
 
@@ -135,9 +145,6 @@ class SenkuCanvas extends HTMLElement {
 		};
 
 		// DRAW TASK BACKGROUND
-		// ctx.strokeStyle = "white";
-		// ctx.strokeRect(topLeft.x, topLeft.y, dimensions.width, dimensions.height);
-
 		const radius = 10;
 		ctx.fillStyle = TASK_BACKGROUND;
 		ctx.beginPath();
@@ -191,14 +198,42 @@ class SenkuCanvas extends HTMLElement {
 		const green = [75, 106, 55];
 		const interpolated = lerpColor3(red_500, yellow, green, taskData.progress);
 		const barHeight = dimensions.height * 0.1;
-		ctx.fillStyle = `rgb(${interpolated[0]}, ${interpolated[1]}, ${interpolated[2]})`;
 
-		ctx.fillRect(
-			bottomLeft.x,
-			bottomLeft.y - barHeight,
-			dimensions.width * taskData.progress,
-			dimensions.height * 0.1,
+		ctx.fillStyle = `rgb(${interpolated[0]}, ${interpolated[1]}, ${interpolated[2]})`;
+		ctx.beginPath();
+		ctx.moveTo(topLeft.x, bottomLeft.y - barHeight);
+		ctx.quadraticCurveTo(
+			topLeft.x,
+			bottomLeft.y,
+			topLeft.x + radius,
+			bottomLeft.y,
 		);
+
+		const xProgressBarEnd = topLeft.x + dimensions.width * taskData.progress;
+		ctx.lineTo(xProgressBarEnd - radius, bottomLeft.y);
+
+		if (floatEquals(taskData.progress, 1.0, 1e-10)) {
+			ctx.quadraticCurveTo(
+				bottomLeft.x + dimensions.width,
+				bottomLeft.y,
+				bottomLeft.x + dimensions.width,
+				bottomLeft.y - barHeight,
+			);
+		} else {
+			const endRadius = barHeight / 2;
+			ctx.arc(
+				xProgressBarEnd - endRadius,
+				bottomLeft.y - endRadius,
+				endRadius,
+				Math.PI / 2,
+				(3 * Math.PI) / 2,
+				true,
+			);
+		}
+		ctx.lineTo(bottomLeft.x, bottomLeft.y - barHeight);
+
+		ctx.fill();
+		ctx.closePath();
 	}
 
 	/**
@@ -211,7 +246,7 @@ class SenkuCanvas extends HTMLElement {
 			y: 0,
 		};
 
-		let scale = this.getAttribute("zoom") ?? 1;
+		let scale = this.getAttribute("zoom") ?? SCALE_DIM.min;
 		let startDragOffset = {};
 		let mouseDown = false;
 
