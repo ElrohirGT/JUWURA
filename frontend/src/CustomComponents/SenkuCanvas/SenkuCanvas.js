@@ -395,8 +395,34 @@ class SenkuCanvas extends HTMLElement {
 				ctx.stroke();
 
 				// DRAWING END NOTCH
+				const notchRadius = 3;
 				ctx.beginPath();
-				ctx.arc(origin.x, origin.y, 3, Math.PI / 2, (3 * Math.PI) / 2);
+				if (xDirection > 0) {
+					// LEFT NOTCH
+					ctx.arc(
+						origin.x,
+						origin.y,
+						notchRadius,
+						Math.PI / 2,
+						(3 * Math.PI) / 2,
+					);
+				} else if (xDirection < 0) {
+					// RIGHT NOTCH
+					ctx.arc(
+						origin.x,
+						origin.y,
+						notchRadius,
+						Math.PI / 2,
+						(3 * Math.PI) / 2,
+						true,
+					);
+				} else if (yDirection > 0) {
+					// UP NOTCH
+					ctx.arc(origin.x, origin.y, notchRadius, 0, Math.PI, true);
+				} else {
+					// DOWN NOTCH
+					ctx.arc(origin.x, origin.y, notchRadius, 0, Math.PI);
+				}
 				ctx.closePath();
 
 				ctx.fillStyle = "white";
