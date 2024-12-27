@@ -54,11 +54,78 @@ const MINIFIED_VIEW = (() => {
  * @property {TaskConnection[]} connections
  */
 
+function genHorizontalStraight(cells, connections) {
+	cells[0][0] = { id: 1, icon: "😎", progress: 1.0 };
+	cells[0][5] = { id: 2, icon: "😎", progress: 1.0 };
+
+	connections.push({
+		start: {
+			row: 0,
+			column: 0,
+		},
+		end: {
+			row: 0,
+			column: 10,
+		},
+	});
+}
+
+function genSmallDiagonal(cells, connections) {
+	cells[1][1] = { id: 3, icon: "😎", progress: 1.0 };
+	cells[2][2] = { id: 4, icon: "😎", progress: 1.0 };
+
+	connections.push({
+		start: {
+			row: 2,
+			column: 2,
+		},
+		end: {
+			row: 4,
+			column: 4,
+		},
+	});
+}
+
+function genBigDiagonal(cells, connections) {
+	cells[3][3] = { id: 5, icon: "😎", progress: 1.0 };
+	cells[8][8] = { id: 6, icon: "😎", progress: 1.0 };
+
+	connections.push({
+		start: {
+			row: 6,
+			column: 6,
+		},
+		end: {
+			row: 16,
+			column: 16,
+		},
+	});
+}
+
+function genObstacle(cells, connections) {
+	cells[3][4] = { id: 7, icon: "😎", progress: 1.0 };
+	cells[3][7] = { id: 8, icon: "😎", progress: 1.0 };
+	cells[3][8] = { id: 9, icon: "😎", progress: 1.0 };
+
+	connections.push({
+		start: {
+			row: 6,
+			column: 8,
+		},
+		end: {
+			row: 6,
+			column: 16,
+		},
+	});
+}
+
 /**
  * Generates dummy data for the graph
  * @returns {SenkuCanvasState}
  */
 function generateDummyData() {
+	/**@type {TaskConnection[]}*/
+	const connections = [];
 	/** @type {Cells}*/
 	const cells = [];
 	for (let i = 0; i < GRID_SIZE; i++) {
@@ -67,23 +134,15 @@ function generateDummyData() {
 			cells[i].push(undefined);
 		}
 	}
-	cells[0][0] = { id: 1, icon: "😎", progress: 1.0 };
-	cells[0][9] = { id: 2, icon: "😎", progress: 1.0 };
+
+	genHorizontalStraight(cells, connections);
+	genSmallDiagonal(cells, connections);
+	genBigDiagonal(cells, connections);
+	genObstacle(cells, connections);
 
 	return {
 		cells,
-		connections: [
-			{
-				start: {
-					row: 0,
-					column: 0,
-				},
-				end: {
-					row: 0,
-					column: 18,
-				},
-			},
-		],
+		connections,
 	};
 }
 
@@ -128,7 +187,7 @@ class SenkuCanvas extends HTMLElement {
 				this.drawCanvas(
 					canvas,
 					this.getState(),
-					this.getAttribute("zoom") ?? SCALE_DIMENSIONS.max,
+					this.getAttribute("zoom") ?? SCALE_DIMENSIONS.min,
 					{
 						x: 0,
 						y: 0,
@@ -232,6 +291,7 @@ class SenkuCanvas extends HTMLElement {
 	 */
 	drawTaskConnection(ctx, connInfo, matrix) {
 		const { start, end } = connInfo;
+		console.log("DRAWING CONNECTION", connInfo);
 		const startTask = matrix[start.row][start.column];
 		const endTask = matrix[end.row][end.column];
 		const path = search(
@@ -250,13 +310,13 @@ class SenkuCanvas extends HTMLElement {
 				return a !== undefined && a.id !== endTask.id;
 			},
 		);
-		console.log("RESULT:", path);
+		console.log("PATH:", path);
 
 		path.unshift(createNode(startTask, start.column, start.row));
 
 		const basicDelta = {
-			x: start.column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
-			y: start.row * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
+			x: MINIFIED_VIEW.griddOffset,
+			y: MINIFIED_VIEW.griddOffset,
 		};
 
 		ctx.fillStyle = "red";
@@ -280,26 +340,29 @@ class SenkuCanvas extends HTMLElement {
 				const origin = {
 					x:
 						basicDelta.x +
+						(start.column / 2) * MINIFIED_VIEW.cellSize +
 						MINIFIED_VIEW.cellSize / 2 +
 						(xDirection *
 							(MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2)) /
 							2,
 					y:
 						basicDelta.y +
+						(start.row / 2) * MINIFIED_VIEW.cellSize +
 						MINIFIED_VIEW.cellSize / 2 +
 						(yDirection *
 							(MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2)) /
 							2,
 				};
-				// ctx.fillRect(pos.x, pos.y, 5, 5);
 				const target = {
 					x: origin.x + xDirection * MINIFIED_VIEW.cellPadding,
 					y: origin.y + yDirection * MINIFIED_VIEW.cellPadding,
 				};
+
 				console.log("DRAWING START", { origin, target });
 				ctx.moveTo(origin.x, origin.y);
 				ctx.lineTo(target.x, target.y);
 			}
+
 			// DRAW END
 			else if (next.x === end.column && next.y === end.row) {
 				const origin = {
@@ -340,7 +403,7 @@ class SenkuCanvas extends HTMLElement {
 				ctx.fill();
 			}
 			// DRAW STRAIGHT HORIZONTAL
-			else if (current.y === next.y && next.x % 2 !== 0) {
+			else if (current.y === next.y) {
 				const target = {
 					x:
 						basicDelta.x +
@@ -353,6 +416,31 @@ class SenkuCanvas extends HTMLElement {
 				};
 				console.log("DRAWING STRAIGHT HORIZONTAL", { target });
 				ctx.lineTo(target.x, target.y);
+				// ctx.fillStyle = "red";
+				// ctx.fillRect(origin.x, origin.y, 5, 5);
+				// ctx.fillRect(target.x, target.y, 5, 5);
+			}
+
+			// DRAW STRAIGHT VERTICAL
+			else if (next.x === current.x) {
+				const target = {
+					x:
+						basicDelta.x +
+						(next.x / 2) * MINIFIED_VIEW.cellSize +
+						MINIFIED_VIEW.cellSize / 2,
+					y:
+						basicDelta.y +
+						(next.y / 2) * MINIFIED_VIEW.cellSize +
+						MINIFIED_VIEW.cellSize / 2,
+				};
+				console.log("DRAWING STRAIGHT VERTICAL", { target });
+				ctx.lineTo(target.x, target.y);
+				// ctx.fillStyle = "purple";
+				// ctx.fillRect(target.x, target.y, 5, 5);
+			}
+			// DRAW CURVE
+			else if (false) {
+				console.log("DRAWING CURVE");
 			}
 			// DRAW NOTHING
 			else {
@@ -361,6 +449,8 @@ class SenkuCanvas extends HTMLElement {
 			}
 		}
 
+		// FIXME: Remove this once we don't need to debug
+		// The end case on the if's above is in charge of painting everything!
 		ctx.closePath();
 
 		ctx.strokeStyle = "white";
