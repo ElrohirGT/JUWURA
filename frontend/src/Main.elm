@@ -58,7 +58,7 @@ type AppState
     | Login
     | Senku SenkuPage.Model
     | Details DetailsPage.Model
-    | Home ( HomePage.Model HomePage.Msg, Cmd HomePage.Msg )
+    | Home ( HomePage.Model, Cmd HomePage.Msg )
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
     | Json ( JsonPage.Model, Cmd JsonPage.Msg )
     | Ports ( PortsPage.Model, Cmd PortsPage.Msg )

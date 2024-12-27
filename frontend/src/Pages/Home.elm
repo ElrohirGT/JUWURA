@@ -22,13 +22,13 @@ type Msg
     | Save
 
 
-type alias Model msg =
-    { navigationHrefs : NavigationHrefs msg
+type alias Model =
+    { navigationHrefs : NavigationHrefs Msg
     , text : String
     }
 
 
-init : BasePath -> ( Model Msg, Cmd Msg )
+init : BasePath -> ( Model, Cmd Msg )
 init basePath =
     ( { navigationHrefs = generateRoutingFuncs basePath
       , text = ""
@@ -37,7 +37,7 @@ init basePath =
     )
 
 
-update : Model msg -> Msg -> ( Model msg, Cmd Msg )
+update : Model -> Msg -> ( Model, Cmd Msg )
 update model msg =
     case msg of
         ChangeText newValue ->
@@ -51,14 +51,14 @@ update model msg =
             ( model, Cmd.none )
 
 
-view : Model Msg -> { title : String, body : List (Html.Styled.Html Msg) }
+view : Model -> { title : String, body : List (Html.Styled.Html Msg) }
 view model =
     { title = "Juwura"
     , body = body model
     }
 
 
-body : Model Msg -> List (Html.Styled.Html Msg)
+body : Model -> List (Html.Styled.Html Msg)
 body model =
     let
         nav =
