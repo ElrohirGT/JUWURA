@@ -1,5 +1,28 @@
 import { BinaryHeap } from "./binaryHeap";
 
+/**
+ * @template T
+ * @typedef {Object} AStarNode
+ * @property {number} x - The x index where this node is on the matrix
+ * @property {number} y - The y index where this node is on the matrix
+ * @property {number} f - g + cost + h
+ * @property {number} g - The shortest path from start to this node.
+ * @property {number} h - The shortest path from end to this node.
+ * @property {number} cost - The extra cost to go to this node. By default should be 1.
+ * @property {boolean} visited - Whether or not this node has been visited. This is different from being closed since we visit neighbors, we close current nodes.
+ * @property {boolean} closed - Whether or not this node has already been processed.
+ * @property {AStarNode|null} parent - The previous node in the path.
+ * @property {T} value - The inner value this node holds
+ */
+
+/**
+ * @template T
+ * Creates a basic node. By default the cost is 1.
+ * @param {T} value
+ * @param {number} x
+ * @param {number} y
+ * @returns {AStarNode}
+ */
 export function createNode(value, x, y) {
 	return {
 		f: 0,
@@ -15,6 +38,12 @@ export function createNode(value, x, y) {
 	};
 }
 
+/**
+ * @template T
+ * Initializes a node grid
+ * @param {T[][]} grid
+ * @returns {AStarNode<T>[][]}
+ */
 function init(grid) {
 	const outGrid = [];
 	for (let y = 0, yl = grid.length; y < yl; y++) {
@@ -108,6 +137,7 @@ function neighbors(grid, node, diagonals) {
  * @param {boolean} diagonal
  * @param {(a: T, b: T)=>boolean} comparator
  * @param {(a:T, b: T)=>} heuristic
+ * @returns {AStarNode<T>[]} The shortest path from start to end
  */
 
 /**
@@ -124,7 +154,7 @@ export function search(
 	heuristic = manhattan,
 ) {
 	const nodeGrid = init(grid);
-	console.log("NODE GRID:", nodeGrid);
+	// console.log("NODE GRID:", nodeGrid);
 	diagonal = !!diagonal;
 
 	let openHeap = heap(comparator);
@@ -135,10 +165,10 @@ export function search(
 		// Grab the lowest f(x) to process next.  Heap keeps this sorted for us.
 		let currentNode = openHeap.pop();
 		// console.log("CURRENT NODE", currentNode);
-		console.log(
-			`GOING: (${currentNode.x}, ${currentNode.y}). Because: ${currentNode.g} + ${currentNode.h} = ${currentNode.f}`,
-			currentNode,
-		);
+		// console.log(
+		// 	`GOING: (${currentNode.x}, ${currentNode.y}). Because: ${currentNode.g} + ${currentNode.h} = ${currentNode.f}`,
+		// 	currentNode,
+		// );
 
 		// End case -- result has been found, return the traced path.
 		if (comparator(currentNode.value, end.value)) {
@@ -156,14 +186,14 @@ export function search(
 
 		// Find all neighbors for the current node. Optionally find diagonal neighbors as well (false by default).
 		let foundNeighbors = neighbors(nodeGrid, currentNode, diagonal);
-		console.log("VECINOS:", foundNeighbors);
+		// console.log("VECINOS:", foundNeighbors);
 
 		for (let i = 0, il = foundNeighbors.length; i < il; i++) {
 			let neighbor = foundNeighbors[i];
-			console.log("NEIGHBOR:", neighbor);
+			// console.log("NEIGHBOR:", neighbor);
 
 			if (neighbor.closed || isWall(neighbor.value)) {
-				console.log("CLOSED OR IS WALL");
+				// console.log("CLOSED OR IS WALL");
 				// Not a valid node to process, skip to next neighbor.
 				continue;
 			}

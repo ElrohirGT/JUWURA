@@ -234,13 +234,13 @@ class SenkuCanvas extends HTMLElement {
 		const { start, end } = connInfo;
 		const startTask = matrix[start.row][start.column];
 		const endTask = matrix[end.row][end.column];
-		const result = search(
+		const path = search(
 			matrix,
 			createNode(startTask, start.column, start.row),
 			createNode(endTask, end.column, end.row),
 			false,
 			(a, b) => {
-				console.log("A:", a, "B:", b);
+				// console.log("A:", a, "B:", b);
 				if (a && b) {
 					return a.id === b.id;
 				}
@@ -250,7 +250,121 @@ class SenkuCanvas extends HTMLElement {
 				return a !== undefined && a.id !== endTask.id;
 			},
 		);
-		console.log(result);
+		console.log("RESULT:", path);
+
+		path.unshift(createNode(startTask, start.column, start.row));
+
+		const basicDelta = {
+			x: start.column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
+			y: start.row * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
+		};
+
+		ctx.fillStyle = "red";
+		ctx.fillRect(basicDelta.x, basicDelta.y, 5, 5);
+
+		ctx.beginPath();
+
+		for (let i = 0; i < path.length - 1; i++) {
+			const current = path[i];
+			const next = path[i + 1];
+			console.log("CURRENT", current);
+			console.log("NEXT", next);
+
+			const xDirection = next.x - current.x;
+			const yDirection = next.y - current.y;
+
+			console.log("DIRECTIONS", { xDirection, yDirection });
+
+			// START
+			if (start.column === current.x && start.row === current.y) {
+				const origin = {
+					x:
+						basicDelta.x +
+						MINIFIED_VIEW.cellSize / 2 +
+						(xDirection *
+							(MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2)) /
+							2,
+					y:
+						basicDelta.y +
+						MINIFIED_VIEW.cellSize / 2 +
+						(yDirection *
+							(MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2)) /
+							2,
+				};
+				// ctx.fillRect(pos.x, pos.y, 5, 5);
+				const target = {
+					x: origin.x + xDirection * MINIFIED_VIEW.cellPadding,
+					y: origin.y + yDirection * MINIFIED_VIEW.cellPadding,
+				};
+				console.log("DRAWING START", { origin, target });
+				ctx.moveTo(origin.x, origin.y);
+				ctx.lineTo(target.x, target.y);
+			}
+			// DRAW END
+			else if (next.x === end.column && next.y === end.row) {
+				const origin = {
+					x:
+						basicDelta.x +
+						(end.column / 2) * MINIFIED_VIEW.cellSize +
+						MINIFIED_VIEW.cellSize / 2 +
+						(-xDirection *
+							(MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2)) /
+							2,
+					y:
+						basicDelta.y +
+						(end.row / 2) * MINIFIED_VIEW.cellSize +
+						MINIFIED_VIEW.cellSize / 2 +
+						(-yDirection *
+							(MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2)) /
+							2,
+				};
+				const target = {
+					x: origin.x + -xDirection * MINIFIED_VIEW.cellPadding,
+					y: origin.y + -yDirection * MINIFIED_VIEW.cellPadding,
+				};
+				console.log("DRAWING END", { origin, target });
+				ctx.moveTo(origin.x, origin.y);
+				ctx.lineTo(target.x, target.y);
+				ctx.closePath();
+
+				ctx.strokeStyle = "white";
+				ctx.lineWidth = 1;
+				ctx.stroke();
+
+				// DRAWING END NOTCH
+				ctx.beginPath();
+				ctx.arc(origin.x, origin.y, 3, Math.PI / 2, (3 * Math.PI) / 2);
+				ctx.closePath();
+
+				ctx.fillStyle = "white";
+				ctx.fill();
+			}
+			// DRAW STRAIGHT HORIZONTAL
+			else if (current.y === next.y && next.x % 2 !== 0) {
+				const target = {
+					x:
+						basicDelta.x +
+						(next.x / 2) * MINIFIED_VIEW.cellSize +
+						MINIFIED_VIEW.cellSize / 2,
+					y:
+						basicDelta.y +
+						(next.y / 2) * MINIFIED_VIEW.cellSize +
+						MINIFIED_VIEW.cellSize / 2,
+				};
+				console.log("DRAWING STRAIGHT HORIZONTAL", { target });
+				ctx.lineTo(target.x, target.y);
+			}
+			// DRAW NOTHING
+			else {
+				console.log("DRAWING NOTHING");
+				continue;
+			}
+		}
+
+		ctx.closePath();
+
+		ctx.strokeStyle = "white";
+		ctx.stroke();
 	}
 
 	/**
@@ -320,6 +434,7 @@ class SenkuCanvas extends HTMLElement {
 		);
 		ctx.lineTo(topLeft.x + radius, topLeft.y);
 
+		ctx.closePath();
 		ctx.fill();
 
 		// DRAW EMOJI
@@ -372,6 +487,7 @@ class SenkuCanvas extends HTMLElement {
 		}
 		ctx.lineTo(bottomLeft.x, bottomLeft.y - barHeight);
 
+		ctx.closePath();
 		ctx.fill();
 	}
 
