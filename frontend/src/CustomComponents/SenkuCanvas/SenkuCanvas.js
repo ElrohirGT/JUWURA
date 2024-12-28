@@ -41,6 +41,7 @@ const MINIFIED_VIEW = (() => {
 		griddOffset: cellSize / 2,
 		cellPadding: cellSize * 0.15,
 		taskIconPadding: cellSize * 0.15,
+		connectorCurveStart: cellSize / 4,
 	};
 })();
 
@@ -135,10 +136,10 @@ function generateDummyData() {
 		}
 	}
 
-	genHorizontalStraight(cells, connections);
-	genSmallDiagonal(cells, connections);
+	// genHorizontalStraight(cells, connections);
+	// genSmallDiagonal(cells, connections);
 	genBigDiagonal(cells, connections);
-	genObstacle(cells, connections);
+	// genObstacle(cells, connections);
 
 	return {
 		cells,
@@ -314,90 +315,222 @@ class SenkuCanvas extends HTMLElement {
 
 		path.unshift(createNode(startTask, start.column, start.row));
 
-		const basicDelta = {
+		const finishDrawing = () => {
+			// ctx.closePath();
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = "white";
+			ctx.stroke();
+		};
+
+		const basicOffset = {
 			x: MINIFIED_VIEW.griddOffset,
 			y: MINIFIED_VIEW.griddOffset,
 		};
 
-		ctx.fillStyle = "red";
-		ctx.fillRect(basicDelta.x, basicDelta.y, 5, 5);
+		// ctx.fillStyle = "red";
+		// ctx.fillRect(basicDelta.x, basicDelta.y, 5, 5);
 
-		ctx.beginPath();
+		for (let i = 0; i < 13; i++) {
+			// for (let i = 0; i < path.length - 2; i++) {
+			console.log("GETTING TRIPLET: ", i, i + 1, i + 2);
+			const [startNode, middleNode, endNode] = getNodeTriplet(path, i);
+			console.log("TRIPLET:", startNode, middleNode, endNode);
 
-		for (let i = 0; i < path.length - 1; i++) {
-			const current = path[i];
-			const next = path[i + 1];
-			console.log("CURRENT", current);
-			console.log("NEXT", next);
+			const currentTripletInfo = getTripletInfo(startNode, middleNode, endNode);
+			console.log("TRIPLET INFO:", currentTripletInfo);
 
-			const xDirection = next.x - current.x;
-			const yDirection = next.y - current.y;
+			const { direction } = currentTripletInfo;
+			const {
+				start: startPoint,
+				middle: middlePoint,
+				end: endPoint,
+			} = fromTripletToPoints(
+				startNode,
+				middleNode,
+				endNode,
+				basicOffset,
+				MINIFIED_VIEW.cellSize,
+				MINIFIED_VIEW.cellSize,
+			);
 
-			console.log("DIRECTIONS", { xDirection, yDirection });
+			ctx.beginPath();
+			ctx.arc(middlePoint.x, middlePoint.y, 1, 0, 2 * Math.PI);
+			ctx.fillStyle = "red";
+			ctx.fill();
+
+			if (currentTripletInfo.isCurve()) {
+				ctx.beginPath();
+				const debug = i === 10 || i === 11 ? true : false;
+				// const debug = false;
+				// DRAWING CURVE
+				const curveStart = startPoint;
+				const curveControl = middlePoint;
+				const curveEnd = endPoint;
+				console.log("CURVE CONTROL", curveControl, "CURVE END", curveEnd);
+
+				const originDirection = {
+					x: middleNode.x - startNode.x,
+					y: middleNode.y - startNode.y,
+				};
+				const endDirection = {
+					x: middleNode.x - endNode.x,
+					y: middleNode.y - endNode.y,
+				};
+
+				const preCurveSegment = {
+					start: curveStart,
+					end: {
+						x:
+							curveStart.x +
+							originDirection.x * MINIFIED_VIEW.connectorCurveStart,
+						y:
+							curveStart.y +
+							originDirection.y * MINIFIED_VIEW.connectorCurveStart,
+					},
+				};
+
+				const postCurveSegment = {
+					start: {
+						x: curveEnd.x + endDirection.x * MINIFIED_VIEW.connectorCurveStart,
+						y: curveEnd.y + endDirection.y * MINIFIED_VIEW.connectorCurveStart,
+					},
+					end: curveEnd,
+				};
+
+				const nextTriplet = getNodeTriplet(path, i + 1);
+				if (
+					!nextTriplet[2] || // next next2 is invalid
+					!getTripletInfo(...nextTriplet).isCurve() // next triplet is not a curve
+				) {
+					// const nextInfo = getTripletInfo(...nextTriplet);
+					// console.log("NEXT INFO:", nextInfo.isCurve());
+					ctx.moveTo(postCurveSegment.start.x, postCurveSegment.start.y);
+					ctx.lineTo(postCurveSegment.end.x, postCurveSegment.end.y);
+					i++;
+				}
+
+				if (middleNode.x % 2 === 0 && middleNode.y % 2 === 0) {
+					ctx.moveTo(preCurveSegment.start.x, preCurveSegment.start.y);
+					ctx.lineTo(preCurveSegment.end.x, preCurveSegment.end.y);
+				} else {
+					ctx.moveTo(preCurveSegment.end.x, preCurveSegment.end.y);
+				}
+
+				ctx.bezierCurveTo(
+					curveControl.x,
+					curveControl.y,
+					curveControl.x,
+					curveControl.y,
+					postCurveSegment.start.x,
+					postCurveSegment.start.y,
+				);
+
+				if (debug) {
+					// ctx.closePath();
+
+					ctx.strokeStyle = "red";
+					ctx.lineWidth = 1;
+					ctx.stroke();
+
+					ctx.fillStyle = "green";
+					ctx.fillRect(
+						postCurveSegment.start.x,
+						postCurveSegment.start.y,
+						5,
+						5,
+					);
+
+					ctx.fillStyle = "purple";
+					ctx.fillRect(curveControl.x, curveControl.y, 5, 5);
+
+					ctx.fillStyle = "pink";
+					ctx.fillRect(curveEnd.x, curveEnd.y, 5, 5);
+
+					ctx.fillStyle = "yellow";
+					ctx.fillRect(curveStart.x, curveStart.y, 5, 5);
+				} else {
+					finishDrawing();
+				}
+				continue;
+			}
 
 			// START
-			if (start.column === current.x && start.row === current.y) {
+			if (start.column === startNode.x && start.row === startNode.y) {
+				ctx.beginPath();
+				const debug = false;
+
 				const origin = {
 					x:
-						basicDelta.x +
+						basicOffset.x +
 						(start.column / 2) * MINIFIED_VIEW.cellSize +
 						MINIFIED_VIEW.cellSize / 2 +
-						(xDirection *
+						(direction.x *
 							(MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2)) /
 							2,
 					y:
-						basicDelta.y +
+						basicOffset.y +
 						(start.row / 2) * MINIFIED_VIEW.cellSize +
 						MINIFIED_VIEW.cellSize / 2 +
-						(yDirection *
+						(direction.y *
 							(MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2)) /
 							2,
 				};
 				const target = {
-					x: origin.x + xDirection * MINIFIED_VIEW.cellPadding,
-					y: origin.y + yDirection * MINIFIED_VIEW.cellPadding,
+					x: origin.x + direction.x * MINIFIED_VIEW.cellPadding,
+					y: origin.y + direction.y * MINIFIED_VIEW.cellPadding,
 				};
 
 				console.log("DRAWING START", { origin, target });
 				ctx.moveTo(origin.x, origin.y);
 				ctx.lineTo(target.x, target.y);
+
+				if (debug) {
+					ctx.strokeStyle = "red";
+					ctx.stroke();
+
+					ctx.fillStyle = "purple";
+					ctx.fillRect(origin.x, origin.y, 5, 5);
+
+					ctx.fillStyle = "pink";
+					ctx.fillRect(target.x, target.y, 5, 5);
+				} else {
+					finishDrawing();
+				}
 			}
 
 			// DRAW END
-			else if (next.x === end.column && next.y === end.row) {
+			else if (endNode.x === end.column && endNode.y === end.row) {
+				ctx.beginPath();
 				const origin = {
 					x:
-						basicDelta.x +
+						basicOffset.x +
 						(end.column / 2) * MINIFIED_VIEW.cellSize +
 						MINIFIED_VIEW.cellSize / 2 +
-						(-xDirection *
+						(-direction.x *
 							(MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2)) /
 							2,
 					y:
-						basicDelta.y +
+						basicOffset.y +
 						(end.row / 2) * MINIFIED_VIEW.cellSize +
 						MINIFIED_VIEW.cellSize / 2 +
-						(-yDirection *
+						(-direction.y *
 							(MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2)) /
 							2,
 				};
 				const target = {
-					x: origin.x + -xDirection * MINIFIED_VIEW.cellPadding,
-					y: origin.y + -yDirection * MINIFIED_VIEW.cellPadding,
+					x: origin.x + -direction.x * MINIFIED_VIEW.cellPadding,
+					y: origin.y + -direction.y * MINIFIED_VIEW.cellPadding,
 				};
 				console.log("DRAWING END", { origin, target });
 				ctx.moveTo(origin.x, origin.y);
 				ctx.lineTo(target.x, target.y);
-				ctx.closePath();
 
-				ctx.strokeStyle = "white";
-				ctx.lineWidth = 1;
-				ctx.stroke();
+				finishDrawing();
 
 				// DRAWING END NOTCH
 				const notchRadius = 3;
 				ctx.beginPath();
-				if (xDirection > 0) {
+				if (direction.x > 0) {
 					// LEFT NOTCH
 					ctx.arc(
 						origin.x,
@@ -406,7 +539,7 @@ class SenkuCanvas extends HTMLElement {
 						Math.PI / 2,
 						(3 * Math.PI) / 2,
 					);
-				} else if (xDirection < 0) {
+				} else if (direction.x < 0) {
 					// RIGHT NOTCH
 					ctx.arc(
 						origin.x,
@@ -416,7 +549,7 @@ class SenkuCanvas extends HTMLElement {
 						(3 * Math.PI) / 2,
 						true,
 					);
-				} else if (yDirection > 0) {
+				} else if (direction.y > 0) {
 					// UP NOTCH
 					ctx.arc(origin.x, origin.y, notchRadius, 0, Math.PI, true);
 				} else {
@@ -428,45 +561,67 @@ class SenkuCanvas extends HTMLElement {
 				ctx.fillStyle = "white";
 				ctx.fill();
 			}
+
 			// DRAW STRAIGHT HORIZONTAL
-			else if (current.y === next.y) {
-				const target = {
-					x:
-						basicDelta.x +
-						(next.x / 2) * MINIFIED_VIEW.cellSize +
-						MINIFIED_VIEW.cellSize / 2,
-					y:
-						basicDelta.y +
-						(next.y / 2) * MINIFIED_VIEW.cellSize +
-						MINIFIED_VIEW.cellSize / 2,
-				};
-				console.log("DRAWING STRAIGHT HORIZONTAL", { target });
+			else if (startNode.y === middleNode.y) {
+				ctx.beginPath();
+				const debug = false;
+
+				const origin = startPoint;
+				const target = middlePoint;
+
+				console.log("DRAWING STRAIGHT HORIZONTAL", { origin, target });
+
+				ctx.moveTo(origin.x, origin.y);
 				ctx.lineTo(target.x, target.y);
-				// ctx.fillStyle = "red";
-				// ctx.fillRect(origin.x, origin.y, 5, 5);
-				// ctx.fillRect(target.x, target.y, 5, 5);
+
+				const nextTriplet = getNodeTriplet(path, i + 1);
+				if (nextTriplet[2] && getTripletInfo(...nextTriplet).isCurve()) {
+					ctx.lineTo(target.x + MINIFIED_VIEW.connectorCurveStart, target.y);
+				}
+
+				if (debug) {
+					ctx.strokeStyle = "red";
+					ctx.stroke();
+
+					ctx.fillStyle = "purple";
+					ctx.fillRect(origin.x, origin.y, 5, 5);
+					ctx.fillStyle = "pink";
+					ctx.fillRect(target.x, target.y, 5, 5);
+				} else {
+					finishDrawing();
+				}
 			}
 
 			// DRAW STRAIGHT VERTICAL
-			else if (next.x === current.x) {
-				const target = {
-					x:
-						basicDelta.x +
-						(next.x / 2) * MINIFIED_VIEW.cellSize +
-						MINIFIED_VIEW.cellSize / 2,
-					y:
-						basicDelta.y +
-						(next.y / 2) * MINIFIED_VIEW.cellSize +
-						MINIFIED_VIEW.cellSize / 2,
-				};
-				console.log("DRAWING STRAIGHT VERTICAL", { target });
+			else if (middleNode.x === startNode.x) {
+				ctx.beginPath();
+				// const debug = i === 6 ? true : false;
+				const debug = false;
+
+				const origin = startPoint;
+				const target = middlePoint;
+
+				console.log("DRAWING STRAIGHT VERTICAL", { origin, target });
+				ctx.moveTo(origin.x, origin.y);
 				ctx.lineTo(target.x, target.y);
-				// ctx.fillStyle = "purple";
-				// ctx.fillRect(target.x, target.y, 5, 5);
-			}
-			// DRAW CURVE
-			else if (false) {
-				console.log("DRAWING CURVE");
+
+				const nextTriplet = getNodeTriplet(path, i + 1);
+				if (nextTriplet[2] && getTripletInfo(...nextTriplet).isCurve()) {
+					ctx.lineTo(target.x, target.y + MINIFIED_VIEW.connectorCurveStart);
+				}
+
+				if (debug) {
+					ctx.strokeStyle = "red";
+					ctx.stroke();
+
+					ctx.fillStyle = "purple";
+					ctx.fillRect(origin.x, origin.y, 5, 5);
+					ctx.fillStyle = "pink";
+					ctx.fillRect(target.x, target.y, 5, 5);
+				} else {
+					finishDrawing();
+				}
 			}
 			// DRAW NOTHING
 			else {
@@ -477,10 +632,9 @@ class SenkuCanvas extends HTMLElement {
 
 		// FIXME: Remove this once we don't need to debug
 		// The end case on the if's above is in charge of painting everything!
-		ctx.closePath();
-
-		ctx.strokeStyle = "white";
-		ctx.stroke();
+		// ctx.closePath();
+		// ctx.strokeStyle = "white";
+		// ctx.stroke();
 	}
 
 	/**
@@ -650,6 +804,52 @@ class SenkuCanvas extends HTMLElement {
 			this.drawCanvas(canvas, this.getState(), scale, translatePos);
 		});
 	}
+}
+
+function getNodeTriplet(path, startingIdx) {
+	return [path[startingIdx], path[startingIdx + 1], path[startingIdx + 2]];
+}
+
+function getTripletInfo(current, next, next2) {
+	const xDirection = next.x - current.x;
+	const yDirection = next.y - current.y;
+
+	const xCurved = next2.x - current.x;
+	const yCurved = next2.y - current.y;
+	return {
+		direction: { x: xDirection, y: yDirection },
+		curvature: { x: xCurved, y: yCurved },
+
+		// If we're making a curve both should not be 0.
+		// If any of them is 0 then it's a straight
+		isCurve: () => {
+			return xCurved !== 0 && yCurved !== 0;
+		},
+	};
+}
+
+function fromTripletToPoints(
+	current,
+	next,
+	next2,
+	offset,
+	cellWidth,
+	cellHeight,
+) {
+	return {
+		start: {
+			x: offset.x + (current.x / 2) * cellWidth + cellWidth / 2,
+			y: offset.y + (current.y / 2) * cellHeight + cellHeight / 2,
+		},
+		middle: {
+			x: offset.x + (next.x / 2) * cellWidth + cellWidth / 2,
+			y: offset.y + (next.y / 2) * cellHeight + cellHeight / 2,
+		},
+		end: {
+			x: offset.x + (next2.x / 2) * cellWidth + cellWidth / 2,
+			y: offset.y + (next2.y / 2) * cellHeight + cellHeight / 2,
+		},
+	};
 }
 
 export const SenkuCanvasComponent = {
