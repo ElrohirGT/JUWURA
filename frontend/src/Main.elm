@@ -128,6 +128,9 @@ init basePath url navKey =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.state of
+        Home _ ->
+            Sub.map HomeViewMsg (HomePage.subscriptions (Just ""))
+
         Ports innerModel ->
             Sub.map PortsViewMsg (PortsPage.subscriptions (Tuple.first innerModel))
 
