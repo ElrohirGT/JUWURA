@@ -258,7 +258,7 @@ class SenkuCanvas extends HTMLElement {
 		}
 
 		if (hoverPos) {
-			const debug = true;
+			const debug = false;
 			let column = Math.floor(
 				(hoverPos.x - MINIFIED_VIEW.griddOffset) / MINIFIED_VIEW.cellSize,
 			);
