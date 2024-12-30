@@ -227,8 +227,9 @@ class SenkuCanvas extends HTMLElement {
 	 * @param {SenkuCanvasState} state - The input for rendering the component.
 	 * @param {number} scale - How much scale do we need? Value between 1 and 2.
 	 * @param {{x:number, y:number}} translatePos - The position inside the drawing the center of the canvas should be.
+	 * @param {{x: number, y: number}|undefined} hoverPos - The current hover position of the mouse (null if no hover).
 	 */
-	drawCanvas(canvas, state, scale, translatePos) {
+	drawCanvas(canvas, state, scale, translatePos, hoverPos) {
 		console.log("Drawing canvas with scale:", scale);
 
 		const ctx = canvas.getContext("2d");
@@ -253,6 +254,56 @@ class SenkuCanvas extends HTMLElement {
 				if (cell) {
 					this.drawMinifiedTask(ctx, cell, { column, row });
 				}
+			}
+		}
+
+		if (hoverPos) {
+			const debug = true;
+			let column = Math.floor(
+				(hoverPos.x - MINIFIED_VIEW.griddOffset) / MINIFIED_VIEW.cellSize,
+			);
+			let row = Math.floor(
+				(hoverPos.y - MINIFIED_VIEW.griddOffset) / MINIFIED_VIEW.cellSize,
+			);
+			let x = column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset;
+			let y = row * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset;
+
+			if (debug) {
+				ctx.fillStyle = "purple";
+				ctx.fillRect(x, y, 5, 5);
+
+				ctx.fillStyle = "red";
+				ctx.fillRect(hoverPos.x, hoverPos.y, 5, 5);
+			}
+
+			// Draw + circle on empty cells when hovering...
+			if (row < GRID_SIZE && column < GRID_SIZE && !state.cells[row][column]) {
+				const addBtnRadius = MINIFIED_VIEW.cellSize / 5;
+				const cellCenter = {
+					x: x + MINIFIED_VIEW.cellSize / 2,
+					y: y + MINIFIED_VIEW.cellSize / 2,
+				};
+
+				ctx.beginPath();
+				ctx.arc(cellCenter.x, cellCenter.y, addBtnRadius, 0, 2 * Math.PI);
+				ctx.fillStyle = "#282828";
+				ctx.fill();
+
+				ctx.beginPath();
+				ctx.arc(cellCenter.x, cellCenter.y, addBtnRadius, 0, 2 * Math.PI);
+				ctx.strokeStyle = "#515151";
+				ctx.lineWidth = 1;
+				ctx.stroke();
+
+				const plusSize = addBtnRadius * 3;
+				ctx.font = `${plusSize}px IBM Plex Mono`;
+				ctx.fillStyle = "#515151";
+				ctx.textBaseline = "hanging";
+				ctx.fillText(
+					"+",
+					cellCenter.x - plusSize / 3.25,
+					cellCenter.y - plusSize / 3.25,
+				);
 			}
 		}
 
@@ -679,10 +730,25 @@ class SenkuCanvas extends HTMLElement {
 		});
 
 		canvas.addEventListener("mousemove", (ev) => {
+			console.log(mouseDown);
 			if (mouseDown) {
 				translatePos.x = ev.clientX - startDragOffset.x;
 				translatePos.y = ev.clientY - startDragOffset.y;
 				this.drawCanvas(canvas, this.getState(), scale, translatePos);
+			} else {
+				const canvasPos = canvas.getBoundingClientRect();
+				const mousePosOnCanvas = {
+					x: (ev.clientX - canvasPos.left - translatePos.x) / scale,
+					y: (ev.clientY - canvasPos.top - translatePos.y) / scale,
+				};
+
+				this.drawCanvas(
+					canvas,
+					this.getState(),
+					scale,
+					translatePos,
+					mousePosOnCanvas,
+				);
 			}
 		});
 
