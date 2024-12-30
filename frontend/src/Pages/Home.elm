@@ -1,11 +1,12 @@
 module Pages.Home exposing (Model, Msg, init, subscriptions, update, view)
 
-import Css exposing (color, column, displayFlex, flexDirection, hex)
+import Css exposing (backgroundColor, border, borderRadius, color, column, cursor, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, fontWeight, hex, hover, int, maxWidth, padding2, pointer, px, zero)
 import Html.Styled exposing (a, button, div, input, text)
 import Html.Styled.Attributes exposing (css, placeholder, value)
 import Html.Styled.Events exposing (onClick, onInput)
-import Ports.LocalStorage.LocalStorage exposing (getLocalStorage, onValueLocalStorage, setLocalStorage)
+import Ports.Auth.Auth exposing (logoutRedirect)
 import Routing exposing (BasePath, NavigationHrefs, generateRoutingFuncs)
+import Theme
 
 
 
@@ -19,57 +20,32 @@ import Routing exposing (BasePath, NavigationHrefs, generateRoutingFuncs)
 
 
 type Msg
-    = ChangeText String
-    | Save
-    | Retreive
-    | TokenReceived (Maybe String)
+    = StartLogout
 
 
 type alias Model =
     { navigationHrefs : NavigationHrefs Msg
-    , text : String
-    , savedText : String
     }
 
 
 init : BasePath -> ( Model, Cmd Msg )
 init basePath =
     ( { navigationHrefs = generateRoutingFuncs basePath
-      , text = ""
-      , savedText = "hello"
       }
     , Cmd.none
     )
 
 
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
+
+
 update : Model -> Msg -> ( Model, Cmd Msg )
 update model msg =
     case msg of
-        ChangeText newValue ->
-            ( { model | text = newValue }, Cmd.none )
-
-        Save ->
-            let
-                cmd =
-                    setLocalStorage ( "token", model.text )
-            in
-            ( model, cmd )
-
-        Retreive ->
-            ( model, getLocalStorage "token" )
-
-        TokenReceived maybeValue ->
-            case maybeValue of
-                Just text ->
-                    ( { model | savedText = text }, Cmd.none )
-
-                Nothing ->
-                    ( { model | savedText = "Failed to retreive token" }, Cmd.none )
-
-
-subscriptions : Maybe String -> Sub Msg
-subscriptions _ =
-    onValueLocalStorage TokenReceived
+        StartLogout ->
+            ( model, logoutRedirect () )
 
 
 view : Model -> { title : String, body : List (Html.Styled.Html Msg) }
@@ -92,9 +68,25 @@ body model =
         , a [ nav.goToPorts ] [ text "Go to PORTS example" ]
         ]
     , div []
-        [ input [ placeholder "localStorage value", value model.text, onInput ChangeText ] []
-        , button [ onClick Save ] [ text "Save" ]
-        , button [ onClick Retreive ] [ text "Get" ]
-        , div [ css [ color <| hex "#FFF" ] ] [ text model.savedText ]
+        [ button
+            [ css
+                [ backgroundColor Theme.cssColors.red_600
+                , color Theme.cssColors.white_400
+                , padding2 Theme.cssSpacing.xs Theme.cssSpacing.xl_7
+                , maxWidth fitContent
+                , fontFamilies [ Theme.fontFamilies.body ]
+                , fontWeight (int 400)
+                , fontSize Theme.cssFontSizes.title_large
+                , border zero
+                , cursor pointer
+                , borderRadius (px 5)
+                , hover
+                    [ backgroundColor Theme.cssColors.red_400
+                    ]
+                , Css.property "transition" "0.2s"
+                ]
+            , onClick StartLogout
+            ]
+            [ text "Logout!" ]
         ]
     ]

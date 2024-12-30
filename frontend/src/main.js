@@ -28,7 +28,8 @@ socket.addEventListener("message", (event) => {
 });
 
 // LOCAL STORAGE
-initializeLocalStoragePorts(app)
+// Uncomment when is used on app
+// initializeLocalStoragePorts(app)
 
 // OAUTH
 initializeOauthPorts(app)
