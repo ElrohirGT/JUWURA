@@ -738,8 +738,8 @@ class SenkuCanvas extends HTMLElement {
 			} else {
 				const canvasPos = canvas.getBoundingClientRect();
 				const mousePosOnCanvas = {
-					x: (ev.clientX - canvasPos.left - translatePos.x) / scale,
-					y: (ev.clientY - canvasPos.top - translatePos.y) / scale,
+					x: (ev.clientX - canvasPos.left) / scale - translatePos.x,
+					y: (ev.clientY - canvasPos.top) / scale - translatePos.y,
 				};
 
 				this.drawCanvas(
