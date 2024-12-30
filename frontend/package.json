@@ -19,6 +19,7 @@
 		"vite": "^6.0.5"
 	},
 	"dependencies": {
+		"auth0-js": "^9.28.0",
 		"vite-plugin-elm": "^3.0.1"
 	}
 }

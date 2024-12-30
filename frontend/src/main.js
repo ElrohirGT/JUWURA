@@ -3,6 +3,7 @@ import "./CustomComponents/Icon/Icon.js";
 import "./CustomComponents/SenkuCanvas/SenkuCanvas.js";
 import { Elm } from "./Main.elm";
 import { initializeLocalStoragePorts} from "./Ports/LocalStorage/LocalStorage.js";
+import { initializeOauthPorts} from "./Ports/Auth/Auth.js";
 
 // NOTE: We need to use substring to remove the / at the beginning
 const basePath = import.meta.env.BASE_URL.substring(1);
@@ -28,3 +29,6 @@ socket.addEventListener("message", (event) => {
 
 // LOCAL STORAGE
 initializeLocalStoragePorts(app)
+
+// OAUTH
+initializeOauthPorts(app)
