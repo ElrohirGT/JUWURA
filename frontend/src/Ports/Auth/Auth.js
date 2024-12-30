@@ -10,8 +10,17 @@ const webAuth = new auth0.WebAuth({
     audience: import.meta.env.VITE_OAUTH_AUDIENCE
 });
 
-async function getAuthToken () {
-
+function parseCallback (app) {
+    return () => {
+        webAuth.parseHash({}, (err, authResult) => {
+            if (err) {
+                app.ports.onOauthResult.send(false)
+            } else {
+                console.log(authResult)
+                app.ports.onOauthResult.send(true)
+            }
+        })
+    }
 }
 
 export function initializeOauthPorts(app) {
@@ -24,5 +33,5 @@ export function initializeOauthPorts(app) {
             returnTo: import.meta.env.VITE_OUATH_LOGOUT_URI
         })
     })
-    
+    app.ports.parseCallback.subscribe(parseCallback)
 }

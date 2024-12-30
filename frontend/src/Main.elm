@@ -57,7 +57,7 @@ Used to represent the current page and state
 type AppState
     = NotFound
     | Login
-    | LoginCallback
+    | LoginCallback ( LoginCallbackPage.Model, Cmd LoginCallbackPage.Msg )
     | Senku SenkuPage.Model
     | Details DetailsPage.Model
     | Home ( HomePage.Model, Cmd HomePage.Msg )
@@ -66,8 +66,8 @@ type AppState
     | Ports ( PortsPage.Model, Cmd PortsPage.Msg )
 
 
-fromUrlToAppState : Maybe String -> Url -> AppState
-fromUrlToAppState basePath url =
+fromUrlToAppState : Maybe String -> Url -> Nav.Key -> AppState
+fromUrlToAppState basePath url key =
     case Routing.parseUrl basePath url of
         Routing.Home ->
             Home (HomePage.init basePath)
@@ -76,7 +76,7 @@ fromUrlToAppState basePath url =
             Login
 
         Routing.LoginCallback ->
-            LoginCallback
+            LoginCallback LoginCallbackPage.init
 
         Routing.NotFound ->
             NotFound
@@ -110,9 +110,12 @@ init : Maybe String -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init basePath url navKey =
     let
         initialAppState =
-            fromUrlToAppState basePath url
+            fromUrlToAppState basePath url navKey
     in
     case initialAppState of
+        LoginCallback ( _, command ) ->
+            ( Model navKey basePath initialAppState, Cmd.map LoginCallbackViewMsg command )
+
         Home ( _, command ) ->
             ( Model navKey basePath initialAppState, Cmd.map HomeViewMsg command )
 
@@ -133,6 +136,9 @@ init basePath url navKey =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.state of
+        LoginCallback _ ->
+            Sub.map LoginCallbackViewMsg (LoginCallbackPage.subscriptions True)
+
         Home innerModel ->
             Sub.map HomeViewMsg (HomePage.subscriptions (Tuple.first innerModel))
 
@@ -150,7 +156,9 @@ subscriptions model =
 type Msg
     = UrlChanged Url
     | LinkClicked Browser.UrlRequest
+    | ReplaceUrl String
     | LoginViewMsg LoginPage.Msg
+    | LoginCallbackViewMsg LoginCallbackPage.Msg
     | HomeViewMsg HomePage.Msg
     | DetailsViewMsg DetailsPage.Msg
     | HttpViewMsg HttpPage.Msg
@@ -163,7 +171,7 @@ update msg model =
     case msg of
         UrlChanged url ->
             ( { model
-                | state = fromUrlToAppState model.basePath url
+                | state = fromUrlToAppState model.basePath url model.key
               }
             , Cmd.none
             )
@@ -176,6 +184,14 @@ update msg model =
                 Browser.External href ->
                     ( model, Nav.load href )
 
+        ReplaceUrl url ->
+            case model.basePath of
+                Just s ->
+                    ( model, Nav.replaceUrl model.key (s ++ url) )
+
+                Nothing ->
+                    ( model, Nav.replaceUrl model.key url )
+
         LoginViewMsg innerMsg ->
             case model.state of
                 Login ->
@@ -184,6 +200,18 @@ update msg model =
                             LoginPage.update innerMsg
                     in
                     ( model, Cmd.map LoginViewMsg newCmd )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        LoginCallbackViewMsg innerMsg ->
+            case model.state of
+                LoginCallback innerModel ->
+                    let
+                        ( newModel, newCmd ) =
+                            LoginCallbackPage.update (Tuple.first innerModel) innerMsg
+                    in
+                    ( { model | state = LoginCallback ( newModel, newCmd ) }, Cmd.map LoginCallbackViewMsg newCmd )
 
                 _ ->
                     ( model, Cmd.none )
@@ -303,8 +331,8 @@ view model =
         Login ->
             viewWithMsg LoginPage.view LoginViewMsg
 
-        LoginCallback ->
-            viewStateLess LoginCallbackPage.view
+        LoginCallback pageModel ->
+            viewWithEffects LoginCallbackPage.view pageModel LoginCallbackViewMsg
 
         Home pageModel ->
             viewWithEffects HomePage.view pageModel HomeViewMsg
