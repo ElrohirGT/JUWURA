@@ -25,6 +25,7 @@ type alias BasePath =
 
 type Route
     = Login
+    | LoginCallback
     | Home
     | RouteWithParams
     | NotFound
@@ -52,6 +53,9 @@ genRouteParser maybeBasePath =
                 -- /${basePath}/login
                 , P.map Login (s basePath </> s "login" </> P.top)
 
+                -- /${basePath}/callback
+                , P.map LoginCallback (s basePath </> s "callback" </> P.top)
+
                 -- /${basePath}/details
                 , P.map RouteWithParams (s basePath </> s "details")
 
@@ -75,6 +79,9 @@ genRouteParser maybeBasePath =
 
                 -- /login
                 , P.map Login (s "login")
+
+                -- /login
+                , P.map LoginCallback (s "callback")
 
                 -- /details
                 , P.map RouteWithParams (s "details")
@@ -119,6 +126,7 @@ type alias NavigationHrefs msg =
     , goToJson : Int -> Attribute msg
     , goToHttp : Int -> Attribute msg
     , goToRouteWithParams : Attribute msg
+    , goToLogin : Attribute msg
     , goToHome : Attribute msg
     , goToSenku : Attribute msg
     }
@@ -130,6 +138,7 @@ generateRoutingFuncs basePath =
     , goToJson = goToJson basePath
     , goToHttp = goToHttp basePath
     , goToRouteWithParams = goToRouteWithParams basePath
+    , goToLogin = goToLogin basePath
     , goToHome = goToHome basePath
     , goToSenku = goToSenku basePath
     }
@@ -181,6 +190,18 @@ goToRouteWithParams basePath =
 
         Nothing ->
             href "/details/"
+
+
+{-| Generates an href attribute to go to the login page
+-}
+goToLogin : BasePath -> Attribute msg
+goToLogin basePath =
+    case basePath of
+        Just s ->
+            href (String.concat [ "/", s, "/login/" ])
+
+        Nothing ->
+            href "/login/"
 
 
 {-| Generates an href attribute to go to the home page

@@ -9,6 +9,7 @@ import Pages.Home as HomePage
 import Pages.Http as HttpPage
 import Pages.Json as JsonPage
 import Pages.Login as LoginPage
+import Pages.LoginCallback as LoginCallbackPage
 import Pages.NotFound as NotFoundPage
 import Pages.Ports as PortsPage
 import Pages.Senku as SenkuPage
@@ -56,6 +57,7 @@ Used to represent the current page and state
 type AppState
     = NotFound
     | Login
+    | LoginCallback
     | Senku SenkuPage.Model
     | Details DetailsPage.Model
     | Home ( HomePage.Model, Cmd HomePage.Msg )
@@ -72,6 +74,9 @@ fromUrlToAppState basePath url =
 
         Routing.Login ->
             Login
+
+        Routing.LoginCallback ->
+            LoginCallback
 
         Routing.NotFound ->
             NotFound
@@ -145,6 +150,7 @@ subscriptions model =
 type Msg
     = UrlChanged Url
     | LinkClicked Browser.UrlRequest
+    | LoginViewMsg LoginPage.Msg
     | HomeViewMsg HomePage.Msg
     | DetailsViewMsg DetailsPage.Msg
     | HttpViewMsg HttpPage.Msg
@@ -169,6 +175,18 @@ update msg model =
 
                 Browser.External href ->
                     ( model, Nav.load href )
+
+        LoginViewMsg innerMsg ->
+            case model.state of
+                Login ->
+                    let
+                        newCmd =
+                            LoginPage.update innerMsg
+                    in
+                    ( model, Cmd.map LoginViewMsg newCmd )
+
+                _ ->
+                    ( model, Cmd.none )
 
         HomeViewMsg innerMsg ->
             case model.state of
@@ -245,6 +263,15 @@ view model =
             , body = List.map toUnstyled body
             }
 
+        viewWithMsg staticView msgWrapper =
+            let
+                { title, body } =
+                    staticView
+            in
+            { title = title
+            , body = List.map (Html.map msgWrapper) (List.map toUnstyled body)
+            }
+
         viewStatic staticView pageModel =
             let
                 { title, body } =
@@ -274,7 +301,10 @@ view model =
     in
     case model.state of
         Login ->
-            viewStateLess LoginPage.view
+            viewWithMsg LoginPage.view LoginViewMsg
+
+        LoginCallback ->
+            viewStateLess LoginCallbackPage.view
 
         Home pageModel ->
             viewWithEffects HomePage.view pageModel HomeViewMsg
