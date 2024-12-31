@@ -3,28 +3,6 @@ import { lerpColor3 } from "../../Utils/color";
 import { floatEquals } from "../../Utils/math";
 import { search, createNode } from "../../Utils/astar";
 
-/**
- * @typedef {Object} CellCoord
- * @property {number} column
- * @property {number} row
- */
-
-/**
- * @typedef {Object} TaskData
- * @property {number} id
- * @property {Date} due_date
- * @property {String} title
- * @property {String} status
- * @property {String} icon
- * @property {number} progress
- */
-
-/**
- * @typedef {Object} TaskConnection
- * @property {CellCoord} start
- * @property {CellCoord} end
- */
-
 const SCALE_DIMENSIONS = {
 	min: 1,
 	max: 4,
@@ -45,19 +23,28 @@ const MINIFIED_VIEW = (() => {
 	};
 })();
 
+let lastTaskId = 0;
 /**
- * @typedef {(TaskData|undefined)[][]} Cells
+ * @param {string} [title="Test Title"] - The title of the task
+ * @returns {TaskData}
  */
-
-/**
- * @typedef {Object} SenkuCanvasState
- * @property {Cells} cells
- * @property {TaskConnection[]} connections
- */
+function createTask(title = "Test Title") {
+	return {
+		id: lastTaskId++,
+		title,
+		icon: "😎",
+		progress: 0.7,
+		status: {
+			name: "ON HOLD",
+			color: "#3b5083",
+		},
+		due_date: new Date(),
+	};
+}
 
 function genHorizontalStraight(cells, connections) {
-	cells[0][0] = { id: 1, icon: "😎", progress: 1.0 };
-	cells[0][5] = { id: 2, icon: "😎", progress: 1.0 };
+	cells[0][0] = createTask();
+	cells[0][5] = createTask();
 
 	connections.push({
 		start: {
@@ -72,8 +59,8 @@ function genHorizontalStraight(cells, connections) {
 }
 
 function genSmallDiagonal(cells, connections) {
-	cells[1][1] = { id: 3, icon: "😎", progress: 1.0 };
-	cells[2][2] = { id: 4, icon: "😎", progress: 1.0 };
+	cells[1][1] = createTask();
+	cells[2][2] = createTask();
 
 	connections.push({
 		start: {
@@ -88,8 +75,8 @@ function genSmallDiagonal(cells, connections) {
 }
 
 function genBigDiagonal(cells, connections) {
-	cells[3][3] = { id: 5, icon: "😎", progress: 1.0 };
-	cells[8][8] = { id: 6, icon: "😎", progress: 1.0 };
+	cells[3][3] = createTask();
+	cells[8][8] = createTask();
 
 	connections.push({
 		start: {
@@ -104,9 +91,9 @@ function genBigDiagonal(cells, connections) {
 }
 
 function genObstacle(cells, connections) {
-	cells[3][4] = { id: 7, icon: "😎", progress: 1.0 };
-	cells[3][7] = { id: 8, icon: "😎", progress: 1.0 };
-	cells[3][8] = { id: 9, icon: "😎", progress: 1.0 };
+	cells[3][4] = createTask();
+	cells[3][7] = createTask();
+	cells[3][8] = createTask();
 
 	connections.push({
 		start: {
@@ -257,56 +244,6 @@ class SenkuCanvas extends HTMLElement {
 			}
 		}
 
-		if (hoverPos) {
-			const debug = false;
-			let column = Math.floor(
-				(hoverPos.x - MINIFIED_VIEW.griddOffset) / MINIFIED_VIEW.cellSize,
-			);
-			let row = Math.floor(
-				(hoverPos.y - MINIFIED_VIEW.griddOffset) / MINIFIED_VIEW.cellSize,
-			);
-			let x = column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset;
-			let y = row * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset;
-
-			if (debug) {
-				ctx.fillStyle = "purple";
-				ctx.fillRect(x, y, 5, 5);
-
-				ctx.fillStyle = "red";
-				ctx.fillRect(hoverPos.x, hoverPos.y, 5, 5);
-			}
-
-			// Draw + circle on empty cells when hovering...
-			if (row < GRID_SIZE && column < GRID_SIZE && !state.cells[row][column]) {
-				const addBtnRadius = MINIFIED_VIEW.cellSize / 5;
-				const cellCenter = {
-					x: x + MINIFIED_VIEW.cellSize / 2,
-					y: y + MINIFIED_VIEW.cellSize / 2,
-				};
-
-				ctx.beginPath();
-				ctx.arc(cellCenter.x, cellCenter.y, addBtnRadius, 0, 2 * Math.PI);
-				ctx.fillStyle = "#282828";
-				ctx.fill();
-
-				ctx.beginPath();
-				ctx.arc(cellCenter.x, cellCenter.y, addBtnRadius, 0, 2 * Math.PI);
-				ctx.strokeStyle = "#515151";
-				ctx.lineWidth = 1;
-				ctx.stroke();
-
-				const plusSize = addBtnRadius * 3;
-				ctx.font = `${plusSize}px IBM Plex Mono`;
-				ctx.fillStyle = "#515151";
-				ctx.textBaseline = "hanging";
-				ctx.fillText(
-					"+",
-					cellCenter.x - plusSize / 3.25,
-					cellCenter.y - plusSize / 3.25,
-				);
-			}
-		}
-
 		// Adds border cells for the pathing algorithm
 		// console.log(state.cells);
 		const connMatrix = [];
@@ -326,6 +263,127 @@ class SenkuCanvas extends HTMLElement {
 
 		for (const connection of state.connections) {
 			this.drawTaskConnection(ctx, connection, connMatrix);
+		}
+
+		if (hoverPos) {
+			const debug = false;
+			let column = Math.floor(
+				(hoverPos.x - MINIFIED_VIEW.griddOffset) / MINIFIED_VIEW.cellSize,
+			);
+			let row = Math.floor(
+				(hoverPos.y - MINIFIED_VIEW.griddOffset) / MINIFIED_VIEW.cellSize,
+			);
+			const cellTopLeft = {
+				x: column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
+				y: row * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
+			};
+			const cellCenter = {
+				x: cellTopLeft.x + MINIFIED_VIEW.cellSize / 2,
+				y: cellTopLeft.y + MINIFIED_VIEW.cellSize / 2,
+			};
+
+			// Draw + circle on empty cells when hovering...
+			if (row < GRID_SIZE && row >= 0 && column < GRID_SIZE && column >= 0) {
+				if (!state.cells[row][column]) {
+					const addBtnRadius = MINIFIED_VIEW.cellSize / 5;
+
+					ctx.beginPath();
+					ctx.arc(cellCenter.x, cellCenter.y, addBtnRadius, 0, 2 * Math.PI);
+					ctx.fillStyle = "#282828";
+					ctx.fill();
+
+					ctx.beginPath();
+					ctx.arc(cellCenter.x, cellCenter.y, addBtnRadius, 0, 2 * Math.PI);
+					ctx.strokeStyle = "#515151";
+					ctx.lineWidth = 1;
+					ctx.stroke();
+
+					const plusSize = addBtnRadius * 3;
+					ctx.font = `${plusSize}px IBM Plex Mono`;
+					ctx.fillStyle = "#515151";
+					ctx.textBaseline = "hanging";
+					ctx.fillText(
+						"+",
+						cellCenter.x - plusSize / 3.25,
+						cellCenter.y - plusSize / 3.25,
+					);
+				}
+				// Draw task information
+				else {
+					const task = state.cells[row][column];
+
+					const MAX_TASK_TITLE_CHARS = 20;
+					const INFO_HEIGHT = 124;
+					const INFO_WIDTH = 326;
+					const TASK_INFO_PADDING = INFO_HEIGHT / 6;
+					const INFO_ITEMS_SPACING =
+						(INFO_HEIGHT - TASK_INFO_PADDING * 2) / 3.5;
+
+					const taskInfoTopLeft = {
+						x: cellCenter.x + MINIFIED_VIEW.cellSize / 4,
+						y: cellCenter.y + MINIFIED_VIEW.cellSize / 4,
+					};
+					const taskInfoPaddedLeft = {
+						x: taskInfoTopLeft.x + TASK_INFO_PADDING,
+						y: taskInfoTopLeft.y + TASK_INFO_PADDING,
+					};
+
+					ctx.fillStyle = "#363636";
+					ctx.fillRect(
+						taskInfoTopLeft.x,
+						taskInfoTopLeft.y,
+						INFO_WIDTH,
+						INFO_HEIGHT,
+					);
+
+					const progressText = `${(task.progress * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
+					const progressHeight = 14;
+					ctx.font = `${progressHeight}px IBM Plex Mono`;
+					ctx.textBaseline = "top";
+
+					ctx.fillStyle = "white";
+					ctx.fillText(
+						progressText,
+						taskInfoPaddedLeft.x,
+						taskInfoPaddedLeft.y,
+					);
+
+					const displayTitle =
+						task.title.length < MAX_TASK_TITLE_CHARS
+							? task.title
+							: task.title.substring(0, MAX_TASK_TITLE_CHARS) + "...";
+					const titleTextHeight = 16;
+					ctx.font = `${titleTextHeight}px Parkinsans`;
+					ctx.textBaseline = "top";
+
+					const titleY =
+						taskInfoPaddedLeft.y + progressHeight + INFO_ITEMS_SPACING;
+					ctx.fillText(
+						displayTitle,
+						taskInfoPaddedLeft.x,
+						titleY,
+						INFO_WIDTH - TASK_INFO_PADDING * 2,
+					);
+
+					const statusTextHeight = 12;
+					ctx.font = `${statusTextHeight}px IBM Plex Mono`;
+					ctx.fillStyle = task.status.color;
+					ctx.fillRect(
+						taskInfoPaddedLeft.x,
+						titleY + INFO_ITEMS_SPACING,
+						statusTextHeight * task.status.name.length + 2,
+						statusTextHeight + 2,
+					);
+				}
+			}
+
+			if (debug) {
+				ctx.fillStyle = "purple";
+				ctx.fillRect(cellTopLeft.x, cellTopLeft.y, 5, 5);
+
+				ctx.fillStyle = "red";
+				ctx.fillRect(hoverPos.x, hoverPos.y, 5, 5);
+			}
 		}
 
 		ctx.restore();
