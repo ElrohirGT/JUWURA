@@ -1,5 +1,7 @@
 import auth0 from 'auth0-js'
 
+const ACCESS_TOKEN_KEY = "access_token"
+const USER_PROFILE = "user_profile"
 const webAuth = new auth0.WebAuth({
     domain: import.meta.env.VITE_OAUTH_DOMAIN, // e.g., you.auth0.com
     clientID: import.meta.env.VITE_OAUTH_CLIENT_ID,
@@ -10,7 +12,6 @@ const webAuth = new auth0.WebAuth({
     audience: import.meta.env.VITE_OAUTH_AUDIENCE
 });
 
-function parseCallback (app) {
 function parseCallbackConstructor (app) {
     return () => {
         webAuth.parseHash({}, (err, authResult) => {
@@ -18,6 +19,13 @@ function parseCallbackConstructor (app) {
                 app.ports.onOauthResult.send(false)
             } else {
                 console.log(authResult)
+                const profile = {
+                    username: authResult.idTokenPayload.name,
+                    email: authResult.idTokenPayload.email,
+                    photo: authResult.idTokenPayload.picture
+                }
+                localStorage.setItem(ACCESS_TOKEN_KEY, authResult.accessToken)
+                localStorage.setItem(USER_PROFILE, JSON.stringify(profile))
                 app.ports.onOauthResult.send(true)
             }
         })
@@ -26,6 +34,8 @@ function parseCallbackConstructor (app) {
 
 export function initializeOauthPorts(app) {
     app.ports.loginRedirect.subscribe(() => {
+        localStorage.removeItem(ACCESS_TOKEN_KEY)
+        localStorage.removeItem(USER_PROFILE)
         webAuth.authorize()
     });
     app.ports.logoutRedirect.subscribe(() => {
@@ -33,6 +43,9 @@ export function initializeOauthPorts(app) {
             clientID: import.meta.env.VITE_OAUTH_CLIENT_ID,
             returnTo: import.meta.env.VITE_OUATH_LOGOUT_URI
         })
+        localStorage.removeItem(ACCESS_TOKEN_KEY)
+        localStorage.removeItem(USER_PROFILE)
     })
     app.ports.parseCallback.subscribe(parseCallbackConstructor(app))
+    app.ports.checkUserSession.subscribe(checkUserSessionConstructor(app))
 }
