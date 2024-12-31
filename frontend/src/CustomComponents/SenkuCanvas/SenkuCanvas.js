@@ -316,8 +316,7 @@ class SenkuCanvas extends HTMLElement {
 					const INFO_HEIGHT = 124;
 					const INFO_WIDTH = 326;
 					const TASK_INFO_PADDING = INFO_HEIGHT / 6;
-					const INFO_ITEMS_SPACING =
-						(INFO_HEIGHT - TASK_INFO_PADDING * 2) / 3.5;
+					const INFO_ITEMS_SPACING = (INFO_HEIGHT - TASK_INFO_PADDING * 2) / 4;
 
 					const taskInfoTopLeft = {
 						x: cellCenter.x + MINIFIED_VIEW.cellSize / 4,
@@ -366,13 +365,45 @@ class SenkuCanvas extends HTMLElement {
 					);
 
 					const statusTextHeight = 12;
+					const statusContainerY =
+						titleY + titleTextHeight + INFO_ITEMS_SPACING;
+					const STATUS_CONTAINER_PADDING = 6;
+
 					ctx.font = `${statusTextHeight}px IBM Plex Mono`;
+					const textMeasurements = ctx.measureText(task.status.name);
+
 					ctx.fillStyle = task.status.color;
 					ctx.fillRect(
 						taskInfoPaddedLeft.x,
-						titleY + INFO_ITEMS_SPACING,
-						statusTextHeight * task.status.name.length + 2,
-						statusTextHeight + 2,
+						statusContainerY,
+						textMeasurements.width + STATUS_CONTAINER_PADDING * 2,
+						statusTextHeight + STATUS_CONTAINER_PADDING * 2,
+					);
+
+					ctx.fillStyle = "white";
+					ctx.fillText(
+						task.status.name,
+						taskInfoPaddedLeft.x + STATUS_CONTAINER_PADDING,
+						statusContainerY + STATUS_CONTAINER_PADDING,
+					);
+
+					const dateTextHeight = 12;
+					const formatter = new Intl.DateTimeFormat(undefined, {
+						day: "2-digit",
+						month: "short",
+					});
+					const dateText = formatter.format(task.due_date).toLocaleUpperCase();
+
+					ctx.fillStyle = "white";
+					ctx.font = `${dateTextHeight}px IBM Plex Mono`;
+					const dateMeasurements = ctx.measureText(dateText);
+					ctx.fillText(
+						dateText,
+						taskInfoTopLeft.x +
+							INFO_WIDTH -
+							TASK_INFO_PADDING -
+							dateMeasurements.width,
+						statusContainerY + STATUS_CONTAINER_PADDING,
 					);
 				}
 			}
