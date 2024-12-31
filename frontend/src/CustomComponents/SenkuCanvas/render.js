@@ -17,6 +17,7 @@ const MINIFIED_VIEW = (() => {
 		connectorCurveStart: cellSize / 4,
 	};
 })();
+
 /**
  * @param {HTMLCanvasElement} canvas
  * @param {SenkuCanvasState} state - The input for rendering the component.
@@ -262,42 +263,51 @@ function drawMinifiedTask(ctx, taskData, cords) {
 
 	// DRAW TASK BACKGROUND
 	const radius = 10;
-	ctx.fillStyle = TASK_BACKGROUND;
-	ctx.beginPath();
-	ctx.moveTo(topLeft.x + radius, topLeft.y);
-
-	ctx.quadraticCurveTo(topLeft.x, topLeft.y, topLeft.x, topLeft.y + radius);
-	ctx.lineTo(topLeft.x, topLeft.y + dimensions.height - radius);
-
-	ctx.quadraticCurveTo(
-		topLeft.x,
-		topLeft.y + dimensions.height,
-		topLeft.x + radius,
-		topLeft.y + dimensions.height,
-	);
-	ctx.lineTo(
-		topLeft.x + dimensions.width - radius,
-		topLeft.y + dimensions.height,
+	drawCurvedRectangle(
+		ctx,
+		TASK_BACKGROUND,
+		topLeft,
+		dimensions.width,
+		dimensions.height,
+		radius,
 	);
 
-	ctx.quadraticCurveTo(
-		topLeft.x + dimensions.width,
-		topLeft.y + dimensions.height,
-		topLeft.x + dimensions.width,
-		topLeft.y + dimensions.height - radius,
-	);
-	ctx.lineTo(topLeft.x + dimensions.width, topLeft.y + radius);
-
-	ctx.quadraticCurveTo(
-		topLeft.x + dimensions.width,
-		topLeft.y,
-		topLeft.x + dimensions.width - radius,
-		topLeft.y,
-	);
-	ctx.lineTo(topLeft.x + radius, topLeft.y);
-
-	ctx.closePath();
-	ctx.fill();
+	// ctx.fillStyle = TASK_BACKGROUND;
+	// ctx.beginPath();
+	// ctx.moveTo(topLeft.x + radius, topLeft.y);
+	//
+	// ctx.quadraticCurveTo(topLeft.x, topLeft.y, topLeft.x, topLeft.y + radius);
+	// ctx.lineTo(topLeft.x, topLeft.y + dimensions.height - radius);
+	//
+	// ctx.quadraticCurveTo(
+	// 	topLeft.x,
+	// 	topLeft.y + dimensions.height,
+	// 	topLeft.x + radius,
+	// 	topLeft.y + dimensions.height,
+	// );
+	// ctx.lineTo(
+	// 	topLeft.x + dimensions.width - radius,
+	// 	topLeft.y + dimensions.height,
+	// );
+	//
+	// ctx.quadraticCurveTo(
+	// 	topLeft.x + dimensions.width,
+	// 	topLeft.y + dimensions.height,
+	// 	topLeft.x + dimensions.width,
+	// 	topLeft.y + dimensions.height - radius,
+	// );
+	// ctx.lineTo(topLeft.x + dimensions.width, topLeft.y + radius);
+	//
+	// ctx.quadraticCurveTo(
+	// 	topLeft.x + dimensions.width,
+	// 	topLeft.y,
+	// 	topLeft.x + dimensions.width - radius,
+	// 	topLeft.y,
+	// );
+	// ctx.lineTo(topLeft.x + radius, topLeft.y);
+	//
+	// ctx.closePath();
+	// ctx.fill();
 
 	// DRAW EMOJI
 	const emojiSize = dimensions.width - MINIFIED_VIEW.taskIconPadding * 2;
@@ -591,6 +601,65 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 	// ctx.closePath();
 	// ctx.strokeStyle = "white";
 	// ctx.stroke();
+}
+
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} fillColor
+ * @param {Point} topLeft
+ * @param {number} width
+ * @param {number} height
+ * @param {number} borderRadius
+ */
+function drawCurvedRectangle(
+	ctx,
+	fillColor,
+	topLeft,
+	width,
+	height,
+	borderRadius,
+) {
+	const bottomRight = {
+		x: topLeft.x + width,
+		y: topLeft.y + height,
+	};
+	ctx.beginPath();
+
+	ctx.moveTo(topLeft.x, topLeft.y + borderRadius);
+	ctx.quadraticCurveTo(
+		topLeft.x,
+		topLeft.y,
+		topLeft.x + borderRadius,
+		topLeft.y,
+	);
+
+	ctx.lineTo(bottomRight.x - borderRadius, topLeft.y);
+	ctx.quadraticCurveTo(
+		bottomRight.x,
+		topLeft.y,
+		bottomRight.x,
+		topLeft.y + borderRadius,
+	);
+
+	ctx.lineTo(bottomRight.x, bottomRight.y - borderRadius);
+	ctx.quadraticCurveTo(
+		bottomRight.x,
+		bottomRight.y,
+		bottomRight.x - borderRadius,
+		bottomRight.y,
+	);
+
+	ctx.lineTo(topLeft.x + borderRadius, bottomRight.y);
+	ctx.quadraticCurveTo(
+		topLeft.x,
+		bottomRight.y,
+		topLeft.x,
+		bottomRight.y - borderRadius,
+	);
+
+	ctx.closePath();
+	ctx.fillStyle = fillColor;
+	ctx.fill();
 }
 
 function getPathNodes(path, startingIdx) {
