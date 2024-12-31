@@ -1,7 +1,6 @@
 module Routing exposing (BasePath, NavigationHrefs, Route(..), generateRoutingFuncs, parseUrl, replaceUrlWithBasePath)
 
-import Browser.Navigation exposing (pushUrl, replaceUrl)
-import FormatNumber.Locales exposing (base)
+import Browser.Navigation exposing (replaceUrl)
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (href)
 import Url exposing (Url)
@@ -125,7 +124,7 @@ replaceUrlWithBasePath : Browser.Navigation.Key -> BasePath -> String -> Cmd msg
 replaceUrlWithBasePath key basepath url =
     case basepath of
         Just s ->
-            replaceUrl key (s ++ url)
+            replaceUrl key ("/" ++ s ++ url)
 
         Nothing ->
             replaceUrl key url

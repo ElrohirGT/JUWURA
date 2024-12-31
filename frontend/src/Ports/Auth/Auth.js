@@ -11,6 +11,7 @@ const webAuth = new auth0.WebAuth({
 });
 
 function parseCallback (app) {
+function parseCallbackConstructor (app) {
     return () => {
         webAuth.parseHash({}, (err, authResult) => {
             if (err) {
@@ -33,5 +34,5 @@ export function initializeOauthPorts(app) {
             returnTo: import.meta.env.VITE_OUATH_LOGOUT_URI
         })
     })
-    app.ports.parseCallback.subscribe(parseCallback)
+    app.ports.parseCallback.subscribe(parseCallbackConstructor(app))
 }

@@ -1,11 +1,9 @@
 module Pages.LoginCallback exposing (..)
 
-import Browser.Navigation
 import Css exposing (alignItems, backgroundColor, borderRadius, center, ch, color, column, displayFlex, flexDirection, fontFamilies, fontSize, fontWeight, height, int, justifyContent, maxWidth, padding2, pct, px, textAlign, textOrientation, wait, width)
 import Html.Styled exposing (div, h1, text)
 import Html.Styled.Attributes exposing (css)
 import Ports.Auth.Auth as Auth exposing (onOauthResult)
-import Routing exposing (replaceUrlWithBasePath)
 import Theme exposing (cssColors)
 
 
@@ -20,12 +18,17 @@ type Status
 
 type alias Model =
     { status : Status
+    , replaceUrl : String -> Cmd Msg
     }
 
 
-init : ( Model, Cmd msg )
-init =
-    ( Model Waiting, Auth.parseCallback () )
+init : (String -> Cmd Msg) -> ( Model, Cmd msg )
+init replaceUrl =
+    let
+        cmd =
+            Auth.parseCallback ()
+    in
+    ( Model Waiting replaceUrl, cmd )
 
 
 update : Model -> Msg -> ( Model, Cmd Msg )
@@ -33,7 +36,7 @@ update model msg =
     case msg of
         CheckStatus result ->
             if result == True then
-                ( { model | status = Failed }, Cmd.none )
+                ( { model | status = Waiting }, model.replaceUrl "/" )
 
             else
                 ( { model | status = Failed }, Cmd.none )

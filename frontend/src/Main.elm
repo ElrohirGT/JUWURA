@@ -67,7 +67,11 @@ type AppState
 
 
 fromUrlToAppState : Maybe String -> Url -> Nav.Key -> AppState
-fromUrlToAppState basePath url key =
+fromUrlToAppState basePath url navKey =
+    let
+        replaceUrl =
+            Routing.replaceUrlWithBasePath navKey basePath
+    in
     case Routing.parseUrl basePath url of
         Routing.Home ->
             Home (HomePage.init basePath)
@@ -76,7 +80,7 @@ fromUrlToAppState basePath url key =
             Login
 
         Routing.LoginCallback ->
-            LoginCallback LoginCallbackPage.init
+            LoginCallback (LoginCallbackPage.init replaceUrl)
 
         Routing.NotFound ->
             NotFound
