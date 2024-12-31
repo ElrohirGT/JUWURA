@@ -8,7 +8,7 @@ const SCALE_DIMENSIONS = {
 	max: 4,
 };
 const GRID_SIZE = 10;
-const GRID_LINES_COLOR = "#515151";
+const GRID_LINES_COLOR = "#363636";
 
 const TASK_BACKGROUND = "#6e6e6e";
 
@@ -28,7 +28,9 @@ let lastTaskId = 0;
  * @param {string} [title="Test Title"] - The title of the task
  * @returns {TaskData}
  */
-function createTask(title = "Test Title") {
+function createTask(
+	title = "MMM MMM MMMMMMM MMMM MMM MMMMMMMM MMM MM MMMMMM MMMM MMM MMMMMMMM",
+) {
 	return {
 		id: lastTaskId++,
 		title,
@@ -266,7 +268,7 @@ class SenkuCanvas extends HTMLElement {
 		}
 
 		if (hoverPos) {
-			const debug = false;
+			const debug = true;
 			let column = Math.floor(
 				(hoverPos.x - MINIFIED_VIEW.griddOffset) / MINIFIED_VIEW.cellSize,
 			);
@@ -312,7 +314,7 @@ class SenkuCanvas extends HTMLElement {
 				else {
 					const task = state.cells[row][column];
 
-					const MAX_TASK_TITLE_CHARS = 20;
+					const MAX_TASK_TITLE_CHARS = 30;
 					const INFO_HEIGHT = 124;
 					const INFO_WIDTH = 326;
 					const TASK_INFO_PADDING = INFO_HEIGHT / 6;

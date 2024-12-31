@@ -59,7 +59,7 @@ body model =
     let
         sidebardWidthPct : Float
         sidebardWidthPct =
-            72.0 / 1728.0 * 100.0
+            74.0 / 1976.0 * 100.0
 
         topbarHeightPct : Float
         topbarHeightPct =
@@ -187,7 +187,7 @@ body model =
                 , height (vh 100)
                 , width (vw sidebardWidthPct)
                 , backgroundColor cssColors.black_500
-                , borderRadius4 zero cssSpacing.xl_3 zero zero
+                , borderRadius4 zero cssSpacing.l cssSpacing.l zero
                 ]
             ]
             []
