@@ -74,7 +74,7 @@ fromUrlToAppState basePath url navKey =
     in
     case Routing.parseUrl basePath url of
         Routing.Home ->
-            Home (HomePage.init basePath)
+            Home (HomePage.init basePath replaceUrl)
 
         Routing.Login ->
             Login
@@ -174,11 +174,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UrlChanged url ->
-            ( { model
-                | state = fromUrlToAppState model.basePath url model.key
-              }
-            , Cmd.none
-            )
+            let
+                -- Initialize again new subModels, recicling the 'init' logic
+                newAppState =
+                    init model.basePath url model.key
+            in
+            newAppState
 
         LinkClicked request ->
             case request of

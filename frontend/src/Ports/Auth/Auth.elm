@@ -1,6 +1,12 @@
-port module Ports.Auth.Auth exposing (UserProfile, checkUserSession, loginRedirect, logoutRedirect, onCheckedUserSession, onOauthResult, parseCallback)
+port module Ports.Auth.Auth exposing (UserCredentials, UserProfile, checkUserSession, loginRedirect, logoutRedirect, onCheckedUserSession, onOauthResult, parseCallback)
 
 import Pages.Http exposing (Model(..))
+
+
+type alias UserCredentials =
+    { profile : UserProfile
+    , accessToken : String
+    }
 
 
 type alias UserProfile =
@@ -25,4 +31,4 @@ port onOauthResult : (Bool -> msg) -> Sub msg
 port checkUserSession : () -> Cmd msg
 
 
-port onCheckedUserSession : ({ success : Bool, profile : Maybe UserProfile } -> msg) -> Sub msg
+port onCheckedUserSession : (Maybe UserCredentials -> msg) -> Sub msg

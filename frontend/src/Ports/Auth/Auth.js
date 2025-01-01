@@ -12,6 +12,21 @@ const webAuth = new auth0.WebAuth({
     audience: import.meta.env.VITE_OAUTH_AUDIENCE
 });
 
+function loginRedirect() {
+    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    localStorage.removeItem(USER_PROFILE)
+    webAuth.authorize()
+}
+
+function logoutRedirect() {
+    webAuth.logout({
+        clientID: import.meta.env.VITE_OAUTH_CLIENT_ID,
+        returnTo: import.meta.env.VITE_OUATH_LOGOUT_URI
+    })
+    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    localStorage.removeItem(USER_PROFILE)
+}
+
 function parseCallbackConstructor (app) {
     return () => {
         webAuth.parseHash({}, (err, authResult) => {
@@ -32,20 +47,25 @@ function parseCallbackConstructor (app) {
     }
 }
 
+function checkUserSessionConstructor(app) {
+    return () => {
+        try {
+            const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY)
+            const profile = JSON.parse(localStorage.getItem(USER_PROFILE))
+            if (!profile || !accessToken) {
+                throw Error("Access token or user_profile are empty")
+            }
+            app.ports.onCheckedUserSession.send({accessToken, profile})
+        } catch (err){
+            console.error(`Error retreiving token: ${err}`)
+            app.ports.onCheckedUserSession.send(null)
+        }
+    }
+}
+
 export function initializeOauthPorts(app) {
-    app.ports.loginRedirect.subscribe(() => {
-        localStorage.removeItem(ACCESS_TOKEN_KEY)
-        localStorage.removeItem(USER_PROFILE)
-        webAuth.authorize()
-    });
-    app.ports.logoutRedirect.subscribe(() => {
-        webAuth.logout({
-            clientID: import.meta.env.VITE_OAUTH_CLIENT_ID,
-            returnTo: import.meta.env.VITE_OUATH_LOGOUT_URI
-        })
-        localStorage.removeItem(ACCESS_TOKEN_KEY)
-        localStorage.removeItem(USER_PROFILE)
-    })
+    app.ports.loginRedirect.subscribe(loginRedirect);
+    app.ports.logoutRedirect.subscribe(logoutRedirect)
     app.ports.parseCallback.subscribe(parseCallbackConstructor(app))
     app.ports.checkUserSession.subscribe(checkUserSessionConstructor(app))
 }
