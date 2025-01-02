@@ -225,6 +225,9 @@ class SenkuCanvas extends HTMLElement {
 			state.mouseDown = true;
 			const debug = true;
 
+			const isLeftClick = ev.button === 0;
+			const isRightClick = ev.button === 2;
+
 			const canvasPos = canvas.getBoundingClientRect();
 			const mousePosOnCanvas = fromScreenPosToCanvasPos(
 				{
@@ -291,6 +294,11 @@ class SenkuCanvas extends HTMLElement {
 				});
 				this.dispatchEvent(event);
 			} else if (clickedOnATask) {
+				if (isLeftClick) {
+					console.log("TODO: VIEW TASK INFO!");
+				} else if (isRightClick) {
+					console.log("TODO: TRY TO CONNECT TASK!");
+				}
 			} else {
 				state.mode = "drag";
 				state.startDragOffset.x = ev.clientX - state.translatePosition.x;

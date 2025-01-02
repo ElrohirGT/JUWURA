@@ -44,7 +44,7 @@
  */
 
 /**
- * @typedef {"none"|"buttonClick"|"drag"} SenkuCanvasMode
+ * @typedef {"none"|"drag"} SenkuCanvasMode
  */
 
 /**
