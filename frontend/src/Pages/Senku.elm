@@ -48,14 +48,18 @@ init =
 
 
 type Msg
-    = CreateTask
+    = CreateTask SenkuCanvas.CreateTaskEvent
 
 
 update : Model -> Msg -> Model
 update model msg =
     case msg of
-        CreateTask ->
-            Debug.log "CREATE MESSAGE CALLED!" model
+        CreateTask ev ->
+            let
+                _ =
+                    Debug.log "CREATE MESSAGE CALLED!" ev
+            in
+            model
 
 
 
