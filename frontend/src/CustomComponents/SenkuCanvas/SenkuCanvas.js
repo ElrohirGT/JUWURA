@@ -126,6 +126,12 @@ function generateDummyData() {
 	return {
 		cells,
 		connections,
+		projectId: 1,
+		scale: SCALE_DIMENSIONS.min,
+		translatePosition: { x: 0, y: 0 },
+		startDragOffset: { x: 0, y: 0 },
+		mouseDown: false,
+		mode: "none",
 	};
 }
 
@@ -149,6 +155,7 @@ class SenkuCanvas extends HTMLElement {
 		canvas.height =
 			(this.getAttribute("heightPct") / 100) * document.body.offsetHeight;
 
+		this.initState();
 		this.registerEvents(canvas);
 
 		const viewTopbar = document.getElementById("viewTopbar");
@@ -167,15 +174,7 @@ class SenkuCanvas extends HTMLElement {
 					`${this.getAttribute("heightPct")} / 100 * ${document.body.offsetHeight} - ${viewTopbar.offsetHeight} = ${canvas.height}`,
 				);
 
-				drawCanvas(
-					canvas,
-					this.getState(),
-					this.getAttribute("zoom") ?? SCALE_DIMENSIONS.min,
-					{
-						x: 0,
-						y: 0,
-					},
-				);
+				drawCanvas(canvas, this.getState());
 			}, 1000);
 		});
 
@@ -204,9 +203,13 @@ class SenkuCanvas extends HTMLElement {
 		console.log(`Attribute ${name} has changed. ${oldValue} -> ${newValue}`);
 	}
 
+	initState() {
+		this.senkuState = generateDummyData();
+	}
+
 	getState() {
 		// TODO: This should be computed from a property in JS
-		return generateDummyData();
+		return this.senkuState;
 	}
 
 	/**
@@ -216,22 +219,11 @@ class SenkuCanvas extends HTMLElement {
 	 * @param {HTMLCanvasElement} canvas
 	 */
 	registerEvents(canvas) {
-		let translatePos = {
-			x: 0,
-			y: 0,
-		};
-
-		let scale = this.getAttribute("zoom") ?? SCALE_DIMENSIONS.min;
-		let startDragOffset = {};
-		let mouseDown = false;
-		/** @type {import("./types").SenkuCanvasMode}*/
-		let mode = "none";
+		const state = this.getState();
 
 		canvas.addEventListener("mousedown", (ev) => {
-			mouseDown = true;
-
+			state.mouseDown = true;
 			const debug = true;
-			const state = this.getState();
 
 			const canvasPos = canvas.getBoundingClientRect();
 			const mousePosOnCanvas = fromScreenPosToCanvasPos(
@@ -243,8 +235,8 @@ class SenkuCanvas extends HTMLElement {
 					x: canvasPos.left,
 					y: canvasPos.top,
 				},
-				scale,
-				translatePos,
+				state.scale,
+				state.translatePosition,
 			);
 
 			const { row, column } = fromCanvasPosToCellCords(
@@ -300,21 +292,23 @@ class SenkuCanvas extends HTMLElement {
 				this.dispatchEvent(event);
 			} else if (clickedOnATask) {
 			} else {
-				mode = "drag";
-				startDragOffset.x = ev.clientX - translatePos.x;
-				startDragOffset.y = ev.clientY - translatePos.y;
+				state.mode = "drag";
+				state.startDragOffset.x = ev.clientX - state.translatePosition.x;
+				state.startDragOffset.y = ev.clientY - state.translatePosition.y;
 			}
 		});
 		canvas.addEventListener("mouseup", () => {
-			mouseDown = false;
-			mode = "none";
+			state.mouseDown = false;
+			state.mode = "none";
 		});
 
 		canvas.addEventListener("mouseover", () => {
-			mouseDown = false;
+			state.mouseDown = false;
+			state.mode = "none";
 		});
 		canvas.addEventListener("mouseout", () => {
-			mouseDown = false;
+			state.mouseDown = false;
+			state.mode = "none";
 		});
 
 		canvas.addEventListener("contextmenu", (ev) => {
@@ -322,10 +316,11 @@ class SenkuCanvas extends HTMLElement {
 		});
 
 		canvas.addEventListener("mousemove", (ev) => {
-			if (mouseDown && mode === "drag") {
-				translatePos.x = ev.clientX - startDragOffset.x;
-				translatePos.y = ev.clientY - startDragOffset.y;
-				drawCanvas(canvas, this.getState(), scale, translatePos);
+			if (state.mouseDown && state.mode === "drag") {
+				state.translatePosition.x = ev.clientX - state.startDragOffset.x;
+				state.translatePosition.y = ev.clientY - state.startDragOffset.y;
+
+				drawCanvas(canvas, this.getState());
 			} else {
 				const canvasPos = canvas.getBoundingClientRect();
 				const mousePosOnCanvas = fromScreenPosToCanvasPos(
@@ -337,17 +332,13 @@ class SenkuCanvas extends HTMLElement {
 						x: canvasPos.left,
 						y: canvasPos.top,
 					},
-					scale,
-					translatePos,
+					state.scale,
+					state.translatePosition,
 				);
 
-				drawCanvas(
-					canvas,
-					this.getState(),
-					scale,
-					translatePos,
-					mousePosOnCanvas,
-				);
+				state.hoverPos = mousePosOnCanvas;
+				drawCanvas(canvas, this.getState());
+				state.hoverPos = undefined;
 			}
 		});
 

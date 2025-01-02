@@ -31,13 +31,6 @@
  */
 
 /**
- * @typedef {Object} SenkuCanvasState
- * @property {number} projectId
- * @property {Cells} cells
- * @property {TaskConnection[]} connections
- */
-
-/**
  * @typedef {Object} Point
  * @property {number} x
  * @property {number} y
@@ -52,6 +45,19 @@
 
 /**
  * @typedef {"none"|"buttonClick"|"drag"} SenkuCanvasMode
+ */
+
+/**
+ * @typedef {Object} SenkuCanvasState
+ * @property {number} projectId
+ * @property {Cells} cells
+ * @property {TaskConnection[]} connections
+ * @property {number} scale
+ * @property {Point} translatePosition
+ * @property {Point|undefined} hoverPos
+ * @property {Point} startDragOffset
+ * @property {boolean} mouseDown
+ * @property {SenkuCanvasMode} mode
  */
 
 export default {};

@@ -26,23 +26,16 @@ export const ADD_BTN_RADIUS = MINIFIED_VIEW.cellSize / 5;
 /**
  * @param {HTMLCanvasElement} canvas
  * @param {import("./types").SenkuCanvasState} state - The input for rendering the component.
- * @param {number} scale - How much scale do we need? Value between 1 and 2.
- * @param {{x:number, y:number}} translatePos - The position inside the drawing the center of the canvas should be.
- * @param {{x: number, y: number}} [hoverPos=undefined] - The current hover position of the mouse (null if no hover).
  */
-export function drawCanvas(
-	canvas,
-	state,
-	scale,
-	translatePos,
-	hoverPos = undefined,
-) {
+export function drawCanvas(canvas, state) {
 	const ctx = canvas.getContext("2d");
 	ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 	ctx.save();
 
+	const { scale, translatePosition, hoverPos } = state;
+
 	ctx.scale(scale, scale);
-	ctx.translate(translatePos.x, translatePos.y);
+	ctx.translate(translatePosition.x, translatePosition.y);
 
 	ctx.strokeStyle = GRID_LINES_COLOR;
 	ctx.lineWidth = 1;
