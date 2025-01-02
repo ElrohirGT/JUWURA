@@ -59,21 +59,8 @@ export function drawCanvas(canvas, state) {
 		}
 	}
 
-	// Adds border cells for the pathing algorithm
-	const connMatrix = [];
-	for (let row = 0; row < 2 * GRID_SIZE - 1; row++) {
-		connMatrix.push([]);
-		for (let column = 0; column < 2 * GRID_SIZE - 1; column++) {
-			if (row % 2 !== 0) {
-				connMatrix[row].push(undefined);
-			} else if (column % 2 === 0) {
-				connMatrix[row].push(state.cells[row / 2][column / 2]);
-			} else {
-				connMatrix[row].push(undefined);
-			}
-		}
-	}
-
+	// Adds border cells for the pathfinding algorithm
+	const connMatrix = addBorderCellsToMatrix(state.cells);
 	for (const connection of state.connections) {
 		drawTaskConnection(ctx, connection, connMatrix);
 	}
@@ -244,9 +231,28 @@ export function drawCanvas(canvas, state) {
 			newRow >= 0 &&
 			newRow < GRID_SIZE &&
 			newColumn >= 0 &&
-			newColumn < GRID_SIZE
+			newColumn < GRID_SIZE &&
+			!state.cells[newRow][newColumn]
 		) {
+			let matrixWithShadowTask = addBorderCellsToMatrix(state.cells);
+			matrixWithShadowTask[newRow * 2][newColumn * 2] =
+				matrixWithShadowTask[row * 2][column * 2];
+
 			drawMinifiedTask(ctx, state.cells[row][column], cellCords, false);
+			drawTaskConnection(
+				ctx,
+				{
+					start: {
+						row: state.draggedTaskOriginalCords.row * 2,
+						column: state.draggedTaskOriginalCords.column * 2,
+					},
+					end: {
+						row: newRow * 2,
+						column: newColumn * 2,
+					},
+				},
+				matrixWithShadowTask,
+			);
 		}
 	}
 
@@ -662,4 +668,20 @@ function fromNodesToPoints(current, next, offset, cellWidth, cellHeight) {
 			y: offset.y + (next.y / 2) * cellHeight + cellHeight / 2,
 		},
 	};
+}
+
+function addBorderCellsToMatrix(matrix) {
+	const connMatrix = [];
+	for (let row = 0; row < 2 * GRID_SIZE - 1; row++) {
+		connMatrix.push([]);
+		for (let column = 0; column < 2 * GRID_SIZE - 1; column++) {
+			if (row % 2 === 0 && column % 2 === 0) {
+				connMatrix[row].push(matrix[row / 2][column / 2]);
+			} else {
+				connMatrix[row].push(undefined);
+			}
+		}
+	}
+
+	return connMatrix;
 }

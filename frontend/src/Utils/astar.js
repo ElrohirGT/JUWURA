@@ -158,27 +158,29 @@ export function search(
 	diagonal = !!diagonal;
 
 	let openHeap = heap(comparator);
+	// If the end === start then we want to keep searching instead of
+	// stopping right at the beginning!
+	let hasFoundStart = !comparator(end.value, start.value);
 
 	openHeap.push(start);
 
 	while (openHeap.size() > 0) {
 		// Grab the lowest f(x) to process next.  Heap keeps this sorted for us.
 		let currentNode = openHeap.pop();
-		// console.log("CURRENT NODE", currentNode);
-		// console.log(
-		// 	`GOING: (${currentNode.x}, ${currentNode.y}). Because: ${currentNode.g} + ${currentNode.h} = ${currentNode.f}`,
-		// 	currentNode,
-		// );
 
 		// End case -- result has been found, return the traced path.
 		if (comparator(currentNode.value, end.value)) {
-			let curr = currentNode;
-			let ret = [];
-			while (curr.parent) {
-				ret.push(curr);
-				curr = curr.parent;
+			if (!hasFoundStart) {
+				hasFoundStart = true;
+			} else {
+				let curr = currentNode;
+				let ret = [];
+				while (curr.parent) {
+					ret.push(curr);
+					curr = curr.parent;
+				}
+				return ret.reverse();
 			}
-			return ret.reverse();
 		}
 
 		// Normal case -- move currentNode from open to closed, process each of its neighbors.
