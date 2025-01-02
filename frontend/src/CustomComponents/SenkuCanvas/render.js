@@ -20,7 +20,7 @@ const MINIFIED_VIEW = (() => {
 
 /**
  * @param {HTMLCanvasElement} canvas
- * @param {SenkuCanvasState} state - The input for rendering the component.
+ * @param {import("./types").SenkuCanvasState} state - The input for rendering the component.
  * @param {number} scale - How much scale do we need? Value between 1 and 2.
  * @param {{x:number, y:number}} translatePos - The position inside the drawing the center of the canvas should be.
  * @param {{x: number, y: number}} [hoverPos=undefined] - The current hover position of the mouse (null if no hover).
@@ -142,12 +142,14 @@ export function drawCanvas(
 					y: taskInfoTopLeft.y + TASK_INFO_PADDING,
 				};
 
-				ctx.fillStyle = "#363636";
-				ctx.fillRect(
-					taskInfoTopLeft.x,
-					taskInfoTopLeft.y,
+				const radius = 8;
+				drawCurvedRectangle(
+					ctx,
+					"#363636",
+					taskInfoTopLeft,
 					INFO_WIDTH,
 					INFO_HEIGHT,
+					radius,
 				);
 
 				const progressText = `${(task.progress * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
@@ -183,11 +185,16 @@ export function drawCanvas(
 				const textMeasurements = ctx.measureText(task.status.name);
 
 				ctx.fillStyle = task.status.color;
-				ctx.fillRect(
-					taskInfoPaddedLeft.x,
-					statusContainerY,
+				drawCurvedRectangle(
+					ctx,
+					task.status.color,
+					{
+						x: taskInfoPaddedLeft.x,
+						y: statusContainerY,
+					},
 					textMeasurements.width + STATUS_CONTAINER_PADDING * 2,
 					statusTextHeight + STATUS_CONTAINER_PADDING * 2,
+					radius / 2,
 				);
 
 				ctx.fillStyle = "white";
@@ -272,43 +279,6 @@ function drawMinifiedTask(ctx, taskData, cords) {
 		radius,
 	);
 
-	// ctx.fillStyle = TASK_BACKGROUND;
-	// ctx.beginPath();
-	// ctx.moveTo(topLeft.x + radius, topLeft.y);
-	//
-	// ctx.quadraticCurveTo(topLeft.x, topLeft.y, topLeft.x, topLeft.y + radius);
-	// ctx.lineTo(topLeft.x, topLeft.y + dimensions.height - radius);
-	//
-	// ctx.quadraticCurveTo(
-	// 	topLeft.x,
-	// 	topLeft.y + dimensions.height,
-	// 	topLeft.x + radius,
-	// 	topLeft.y + dimensions.height,
-	// );
-	// ctx.lineTo(
-	// 	topLeft.x + dimensions.width - radius,
-	// 	topLeft.y + dimensions.height,
-	// );
-	//
-	// ctx.quadraticCurveTo(
-	// 	topLeft.x + dimensions.width,
-	// 	topLeft.y + dimensions.height,
-	// 	topLeft.x + dimensions.width,
-	// 	topLeft.y + dimensions.height - radius,
-	// );
-	// ctx.lineTo(topLeft.x + dimensions.width, topLeft.y + radius);
-	//
-	// ctx.quadraticCurveTo(
-	// 	topLeft.x + dimensions.width,
-	// 	topLeft.y,
-	// 	topLeft.x + dimensions.width - radius,
-	// 	topLeft.y,
-	// );
-	// ctx.lineTo(topLeft.x + radius, topLeft.y);
-	//
-	// ctx.closePath();
-	// ctx.fill();
-
 	// DRAW EMOJI
 	const emojiSize = dimensions.width - MINIFIED_VIEW.taskIconPadding * 2;
 	ctx.font = `${emojiSize}px Parkinsans`;
@@ -365,8 +335,8 @@ function drawMinifiedTask(ctx, taskData, cords) {
 
 /**
  * @param {CanvasRenderingContext2D} ctx
- * @param {TaskConnection} connInfo
- * @param {Cells} matrix
+ * @param {import("./types").TaskConnection} connInfo
+ * @param {import("./types").Cells} matrix
  */
 function drawTaskConnection(ctx, connInfo, matrix) {
 	const { start, end } = connInfo;
@@ -606,7 +576,7 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 /**
  * @param {CanvasRenderingContext2D} ctx
  * @param {string} fillColor
- * @param {Point} topLeft
+ * @param {import("./types").Point} topLeft
  * @param {number} width
  * @param {number} height
  * @param {number} borderRadius

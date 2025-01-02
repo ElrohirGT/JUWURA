@@ -95,12 +95,12 @@ function genObstacle(cells, connections) {
 
 /**
  * Generates dummy data for the graph
- * @returns {SenkuCanvasState}
+ * @returns {import("./types").SenkuCanvasState}
  */
 function generateDummyData() {
-	/**@type {TaskConnection[]}*/
+	/**@type {import("./types").TaskConnection}*/
 	const connections = [];
-	/** @type {Cells}*/
+	/** @type {import("./types").Cells}*/
 	const cells = [];
 	for (let i = 0; i < GRID_SIZE; i++) {
 		cells.push([]);
