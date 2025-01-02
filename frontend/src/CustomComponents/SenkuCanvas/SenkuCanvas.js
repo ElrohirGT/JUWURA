@@ -28,7 +28,7 @@ function createTask(
 		id: lastTaskId++,
 		title,
 		icon: "😎",
-		progress: 0.7,
+		progress: Math.random(),
 		status: {
 			name: "ON HOLD",
 			color: "#3b5083",
