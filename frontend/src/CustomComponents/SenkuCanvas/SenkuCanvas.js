@@ -4,6 +4,8 @@ import { ADD_BTN_RADIUS, drawCanvas, MINIFIED_VIEW } from "./render";
 import { GRID_SIZE } from "./render";
 import { fromCanvasPosToCellCords } from "./utils";
 
+export const TAG_NAME = "uwu-senku";
+
 const SCALE_DIMENSIONS = {
 	min: 1,
 	max: 4,
@@ -363,6 +365,6 @@ function fromScreenPosToCanvasPos(
 
 export const SenkuCanvasComponent = {
 	register() {
-		window.customElements.define("uwu-senku", SenkuCanvas);
+		window.customElements.define(TAG_NAME, SenkuCanvas);
 	},
 };

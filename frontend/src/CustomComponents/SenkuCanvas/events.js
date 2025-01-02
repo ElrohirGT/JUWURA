@@ -1,3 +1,5 @@
+import { TAG_NAME } from "./SenkuCanvas";
+
 /**
  * @template T
  * @param {string} type
@@ -5,7 +7,7 @@
  * @returns {CustomEvent<T>}
  */
 function createCustomEvent(type, detail) {
-	return new CustomEvent(`uwu-senku:${type}`, {
+	return new CustomEvent(`${TAG_NAME}:${type}`, {
 		bubbles: false,
 		cancelable: false,
 		detail,
