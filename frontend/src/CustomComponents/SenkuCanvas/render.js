@@ -59,10 +59,72 @@ export function drawCanvas(canvas, state) {
 		}
 	}
 
-	// Adds border cells for the pathfinding algorithm
-	const connMatrix = addBorderCellsToMatrix(state.cells);
-	for (const connection of state.connections) {
-		drawTaskConnection(ctx, connection, connMatrix);
+	if (state.mode === "dragTask") {
+		const connMatrix = addBorderCellsToMatrix(state.cells);
+		const { row, column } = state.draggedTaskOriginalCords;
+
+		const newCords = fromCanvasPosToCellCords(
+			state.taskTranslatePosition,
+			MINIFIED_VIEW.griddOffset,
+			MINIFIED_VIEW.cellSize,
+			MINIFIED_VIEW.cellSize,
+		);
+		const { row: newRow, column: newColumn } = newCords;
+
+		const newCordsAreValid =
+			newRow >= 0 &&
+			newRow < GRID_SIZE &&
+			newColumn >= 0 &&
+			newColumn < GRID_SIZE &&
+			!state.cells[newRow][newColumn];
+
+		if (newCordsAreValid) {
+			connMatrix[newRow * 2][newColumn * 2] = connMatrix[row * 2][column * 2];
+			drawMinifiedTask(ctx, state.cells[row][column], newCords, false);
+		}
+		for (const connection of state.connections) {
+			const { start, end } = connection;
+			if (
+				newCordsAreValid &&
+				start.row === state.draggedTaskOriginalCords.row * 2 &&
+				start.column === state.draggedTaskOriginalCords.column * 2
+			) {
+				drawTaskConnection(
+					ctx,
+					{
+						start: {
+							row: newRow * 2,
+							column: newColumn * 2,
+						},
+						end,
+					},
+					connMatrix,
+				);
+			} else if (
+				newCordsAreValid &&
+				end.row === state.draggedTaskOriginalCords.row * 2 &&
+				end.column === state.draggedTaskOriginalCords.column * 2
+			) {
+				drawTaskConnection(
+					ctx,
+					{
+						start,
+						end: {
+							row: newRow * 2,
+							column: newColumn * 2,
+						},
+					},
+					connMatrix,
+				);
+			} else {
+				drawTaskConnection(ctx, connection, connMatrix);
+			}
+		}
+	} else {
+		const connMatrix = addBorderCellsToMatrix(state.cells);
+		for (const connection of state.connections) {
+			drawTaskConnection(ctx, connection, connMatrix);
+		}
 	}
 
 	if (hoverPos) {
@@ -214,45 +276,6 @@ export function drawCanvas(canvas, state) {
 
 			ctx.fillStyle = "red";
 			ctx.fillRect(hoverPos.x, hoverPos.y, 5, 5);
-		}
-	}
-
-	if (state.mode === "dragTask") {
-		const cellCords = fromCanvasPosToCellCords(
-			state.taskTranslatePosition,
-			MINIFIED_VIEW.griddOffset,
-			MINIFIED_VIEW.cellSize,
-			MINIFIED_VIEW.cellSize,
-		);
-		const { row: newRow, column: newColumn } = cellCords;
-		const { row, column } = state.draggedTaskOriginalCords;
-
-		if (
-			newRow >= 0 &&
-			newRow < GRID_SIZE &&
-			newColumn >= 0 &&
-			newColumn < GRID_SIZE &&
-			!state.cells[newRow][newColumn]
-		) {
-			let matrixWithShadowTask = addBorderCellsToMatrix(state.cells);
-			matrixWithShadowTask[newRow * 2][newColumn * 2] =
-				matrixWithShadowTask[row * 2][column * 2];
-
-			drawMinifiedTask(ctx, state.cells[row][column], cellCords, false);
-			drawTaskConnection(
-				ctx,
-				{
-					start: {
-						row: state.draggedTaskOriginalCords.row * 2,
-						column: state.draggedTaskOriginalCords.column * 2,
-					},
-					end: {
-						row: newRow * 2,
-						column: newColumn * 2,
-					},
-				},
-				matrixWithShadowTask,
-			);
 		}
 	}
 
@@ -670,6 +693,11 @@ function fromNodesToPoints(current, next, offset, cellWidth, cellHeight) {
 	};
 }
 
+/**
+ * @template T
+ * @param {T[][]} matrix
+ * @returns {T[][]}
+ */
 function addBorderCellsToMatrix(matrix) {
 	const connMatrix = [];
 	for (let row = 0; row < 2 * GRID_SIZE - 1; row++) {

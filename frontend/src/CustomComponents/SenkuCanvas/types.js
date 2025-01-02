@@ -44,7 +44,7 @@
  */
 
 /**
- * @typedef {"none"|"dragGrid"|"dragTask"} SenkuCanvasMode
+ * @typedef {"none"|"dragGrid"|"dragTask"|"createConnection"} SenkuCanvasMode
  */
 
 /**
