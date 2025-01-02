@@ -32,6 +32,7 @@
 
 /**
  * @typedef {Object} SenkuCanvasState
+ * @property {number} projectId
  * @property {Cells} cells
  * @property {TaskConnection[]} connections
  */
@@ -47,6 +48,10 @@
  * @property {number} project_id
  * @property {number|null} parent_id
  * @property {string} icon
+ */
+
+/**
+ * @typedef {"none"|"buttonClick"|"drag"} SenkuCanvasMode
  */
 
 export default {};

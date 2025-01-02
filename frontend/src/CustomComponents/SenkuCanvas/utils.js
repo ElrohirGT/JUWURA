@@ -1,4 +1,23 @@
 /**
+ * @param {import("./types").Point} screenPos The position in the screen to transform
+ * @param {import("./types").Point} canvasTopLeft - The topleft corners in the screen of the canvas
+ * @param {number} scale - The scale of zoom in the canvas
+ * @param {import("./types").Point} translation - The translation of the canvas
+ * @returns {import("./types").Point} The screen position transformed into a canvas position
+ */
+export function fromScreenPosToCanvasPos(
+	screenPos,
+	canvasTopLeft,
+	scale,
+	translation,
+) {
+	return {
+		x: (screenPos.x - canvasTopLeft.x) / scale - translation.x,
+		y: (screenPos.y - canvasTopLeft.y) / scale - translation.y,
+	};
+}
+
+/**
  * @param {import("./types").Point} canvasPos - The position inside the canvas
  * @param {number} gridOffset - The initial grid offset
  * @param {number} cellWidth - The width in pixels of a cell
@@ -18,4 +37,32 @@ export function fromCanvasPosToCellCords(
 		column,
 		row,
 	};
+}
+
+/**
+ * @param {import("./types").Point} canvasPos
+ * @param {import("./types").Point} center
+ * @param {number} radius
+ */
+export function canvasPosInsideCircle(canvasPos, center, radius) {
+	const distanceFromCenter = Math.sqrt(
+		Math.pow(canvasPos.x - center.x, 2) + Math.pow(canvasPos.y - center.y, 2),
+	);
+
+	return distanceFromCenter <= radius;
+}
+
+/**
+ * @param {import("./types").Point} canvasPos
+ * @param {import("./types").Point} topLeft
+ * @param {number} width
+ * @param {number} height
+ */
+export function canvasPosInsideRectangle(canvasPos, topLeft, width, height) {
+	const xIsBetween =
+		canvasPos.x >= topLeft.x && canvasPos.x <= topLeft.x + width;
+	const yIsBetween =
+		canvasPos.y >= topLeft.y && canvasPos.y <= topLeft.y + height;
+
+	return xIsBetween && yIsBetween;
 }

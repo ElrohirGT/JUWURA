@@ -2,7 +2,12 @@ import { clamp } from "../../Utils/math";
 import { CreateTaskEvent } from "./events";
 import { ADD_BTN_RADIUS, drawCanvas, MINIFIED_VIEW } from "./render";
 import { GRID_SIZE } from "./render";
-import { fromCanvasPosToCellCords } from "./utils";
+import {
+	canvasPosInsideCircle,
+	canvasPosInsideRectangle,
+	fromCanvasPosToCellCords,
+	fromScreenPosToCanvasPos,
+} from "./utils";
 
 export const TAG_NAME = "uwu-senku";
 
@@ -219,14 +224,11 @@ class SenkuCanvas extends HTMLElement {
 		let scale = this.getAttribute("zoom") ?? SCALE_DIMENSIONS.min;
 		let startDragOffset = {};
 		let mouseDown = false;
+		/** @type {import("./types").SenkuCanvasMode}*/
+		let mode = "none";
 
 		canvas.addEventListener("mousedown", (ev) => {
 			mouseDown = true;
-			startDragOffset.x = ev.clientX - translatePos.x;
-			startDragOffset.y = ev.clientY - translatePos.y;
-		});
-		canvas.addEventListener("mouseup", (ev) => {
-			mouseDown = false;
 
 			const debug = true;
 			const state = this.getState();
@@ -244,6 +246,7 @@ class SenkuCanvas extends HTMLElement {
 				scale,
 				translatePos,
 			);
+
 			const { row, column } = fromCanvasPosToCellCords(
 				mousePosOnCanvas,
 				MINIFIED_VIEW.griddOffset,
@@ -254,6 +257,10 @@ class SenkuCanvas extends HTMLElement {
 			const cellTopLeft = {
 				x: column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
 				y: row * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
+			};
+			const cellCenter = {
+				x: cellTopLeft.x + MINIFIED_VIEW.cellSize / 2,
+				y: cellTopLeft.y + MINIFIED_VIEW.cellSize / 2,
 			};
 
 			if (debug) {
@@ -268,30 +275,39 @@ class SenkuCanvas extends HTMLElement {
 			const indicesInRange =
 				row >= 0 && row < GRID_SIZE && column >= 0 && column < GRID_SIZE;
 			const clickedOnATaskCell = state.cells[row] && state.cells[row][column];
-
-			if (!indicesInRange) {
-				return;
-			}
-
-			if (!clickedOnATaskCell) {
-				// Check if clicked on the "PLUS" sign to create a task...
-				const cellCenter = {
-					x: cellTopLeft.x + MINIFIED_VIEW.cellSize / 2,
-					y: cellTopLeft.y + MINIFIED_VIEW.cellSize / 2,
-				};
-				const distanceFromCenter = Math.sqrt(
-					Math.pow(mousePosOnCanvas.x - cellCenter.x, 2) +
-						Math.pow(mousePosOnCanvas.y - cellCenter.y, 2),
+			const clickedOnAddTaskBtn =
+				indicesInRange &&
+				!clickedOnATaskCell &&
+				canvasPosInsideCircle(mousePosOnCanvas, cellCenter, ADD_BTN_RADIUS);
+			const clickedOnATask =
+				clickedOnATaskCell &&
+				canvasPosInsideRectangle(
+					mousePosOnCanvas,
+					{
+						x: cellTopLeft.x + MINIFIED_VIEW.cellPadding,
+						y: cellTopLeft.y + MINIFIED_VIEW.cellPadding,
+					},
+					MINIFIED_VIEW.innerTaskSize,
+					MINIFIED_VIEW.innerTaskSize,
 				);
-				if (distanceFromCenter <= ADD_BTN_RADIUS) {
-					const event = CreateTaskEvent({
-						icon: "💀",
-						project_id: 1,
-						parent_id: null,
-					});
-					this.dispatchEvent(event);
-				}
+
+			if (clickedOnAddTaskBtn) {
+				const event = CreateTaskEvent({
+					project_id: state.projectId,
+					parent_id: null,
+					icon: "💀",
+				});
+				this.dispatchEvent(event);
+			} else if (clickedOnATask) {
+			} else {
+				mode = "drag";
+				startDragOffset.x = ev.clientX - translatePos.x;
+				startDragOffset.y = ev.clientY - translatePos.y;
 			}
+		});
+		canvas.addEventListener("mouseup", () => {
+			mouseDown = false;
+			mode = "none";
 		});
 
 		canvas.addEventListener("mouseover", () => {
@@ -306,8 +322,7 @@ class SenkuCanvas extends HTMLElement {
 		});
 
 		canvas.addEventListener("mousemove", (ev) => {
-			console.log(mouseDown);
-			if (mouseDown) {
+			if (mouseDown && mode === "drag") {
 				translatePos.x = ev.clientX - startDragOffset.x;
 				translatePos.y = ev.clientY - startDragOffset.y;
 				drawCanvas(canvas, this.getState(), scale, translatePos);
@@ -342,25 +357,6 @@ class SenkuCanvas extends HTMLElement {
 			drawCanvas(canvas, this.getState(), scale, translatePos);
 		});
 	}
-}
-
-/**
- * @param {import("./types").Point} screenPos The position in the screen to transform
- * @param {import("./types").Point} canvasTopLeft - The topleft corners in the screen of the canvas
- * @param {number} scale - The scale of zoom in the canvas
- * @param {import("./types").Point} translation - The translation of the canvas
- * @returns {import("./types").Point} The screen position transformed into a canvas position
- */
-function fromScreenPosToCanvasPos(
-	screenPos,
-	canvasTopLeft,
-	scale,
-	translation,
-) {
-	return {
-		x: (screenPos.x - canvasTopLeft.x) / scale - translation.x,
-		y: (screenPos.y - canvasTopLeft.y) / scale - translation.y,
-	};
 }
 
 export const SenkuCanvasComponent = {

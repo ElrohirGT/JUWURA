@@ -10,10 +10,12 @@ export const TASK_BACKGROUND = "#6e6e6e";
 
 export const MINIFIED_VIEW = (() => {
 	const cellSize = 100;
+	const cellPadding = cellSize * 0.15;
 	return {
 		cellSize,
 		griddOffset: cellSize / 2,
-		cellPadding: cellSize * 0.15,
+		cellPadding,
+		innerTaskSize: cellSize - cellPadding * 2,
 		taskIconPadding: cellSize * 0.15,
 		connectorCurveStart: cellSize / 4,
 	};
@@ -35,8 +37,6 @@ export function drawCanvas(
 	translatePos,
 	hoverPos = undefined,
 ) {
-	console.log("Drawing canvas with scale:", scale);
-
 	const ctx = canvas.getContext("2d");
 	ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 	ctx.save();
@@ -47,7 +47,6 @@ export function drawCanvas(
 	ctx.strokeStyle = GRID_LINES_COLOR;
 	ctx.lineWidth = 1;
 
-	// console.log("STATE", state);
 	for (let column = 0; column < GRID_SIZE; column += 1) {
 		for (let row = 0; row < GRID_SIZE; row += 1) {
 			let x = column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset;
@@ -55,7 +54,6 @@ export function drawCanvas(
 			ctx.strokeRect(x, y, MINIFIED_VIEW.cellSize, MINIFIED_VIEW.cellSize);
 
 			const cell = state.cells[row][column];
-			// console.log("CELL: ", { row, column }, cell);
 			if (cell) {
 				drawMinifiedTask(ctx, cell, { column, row });
 			}
@@ -63,7 +61,6 @@ export function drawCanvas(
 	}
 
 	// Adds border cells for the pathing algorithm
-	// console.log(state.cells);
 	const connMatrix = [];
 	for (let row = 0; row < 2 * GRID_SIZE - 1; row++) {
 		connMatrix.push([]);
@@ -77,7 +74,6 @@ export function drawCanvas(
 			}
 		}
 	}
-	// console.log(connMatrix);
 
 	for (const connection of state.connections) {
 		drawTaskConnection(ctx, connection, connMatrix);
@@ -260,8 +256,8 @@ function drawMinifiedTask(ctx, taskData, cords) {
 			MINIFIED_VIEW.griddOffset,
 	};
 	const dimensions = {
-		width: MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2,
-		height: MINIFIED_VIEW.cellSize - MINIFIED_VIEW.cellPadding * 2,
+		width: MINIFIED_VIEW.innerTaskSize,
+		height: MINIFIED_VIEW.innerTaskSize,
 	};
 
 	const bottomLeft = {
@@ -341,7 +337,6 @@ function drawMinifiedTask(ctx, taskData, cords) {
  */
 function drawTaskConnection(ctx, connInfo, matrix) {
 	const { start, end } = connInfo;
-	console.log("DRAWING CONNECTION", connInfo);
 	const startTask = matrix[start.row][start.column];
 	const endTask = matrix[end.row][end.column];
 	const path = search(
@@ -350,7 +345,6 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 		createNode(endTask, end.column, end.row),
 		false,
 		(a, b) => {
-			// console.log("A:", a, "B:", b);
 			if (a && b) {
 				return a.id === b.id;
 			}
@@ -360,7 +354,6 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 			return a !== undefined && a.id !== endTask.id;
 		},
 	);
-	console.log("PATH:", path);
 
 	path.unshift(createNode(startTask, start.column, start.row));
 
@@ -380,12 +373,9 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 
 	// for (let i = 0; i < 13; i++) {
 	for (let i = 0; i < path.length - 1; i++) {
-		console.log("GETTING TRIPLET: ", i, i + 1, i + 2);
 		const [startNode, endNode] = getPathNodes(path, i);
-		console.log("TRIPLET:", startNode, endNode);
 
 		const nodesInfo = getNodesInfo(startNode, endNode);
-		console.log("TRIPLET INFO:", nodesInfo);
 
 		const { direction } = nodesInfo;
 		const { start: startPoint, end: middlePoint } = fromNodesToPoints(
@@ -427,7 +417,6 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 				y: origin.y + direction.y * MINIFIED_VIEW.cellPadding,
 			};
 
-			console.log("DRAWING START", { origin, target });
 			ctx.moveTo(origin.x, origin.y);
 			ctx.lineTo(target.x, target.y);
 
@@ -468,7 +457,6 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 				x: origin.x + -direction.x * MINIFIED_VIEW.cellPadding,
 				y: origin.y + -direction.y * MINIFIED_VIEW.cellPadding,
 			};
-			console.log("DRAWING END", { origin, target });
 			ctx.moveTo(origin.x, origin.y);
 			ctx.lineTo(target.x, target.y);
 
@@ -517,8 +505,6 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 			const origin = startPoint;
 			const target = middlePoint;
 
-			console.log("DRAWING STRAIGHT HORIZONTAL", { origin, target });
-
 			ctx.moveTo(origin.x, origin.y);
 			ctx.lineTo(target.x, target.y);
 
@@ -544,7 +530,6 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 			const origin = startPoint;
 			const target = middlePoint;
 
-			console.log("DRAWING STRAIGHT VERTICAL", { origin, target });
 			ctx.moveTo(origin.x, origin.y);
 			ctx.lineTo(target.x, target.y);
 
@@ -562,7 +547,6 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 		}
 		// DRAW NOTHING
 		else {
-			console.log("DRAWING NOTHING");
 			continue;
 		}
 	}
