@@ -138,6 +138,7 @@ type Msg
     | HttpViewMsg HttpPage.Msg
     | JsonViewMsg JsonPage.Msg
     | PortsViewMsg PortsPage.Msg
+    | SenkuViewMsg SenkuPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -198,6 +199,18 @@ update msg model =
                             PortsPage.update (Tuple.first innerModel) innerMsg
                     in
                     ( { model | state = Ports newModel }, Cmd.map PortsViewMsg (Tuple.second newModel) )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        SenkuViewMsg innerMsg ->
+            case model.state of
+                Senku innerModel ->
+                    let
+                        newModel =
+                            SenkuPage.update innerModel innerMsg
+                    in
+                    ( { model | state = Senku newModel }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -268,4 +281,4 @@ view model =
             viewStateLess NotFoundPage.view
 
         Senku pageModel ->
-            viewStatic SenkuPage.view pageModel
+            viewWithState SenkuPage.view pageModel SenkuViewMsg

@@ -1,9 +1,9 @@
-module Pages.Senku exposing (Model, init, view)
+module Pages.Senku exposing (Model, Msg, init, update, view)
 
 import Array exposing (Array)
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
-import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas
+import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateTask)
 import Data.Issue exposing (Issue)
 import Html.Styled exposing (button, div, text)
 import Html.Styled.Attributes exposing (css, id)
@@ -44,17 +44,32 @@ init =
 
 
 
+-- UPDATE
+
+
+type Msg
+    = CreateTask
+
+
+update : Model -> Msg -> Model
+update model msg =
+    case msg of
+        CreateTask ->
+            Debug.log "CREATE MESSAGE CALLED!" model
+
+
+
 -- VIEW
 
 
-view : Model -> { title : String, body : List (Html.Styled.Html msg) }
+view : Model -> { title : String, body : List (Html.Styled.Html Msg) }
 view model =
     { title = "Senku View"
     , body = body model
     }
 
 
-body : Model -> List (Html.Styled.Html msg)
+body : Model -> List (Html.Styled.Html Msg)
 body model =
     let
         sidebardWidthPct : Float
@@ -193,7 +208,7 @@ body model =
             []
         , -- Main Content
           div [ css [ paddingLeft (vw sidebardWidthPct) ] ]
-            [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct))
+            [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct)) [ onCreateTask CreateTask ]
             ]
         ]
     ]

@@ -42,4 +42,11 @@
  * @property {number} y
  */
 
+/**
+ * @typedef {Object} CreateTaskEventDetails
+ * @property {number} project_id
+ * @property {number|null} parent_id
+ * @property {string} icon
+ */
+
 export default {};

@@ -1,13 +1,14 @@
 import { lerpColor3 } from "../../Utils/color";
 import { floatEquals } from "../../Utils/math";
 import { search, createNode } from "../../Utils/astar";
+import { fromCanvasPosToCellCords } from "./utils";
 
 export const GRID_SIZE = 10;
-const GRID_LINES_COLOR = "#363636";
+export const GRID_LINES_COLOR = "#363636";
 
-const TASK_BACKGROUND = "#6e6e6e";
+export const TASK_BACKGROUND = "#6e6e6e";
 
-const MINIFIED_VIEW = (() => {
+export const MINIFIED_VIEW = (() => {
 	const cellSize = 100;
 	return {
 		cellSize,
@@ -17,6 +18,8 @@ const MINIFIED_VIEW = (() => {
 		connectorCurveStart: cellSize / 4,
 	};
 })();
+
+export const ADD_BTN_RADIUS = MINIFIED_VIEW.cellSize / 5;
 
 /**
  * @param {HTMLCanvasElement} canvas
@@ -82,11 +85,11 @@ export function drawCanvas(
 
 	if (hoverPos) {
 		const debug = false;
-		let column = Math.floor(
-			(hoverPos.x - MINIFIED_VIEW.griddOffset) / MINIFIED_VIEW.cellSize,
-		);
-		let row = Math.floor(
-			(hoverPos.y - MINIFIED_VIEW.griddOffset) / MINIFIED_VIEW.cellSize,
+		const { row, column } = fromCanvasPosToCellCords(
+			hoverPos,
+			MINIFIED_VIEW.griddOffset,
+			MINIFIED_VIEW.cellSize,
+			MINIFIED_VIEW.cellSize,
 		);
 		const cellTopLeft = {
 			x: column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
@@ -100,20 +103,18 @@ export function drawCanvas(
 		// Draw + circle on empty cells when hovering...
 		if (row < GRID_SIZE && row >= 0 && column < GRID_SIZE && column >= 0) {
 			if (!state.cells[row][column]) {
-				const addBtnRadius = MINIFIED_VIEW.cellSize / 5;
-
 				ctx.beginPath();
-				ctx.arc(cellCenter.x, cellCenter.y, addBtnRadius, 0, 2 * Math.PI);
+				ctx.arc(cellCenter.x, cellCenter.y, ADD_BTN_RADIUS, 0, 2 * Math.PI);
 				ctx.fillStyle = "#282828";
 				ctx.fill();
 
 				ctx.beginPath();
-				ctx.arc(cellCenter.x, cellCenter.y, addBtnRadius, 0, 2 * Math.PI);
+				ctx.arc(cellCenter.x, cellCenter.y, ADD_BTN_RADIUS, 0, 2 * Math.PI);
 				ctx.strokeStyle = "#515151";
 				ctx.lineWidth = 1;
 				ctx.stroke();
 
-				const plusSize = addBtnRadius * 3;
+				const plusSize = ADD_BTN_RADIUS * 3;
 				ctx.font = `${plusSize}px IBM Plex Mono`;
 				ctx.fillStyle = "#515151";
 				ctx.textBaseline = "hanging";
