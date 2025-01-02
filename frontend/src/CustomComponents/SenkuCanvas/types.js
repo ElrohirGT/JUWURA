@@ -44,7 +44,7 @@
  */
 
 /**
- * @typedef {"none"|"drag"} SenkuCanvasMode
+ * @typedef {"none"|"dragGrid"|"dragTask"} SenkuCanvasMode
  */
 
 /**
@@ -58,6 +58,8 @@
  * @property {Point} startDragOffset
  * @property {boolean} mouseDown
  * @property {SenkuCanvasMode} mode
+ * @property {Point} taskTranslatePosition
+ * @property {CellCoord|undefined} draggedTaskOriginalCords
  */
 
 export default {};

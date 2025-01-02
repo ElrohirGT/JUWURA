@@ -127,11 +127,16 @@ function generateDummyData() {
 		cells,
 		connections,
 		projectId: 1,
+		mouseDown: false,
 		scale: SCALE_DIMENSIONS.min,
+		mode: "none",
+		hoverPos: undefined,
+		// Drag grid
 		translatePosition: { x: 0, y: 0 },
 		startDragOffset: { x: 0, y: 0 },
-		mouseDown: false,
-		mode: "none",
+		// Drag task
+		taskTranslatePosition: { x: 0, y: 0 },
+		draggedTaskOriginalCords: undefined,
 	};
 }
 
@@ -242,12 +247,13 @@ class SenkuCanvas extends HTMLElement {
 				state.translatePosition,
 			);
 
-			const { row, column } = fromCanvasPosToCellCords(
+			const cellCords = fromCanvasPosToCellCords(
 				mousePosOnCanvas,
 				MINIFIED_VIEW.griddOffset,
 				MINIFIED_VIEW.cellSize,
 				MINIFIED_VIEW.cellSize,
 			);
+			const { row, column } = cellCords;
 
 			const cellTopLeft = {
 				x: column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
@@ -295,12 +301,17 @@ class SenkuCanvas extends HTMLElement {
 				this.dispatchEvent(event);
 			} else if (clickedOnATask) {
 				if (isLeftClick) {
-					console.log("TODO: VIEW TASK INFO!");
+					state.mode = "dragTask";
+					state.startDragOffset = {
+						x: ev.clientX - state.translatePosition.x,
+						y: ev.clientY - state.translatePosition.y,
+					};
+					state.draggedTaskOriginalCords = cellCords;
 				} else if (isRightClick) {
 					console.log("TODO: TRY TO CONNECT TASK!");
 				}
 			} else {
-				state.mode = "drag";
+				state.mode = "dragGrid";
 				state.startDragOffset.x = ev.clientX - state.translatePosition.x;
 				state.startDragOffset.y = ev.clientY - state.translatePosition.y;
 			}
@@ -308,6 +319,7 @@ class SenkuCanvas extends HTMLElement {
 		canvas.addEventListener("mouseup", () => {
 			state.mouseDown = false;
 			state.mode = "none";
+			drawCanvas(canvas, this.getState());
 		});
 
 		canvas.addEventListener("mouseover", () => {
@@ -324,9 +336,26 @@ class SenkuCanvas extends HTMLElement {
 		});
 
 		canvas.addEventListener("mousemove", (ev) => {
-			if (state.mouseDown && state.mode === "drag") {
+			if (state.mouseDown && state.mode === "dragGrid") {
 				state.translatePosition.x = ev.clientX - state.startDragOffset.x;
 				state.translatePosition.y = ev.clientY - state.startDragOffset.y;
+
+				drawCanvas(canvas, this.getState());
+			} else if (state.mouseDown && state.mode === "dragTask") {
+				const canvasPos = canvas.getBoundingClientRect();
+
+				state.taskTranslatePosition = fromScreenPosToCanvasPos(
+					{
+						x: ev.clientX,
+						y: ev.clientY,
+					},
+					{
+						x: canvasPos.left,
+						y: canvasPos.top,
+					},
+					state.scale,
+					state.translatePosition,
+				);
 
 				drawCanvas(canvas, this.getState());
 			} else {
@@ -351,9 +380,9 @@ class SenkuCanvas extends HTMLElement {
 		});
 
 		canvas.addEventListener("wheel", (ev) => {
-			scale -= ev.deltaY * 1e-3;
-			scale = clamp(scale, 1, 4);
-			drawCanvas(canvas, this.getState(), scale, translatePos);
+			state.scale -= ev.deltaY * 1e-3;
+			state.scale = clamp(state.scale, 1, 4);
+			drawCanvas(canvas, this.getState());
 		});
 	}
 }

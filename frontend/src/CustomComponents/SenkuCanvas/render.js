@@ -6,7 +6,8 @@ import { fromCanvasPosToCellCords } from "./utils";
 export const GRID_SIZE = 10;
 export const GRID_LINES_COLOR = "#363636";
 
-export const TASK_BACKGROUND = "#6e6e6e";
+// #6e6e6e = rgb(110, 110, 110)
+export const TASK_BACKGROUND = [110, 110, 110];
 
 export const MINIFIED_VIEW = (() => {
 	const cellSize = 100;
@@ -48,7 +49,12 @@ export function drawCanvas(canvas, state) {
 
 			const cell = state.cells[row][column];
 			if (cell) {
-				drawMinifiedTask(ctx, cell, { column, row });
+				const drawSemiTransparent =
+					state.mode === "dragTask" &&
+					state.draggedTaskOriginalCords &&
+					row === state.draggedTaskOriginalCords.row &&
+					column === state.draggedTaskOriginalCords.column;
+				drawMinifiedTask(ctx, cell, { column, row }, drawSemiTransparent);
 			}
 		}
 	}
@@ -224,6 +230,26 @@ export function drawCanvas(canvas, state) {
 		}
 	}
 
+	if (state.mode === "dragTask") {
+		const cellCords = fromCanvasPosToCellCords(
+			state.taskTranslatePosition,
+			MINIFIED_VIEW.griddOffset,
+			MINIFIED_VIEW.cellSize,
+			MINIFIED_VIEW.cellSize,
+		);
+		const { row: newRow, column: newColumn } = cellCords;
+		const { row, column } = state.draggedTaskOriginalCords;
+
+		if (
+			newRow >= 0 &&
+			newRow < GRID_SIZE &&
+			newColumn >= 0 &&
+			newColumn < GRID_SIZE
+		) {
+			drawMinifiedTask(ctx, state.cells[row][column], cellCords, false);
+		}
+	}
+
 	ctx.restore();
 }
 
@@ -231,8 +257,9 @@ export function drawCanvas(canvas, state) {
  * @param {CanvasRenderingContext2D} ctx
  * @param {TaskData} taskData
  * @param {CellCoord} cords
+ * @param {boolean} [drawSemiTransparent=false]
  */
-function drawMinifiedTask(ctx, taskData, cords) {
+function drawMinifiedTask(ctx, taskData, cords, drawSemiTransparent = false) {
 	// Converts from idx to column/row number.
 	let { column, row } = cords;
 	column += 1;
@@ -260,9 +287,10 @@ function drawMinifiedTask(ctx, taskData, cords) {
 
 	// DRAW TASK BACKGROUND
 	const radius = 10;
+	const backgroundColor = `rgba(${TASK_BACKGROUND[0]}, ${TASK_BACKGROUND[1]}, ${TASK_BACKGROUND[2]}, ${drawSemiTransparent ? 0.5 : 1})`;
 	drawCurvedRectangle(
 		ctx,
-		TASK_BACKGROUND,
+		backgroundColor,
 		topLeft,
 		dimensions.width,
 		dimensions.height,
@@ -286,7 +314,6 @@ function drawMinifiedTask(ctx, taskData, cords) {
 	const interpolated = lerpColor3(red_500, yellow, green, taskData.progress);
 	const barHeight = dimensions.height * 0.1;
 
-	ctx.fillStyle = `rgb(${interpolated[0]}, ${interpolated[1]}, ${interpolated[2]})`;
 	ctx.beginPath();
 	ctx.moveTo(topLeft.x, bottomLeft.y - barHeight);
 	ctx.quadraticCurveTo(
@@ -320,6 +347,7 @@ function drawMinifiedTask(ctx, taskData, cords) {
 	ctx.lineTo(bottomLeft.x, bottomLeft.y - barHeight);
 
 	ctx.closePath();
+	ctx.fillStyle = `rgba(${interpolated[0]}, ${interpolated[1]}, ${interpolated[2]}, ${drawSemiTransparent ? 0.5 : 1})`;
 	ctx.fill();
 }
 
