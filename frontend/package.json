@@ -4,19 +4,24 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "yarn install && vite",
-		"build": "yarn install && vite build",
-		"preview": "yarn install && vite preview",
-		"format": "yarn install && biome format --write ./src",
-		"format:check": "yarn install && biome format ./src",
-		"lint": "yarn install && biome lint --write ./src"
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"format": "biome format --write ./src",
+		"format:check": "biome format ./src",
+		"lint": "biome lint --write ./src"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
+		"@iconify-json/fa6-solid": "^1.2.3",
+		"jose": "^5.9.6",
+		"ms": "^2.1.3",
 		"unplugin-fonts": "^1.3.1",
-		"vite": "^6.0.1"
+		"unplugin-icons": "^0.22.0",
+		"vite": "^6.0.5"
 	},
 	"dependencies": {
+		"auth0-js": "^9.28.0",
 		"vite-plugin-elm": "^3.0.1"
 	}
 }
