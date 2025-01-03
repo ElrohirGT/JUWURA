@@ -12,6 +12,7 @@
  * @property {TaskStatus} status
  * @property {String} icon
  * @property {number} progress
+ * @property {CellCoord} coordinates
  */
 
 /**

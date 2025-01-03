@@ -17,16 +17,20 @@ const SCALE_DIMENSIONS = {
 };
 
 let lastTaskId = 0;
+
 /**
+ * @param {import("./types").CellCoord} coordinates
  * @param {string} [title="Test Title"] - The title of the task
  * @returns {TaskData}
  */
 function createTask(
+	coordinates,
 	title = "MMM MMM MMMMMMM MMMM MMM MMMMMMMM MMM MM MMMMMM MMMM MMM MMMMMMMM",
 ) {
 	return {
 		id: lastTaskId++,
 		title,
+		coordinates,
 		icon: "😎",
 		progress: Math.random(),
 		status: {
@@ -38,8 +42,8 @@ function createTask(
 }
 
 function genHorizontalStraight(cells, connections) {
-	cells[0][0] = createTask();
-	cells[0][5] = createTask();
+	cells[0][0] = createTask({ row: 0, column: 0 });
+	cells[0][5] = createTask({ row: 0, column: 5 });
 
 	connections.push({
 		start: {
@@ -54,8 +58,8 @@ function genHorizontalStraight(cells, connections) {
 }
 
 function genSmallDiagonal(cells, connections) {
-	cells[1][1] = createTask();
-	cells[2][2] = createTask();
+	cells[1][1] = createTask({ row: 1, column: 1 });
+	cells[2][2] = createTask({ row: 2, column: 2 });
 
 	connections.push({
 		start: {
@@ -70,8 +74,8 @@ function genSmallDiagonal(cells, connections) {
 }
 
 function genBigDiagonal(cells, connections) {
-	cells[3][3] = createTask();
-	cells[8][8] = createTask();
+	cells[3][3] = createTask({ row: 3, column: 3 });
+	cells[8][8] = createTask({ row: 8, column: 8 });
 
 	connections.push({
 		start: {
@@ -86,9 +90,9 @@ function genBigDiagonal(cells, connections) {
 }
 
 function genObstacle(cells, connections) {
-	cells[3][4] = createTask();
-	cells[3][7] = createTask();
-	cells[3][8] = createTask();
+	cells[3][4] = createTask({ row: 3, column: 4 });
+	cells[3][7] = createTask({ row: 3, column: 7 });
+	cells[3][8] = createTask({ row: 3, column: 8 });
 
 	connections.push({
 		start: {
@@ -228,7 +232,7 @@ class SenkuCanvas extends HTMLElement {
 
 		canvas.addEventListener("mousedown", (ev) => {
 			state.mouseDown = true;
-			const debug = true;
+			const debug = false;
 
 			const isLeftClick = ev.button === 0;
 			const isRightClick = ev.button === 2;

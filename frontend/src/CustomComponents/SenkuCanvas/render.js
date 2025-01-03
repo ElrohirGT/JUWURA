@@ -79,7 +79,13 @@ export function drawCanvas(canvas, state) {
 			!state.cells[newRow][newColumn];
 
 		if (newCordsAreValid) {
-			connMatrix[newRow * 2][newColumn * 2] = connMatrix[row * 2][column * 2];
+			connMatrix[newRow * 2][newColumn * 2] = structuredClone(
+				connMatrix[row * 2][column * 2],
+			);
+			connMatrix[newRow * 2][newColumn * 2].coordinates = {
+				row: newRow,
+				column: newColumn,
+			};
 			drawMinifiedTask(ctx, state.cells[row][column], newCords, false);
 		}
 		for (const connection of state.connections) {
@@ -394,9 +400,16 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 		createNode(startTask, start.column, start.row),
 		createNode(endTask, end.column, end.row),
 		false,
+		/**
+		 * @param {import("./types").TaskData|undefined} a
+		 * @param {import("./types").TaskData|undefined} b
+		 */
 		(a, b) => {
 			if (a && b) {
-				return a.id === b.id;
+				return (
+					a.coordinates.row === b.coordinates.row &&
+					a.coordinates.column === b.coordinates.column
+				);
 			}
 			return false;
 		},
