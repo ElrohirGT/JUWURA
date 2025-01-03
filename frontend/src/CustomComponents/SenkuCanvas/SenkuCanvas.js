@@ -309,17 +309,11 @@ class SenkuCanvas extends HTMLElement {
 				});
 				this.dispatchEvent(event);
 			} else if (clickedOnATask) {
+				state.draggedTaskOriginalCords = cellCords;
 				if (isLeftClick) {
 					state.mode = "dragTask";
-					// state.startDragOffset = {
-					// 	x: ev.clientX - state.translatePosition.x,
-					// 	y: ev.clientY - state.translatePosition.y,
-					// };
-					state.draggedTaskOriginalCords = cellCords;
 				} else if (isRightClick) {
 					state.mode = "createConnection";
-					state.draggedTaskOriginalCords = cellCords;
-					// console.log("TODO: TRY TO CONNECT TASK!");
 				}
 			} else {
 				state.mode = "dragGrid";
