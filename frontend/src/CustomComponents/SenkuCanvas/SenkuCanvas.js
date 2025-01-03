@@ -10,9 +10,11 @@ import { GRID_SIZE } from "./render";
 import {
 	canvasPosInsideCircle,
 	canvasPosInsideRectangle,
+	cellCoordsAreEqual,
 	coordinatesAreBetweenIndices,
 	fromCanvasPosToCellCords,
 	fromScreenPosToCanvasPos,
+	scaleCoords,
 } from "./utils";
 
 export const TAG_NAME = "uwu-senku";
@@ -374,10 +376,7 @@ class SenkuCanvas extends HTMLElement {
 				const newCoordinatesHaveATask =
 					state.cells[row] && state.cells[row][column];
 
-				if (
-					row === state.draggedTaskOriginalCords.row &&
-					column === state.draggedTaskOriginalCords.column
-				) {
+				if (cellCoordsAreEqual(coordinates, state.draggedTaskOriginalCords)) {
 					const taskId = state.cells[row][column].id;
 					const event = ViewTaskEvent({
 						taskId,
@@ -427,11 +426,15 @@ class SenkuCanvas extends HTMLElement {
 				const newCoordinatesHaveATask =
 					state.cells[row] && state.cells[row][column];
 
-				if (
-					coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE) &&
-					row !== state.draggedTaskOriginalCords.row &&
-					column !== state.draggedTaskOriginalCords.column
-				) {
+				if (cellCoordsAreEqual(coordinates, state.draggedTaskOriginalCords)) {
+					state.cells[row][column] = undefined;
+					const cords = scaleCoords(coordinates, 2);
+					state.connections = state.connections.filter(
+						(conn) =>
+							!cellCoordsAreEqual(conn.start, cords) &&
+							!cellCoordsAreEqual(conn.end, cords),
+					);
+				} else if (coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE)) {
 					if (!newCoordinatesHaveATask) {
 						const taskData = createDefaultTask(
 							state.futureTaskIcon,

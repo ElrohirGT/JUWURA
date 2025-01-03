@@ -80,4 +80,9 @@
  * @property {number} taskId
  */
 
+/**
+ * @typedef {Object} DeleteTaskEventDetails
+ * @property {number} taskId
+ */
+
 export default {};

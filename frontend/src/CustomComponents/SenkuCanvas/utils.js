@@ -83,3 +83,24 @@ export function coordinatesAreBetweenIndices(coordinates, min, max) {
 		coordinates.column < max
 	);
 }
+
+/**
+ * @param {import("./types").CellCoord} aCords
+ * @param {import("./types").CellCoord} bCords
+ * @returns {boolean}
+ */
+export function cellCoordsAreEqual(aCords, bCords) {
+	return aCords.row === bCords.row && aCords.column === bCords.column;
+}
+
+/**
+ * @param {import("./types").CellCoord} coords
+ * @param {number} scalar
+ * @returns{import("./types").CellCoord}
+ */
+export function scaleCoords(coords, scalar) {
+	return {
+		row: coords.row * scalar,
+		column: coords.column * scalar,
+	};
+}
