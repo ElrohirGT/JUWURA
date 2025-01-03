@@ -106,6 +106,32 @@ onTaskChangedCoordinates mapper =
 
 
 
+-- CreateConnectionEvent
+
+
+type alias CreateConnectionEventDetail =
+    { originTaskId : Int
+    , targetTaskId : Int
+    }
+
+
+createConnectionEventDetailDecoder : Decode.Decoder CreateConnectionEventDetail
+createConnectionEventDetailDecoder =
+    Decode.succeed CreateConnectionEventDetail
+        |> required "originTaskId" int
+        |> required "targetTaskId" int
+
+
+onCreateConnection : (CreateConnectionEventDetail -> msg) -> Html.Styled.Attribute msg
+onCreateConnection mapper =
+    on "uwu-senku:create-connection"
+        (senkuCanvasEventDecoder createConnectionEventDetailDecoder
+            |> Decode.map detailsMapper
+            |> Decode.map mapper
+        )
+
+
+
 -- VIEW
 
 

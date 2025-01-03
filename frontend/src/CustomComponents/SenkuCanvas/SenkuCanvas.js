@@ -423,6 +423,7 @@ class SenkuCanvas extends HTMLElement {
 							state.projectId,
 							coordinates,
 						);
+						taskData.id = lastTaskId++;
 
 						state.cells[coordinates.row][coordinates.column] = taskData;
 
