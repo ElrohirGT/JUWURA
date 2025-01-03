@@ -15,6 +15,22 @@ import {
 } from "./utils";
 
 export const TAG_NAME = "uwu-senku";
+const EMOJIS = [
+	"🐩",
+	"💙",
+	"🙇",
+	"📐",
+	"🗿",
+	"💍",
+	"🍩",
+	"🎌",
+	"➰",
+	"📝",
+	"🤔",
+	"🏊",
+	"🍀",
+	"👦",
+];
 
 const SCALE_DIMENSIONS = {
 	min: 1,
@@ -302,10 +318,19 @@ class SenkuCanvas extends HTMLElement {
 				);
 
 			if (clickedOnAddTaskBtn) {
+				const icon = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+				state.cells[cellCords.row][cellCords.column] = {
+					icon,
+					projectId: state.projectId,
+					parent_id: null,
+					progress: 0.0,
+					coordinates: cellCords,
+				};
+
 				const event = CreateTaskEvent({
 					project_id: state.projectId,
 					parent_id: null,
-					icon: "💀",
+					icon,
 				});
 				this.dispatchEvent(event);
 			} else if (clickedOnATask) {
