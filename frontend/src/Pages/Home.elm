@@ -1,6 +1,6 @@
-module Pages.Home exposing (Model, Msg, init, subscriptions, update, view)
+module Pages.Home exposing (Model, Msg, PageStatus, init, subscriptions, update, view)
 
-import Css exposing (backgroundColor, border, borderRadius, color, column, cursor, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, fontWeight, hex, hover, int, maxWidth, padding2, pointer, px, zero)
+import Css exposing (backgroundColor, border, borderRadius, color, column, cursor, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, fontWeight, hover, int, maxWidth, padding2, pointer, px, zero)
 import Html.Styled exposing (a, button, div, p, text)
 import Html.Styled.Attributes exposing (css)
 import Html.Styled.Events exposing (onClick)
@@ -30,9 +30,7 @@ type Msg
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.batch
-        [ Auth.onCheckedUserSession GotUserCredentials
-        ]
+    Auth.onCheckedUserSession GotUserCredentials
 
 
 init : BasePath -> (String -> Cmd Msg) -> ( Model, Cmd Msg )
@@ -80,7 +78,7 @@ body model =
         , a [ nav.goToPorts ] [ text "Go to PORTS example" ]
         , p [ css [ color Theme.cssColors.white_400 ] ]
             [ case model.pageStatus of
-                Authorized v ->
+                Authorized _ ->
                     text "Authorized"
 
                 _ ->

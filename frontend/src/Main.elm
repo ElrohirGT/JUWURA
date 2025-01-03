@@ -160,7 +160,6 @@ subscriptions model =
 type Msg
     = UrlChanged Url
     | LinkClicked Browser.UrlRequest
-    | ReplaceUrl String
     | LoginViewMsg LoginPage.Msg
     | LoginCallbackViewMsg LoginCallbackPage.Msg
     | HomeViewMsg HomePage.Msg
@@ -175,12 +174,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UrlChanged url ->
-            let
-                -- Initialize again new subModels, recicling the 'init' logic
-                newAppState =
-                    init model.basePath url model.key
-            in
-            newAppState
+            init model.basePath url model.key
 
         LinkClicked request ->
             case request of
@@ -189,14 +183,6 @@ update msg model =
 
                 Browser.External href ->
                     ( model, Nav.load href )
-
-        ReplaceUrl url ->
-            case model.basePath of
-                Just s ->
-                    ( model, Nav.replaceUrl model.key (s ++ url) )
-
-                Nothing ->
-                    ( model, Nav.replaceUrl model.key url )
 
         LoginViewMsg innerMsg ->
             case model.state of
@@ -316,15 +302,6 @@ view model =
             in
             { title = title
             , body = List.map (Html.map msgWrapper) (List.map toUnstyled body)
-            }
-
-        viewStatic staticView pageModel =
-            let
-                { title, body } =
-                    staticView pageModel
-            in
-            { title = title
-            , body = List.map toUnstyled body
             }
 
         viewWithState viewFunc pageModel msgWrapper =

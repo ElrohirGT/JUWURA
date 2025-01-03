@@ -1,6 +1,6 @@
-module Routing exposing (BasePath, NavigationHrefs, Route(..), generateRoutingFuncs, parseUrl, pushUrlWithBasePath, replaceUrlWithBasePath)
+module Routing exposing (BasePath, NavigationHrefs, Route(..), generateRoutingFuncs, parseUrl, replaceUrlWithBasePath)
 
-import Browser.Navigation exposing (pushUrl, replaceUrl)
+import Browser.Navigation exposing (replaceUrl)
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (href)
 import Url exposing (Url)
@@ -128,16 +128,6 @@ replaceUrlWithBasePath key basepath url =
 
         Nothing ->
             replaceUrl key url
-
-
-pushUrlWithBasePath : Browser.Navigation.Key -> BasePath -> String -> Cmd msg
-pushUrlWithBasePath key basepath url =
-    case basepath of
-        Just s ->
-            pushUrl key ("/" ++ s ++ url)
-
-        Nothing ->
-            pushUrl key url
 
 
 {-| Holds all the functions that generate attributes to navigate between views.

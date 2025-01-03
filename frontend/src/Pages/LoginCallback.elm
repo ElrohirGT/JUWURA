@@ -1,6 +1,6 @@
-module Pages.LoginCallback exposing (..)
+module Pages.LoginCallback exposing (Model, Msg(..), Status(..), init, subscriptions, update, view)
 
-import Css exposing (alignItems, backgroundColor, borderRadius, center, ch, color, column, displayFlex, flexDirection, fontFamilies, fontSize, fontWeight, height, int, justifyContent, maxWidth, padding2, pct, px, textAlign, textOrientation, wait, width)
+import Css exposing (alignItems, backgroundColor, borderRadius, center, ch, color, column, displayFlex, flexDirection, fontFamilies, fontSize, fontWeight, height, int, justifyContent, maxWidth, padding2, pct, px, textAlign, width)
 import Html.Styled exposing (div, h1, text)
 import Html.Styled.Attributes exposing (css)
 import Ports.Auth.Auth as Auth exposing (onOauthResult)
@@ -35,7 +35,7 @@ update : Model -> Msg -> ( Model, Cmd Msg )
 update model msg =
     case msg of
         CheckStatus result ->
-            if result == True then
+            if result then
                 ( { model | status = Waiting }, model.replaceUrl "/" )
 
             else

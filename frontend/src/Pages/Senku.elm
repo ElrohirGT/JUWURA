@@ -1,4 +1,4 @@
-module Pages.Senku exposing (Model, Msg, init, update, view)
+module Pages.Senku exposing (Cell, Model, Msg, ZoomLevel, init, update, view)
 
 import Array exposing (Array)
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
@@ -17,8 +17,6 @@ import Utils exposing (viteAsset)
 
 type ZoomLevel
     = Low
-    | Medium
-    | High
 
 
 type alias Cell =
@@ -58,39 +56,19 @@ type Msg
 update : Model -> Msg -> Model
 update model msg =
     case msg of
-        CreateTask ev ->
-            let
-                _ =
-                    Debug.log "CREATE TASK MESSAGE!" ev
-            in
+        CreateTask _ ->
             model
 
-        TaskChangedCoords ev ->
-            let
-                _ =
-                    Debug.log "TASK CHANGED COORDS MESSAGE!" ev
-            in
+        TaskChangedCoords _ ->
             model
 
-        CreateConnection ev ->
-            let
-                _ =
-                    Debug.log "CONNECTION CREATED!" ev
-            in
+        CreateConnection _ ->
             model
 
-        ViewTask ev ->
-            let
-                _ =
-                    Debug.log "DISPLAY TASK INFO" ev
-            in
+        ViewTask _ ->
             model
 
-        DeleteTask ev ->
-            let
-                _ =
-                    Debug.log "DELETE TASK!" ev
-            in
+        DeleteTask _ ->
             model
 
 

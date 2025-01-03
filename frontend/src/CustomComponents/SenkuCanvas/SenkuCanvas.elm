@@ -1,10 +1,10 @@
-module CustomComponents.SenkuCanvas.SenkuCanvas exposing (..)
+module CustomComponents.SenkuCanvas.SenkuCanvas exposing (CellCoordinates, CreateConnectionEventDetail, CreateTaskEventDetail, DeleteTaskEventDetail, Model, SenkuCanvasEvent, TaskChangedCoordinatesEventDetail, ViewTaskEventDetail, init, onCreateConnection, onCreateTask, onDeleteTask, onTaskChangedCoordinates, onViewTask, view)
 
 import Html.Styled exposing (Html, node)
 import Html.Styled.Attributes exposing (attribute)
 import Html.Styled.Events exposing (on)
-import Json.Decode as Decode exposing (int, nullable, oneOf, string)
-import Json.Decode.Pipeline exposing (optional, required)
+import Json.Decode as Decode exposing (int, nullable, string)
+import Json.Decode.Pipeline exposing (required)
 
 
 type alias SenkuCanvasEvent detail =
