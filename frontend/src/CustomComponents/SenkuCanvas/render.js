@@ -133,7 +133,7 @@ export function drawCanvas(canvas, state) {
 		}
 	}
 
-	if (hoverPos) {
+	if (hoverPos && state.mode === "none") {
 		const debug = false;
 		const { row, column } = fromCanvasPosToCellCords(
 			hoverPos,
