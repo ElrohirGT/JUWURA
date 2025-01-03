@@ -438,9 +438,8 @@ class SenkuCanvas extends HTMLElement {
 							state.projectId,
 							coordinates,
 						);
-						taskData.id = lastTaskId++;
 
-						state.cells[coordinates.row][coordinates.column] = taskData;
+						state.cells[row][column] = taskData;
 
 						const event = CreateTaskEvent({
 							project_id: state.projectId,
@@ -598,6 +597,7 @@ function createConnectionBetweenCords(state, originalCords, newCords) {
  */
 function createDefaultTask(icon, projectId, cellCords) {
 	return {
+		id: lastTaskId++,
 		icon,
 		title: "",
 		projectId,
