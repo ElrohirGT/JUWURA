@@ -25,6 +25,7 @@ type alias Model =
 init : (String -> Cmd Msg) -> ( Model, Cmd msg )
 init replaceUrl =
     let
+        cmd : Cmd msg
         cmd =
             Auth.parseCallback ()
     in

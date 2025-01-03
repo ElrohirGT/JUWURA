@@ -68,6 +68,7 @@ view model =
 body : Model -> List (Html.Styled.Html Msg)
 body model =
     let
+        nav : NavigationHrefs Msg
         nav =
             model.navigationHrefs
     in
