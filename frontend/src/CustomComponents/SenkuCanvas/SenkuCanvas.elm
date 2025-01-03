@@ -7,6 +7,21 @@ import Json.Decode as Decode exposing (int, nullable, oneOf, string)
 import Json.Decode.Pipeline exposing (optional, required)
 
 
+type alias SenkuCanvasEvent detail =
+    { detail : detail
+    }
+
+
+senkuCanvasEventDecoder : Decode.Decoder detailDecoder -> Decode.Decoder (SenkuCanvasEvent detailDecoder)
+senkuCanvasEventDecoder detailDecoder =
+    Decode.succeed SenkuCanvasEvent |> required "detail" detailDecoder
+
+
+detailsMapper : SenkuCanvasEvent detail -> detail
+detailsMapper ev =
+    ev.detail
+
+
 
 -- MODEL
 
@@ -24,6 +39,7 @@ init widthPct heightPct =
 
 
 -- EVENTS
+-- CreateTaskEvent
 
 
 type alias CreateTaskEventDetail =
@@ -41,20 +57,52 @@ createTaskDetailDecoder =
         |> required "icon" string
 
 
-type alias CreateTaskEvent =
-    { detail : CreateTaskEventDetail
+onCreateTask : (CreateTaskEventDetail -> msg) -> Html.Styled.Attribute msg
+onCreateTask mapper =
+    on "uwu-senku:create-task"
+        (senkuCanvasEventDecoder createTaskDetailDecoder
+            |> Decode.map detailsMapper
+            |> Decode.map mapper
+        )
+
+
+
+-- TaskChangedCoordinatesEvent
+
+
+type alias CellCoordinates =
+    { row : Int
+    , column : Int
     }
 
 
-createTaskEventDecoder : Decode.Decoder CreateTaskEvent
-createTaskEventDecoder =
-    Decode.succeed CreateTaskEvent
-        |> required "detail" createTaskDetailDecoder
+type alias TaskChangedCoordinatesEventDetail =
+    { taskId : Int
+    , coordinates : CellCoordinates
+    }
 
 
-onCreateTask : (CreateTaskEvent -> msg) -> Html.Styled.Attribute msg
-onCreateTask mapper =
-    on "uwu-senku:create-task" (Decode.map mapper createTaskEventDecoder)
+cellCoordsDecoder : Decode.Decoder CellCoordinates
+cellCoordsDecoder =
+    Decode.succeed CellCoordinates
+        |> required "row" int
+        |> required "column" int
+
+
+taskChangedCoordinatesEventDetailDecoder : Decode.Decoder TaskChangedCoordinatesEventDetail
+taskChangedCoordinatesEventDetailDecoder =
+    Decode.succeed TaskChangedCoordinatesEventDetail
+        |> required "taskId" int
+        |> required "coordinates" cellCoordsDecoder
+
+
+onTaskChangedCoordinates : (TaskChangedCoordinatesEventDetail -> msg) -> Html.Styled.Attribute msg
+onTaskChangedCoordinates mapper =
+    on "uwu-senku:task-changed-coordinates"
+        (senkuCanvasEventDecoder taskChangedCoordinatesEventDetailDecoder
+            |> Decode.map detailsMapper
+            |> Decode.map mapper
+        )
 
 
 
