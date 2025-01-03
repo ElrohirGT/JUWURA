@@ -321,6 +321,7 @@ class SenkuCanvas extends HTMLElement {
 				const icon = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
 				state.cells[cellCords.row][cellCords.column] = {
 					icon,
+					title: "",
 					projectId: state.projectId,
 					parent_id: null,
 					progress: 0.0,

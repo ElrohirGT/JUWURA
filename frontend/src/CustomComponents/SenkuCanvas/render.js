@@ -232,47 +232,51 @@ export function drawCanvas(canvas, state) {
 				const statusContainerY = titleY + titleTextHeight + INFO_ITEMS_SPACING;
 				const STATUS_CONTAINER_PADDING = 6;
 
-				ctx.font = `${statusTextHeight}px IBM Plex Mono`;
-				const textMeasurements = ctx.measureText(task.status.name);
+				if (task.status) {
+					ctx.font = `${statusTextHeight}px IBM Plex Mono`;
+					const textMeasurements = ctx.measureText(task.status.name);
 
-				ctx.fillStyle = task.status.color;
-				drawCurvedRectangle(
-					ctx,
-					task.status.color,
-					{
-						x: taskInfoPaddedLeft.x,
-						y: statusContainerY,
-					},
-					textMeasurements.width + STATUS_CONTAINER_PADDING * 2,
-					statusTextHeight + STATUS_CONTAINER_PADDING * 2,
-					radius / 2,
-				);
+					ctx.fillStyle = task.status.color;
+					drawCurvedRectangle(
+						ctx,
+						task.status.color,
+						{
+							x: taskInfoPaddedLeft.x,
+							y: statusContainerY,
+						},
+						textMeasurements.width + STATUS_CONTAINER_PADDING * 2,
+						statusTextHeight + STATUS_CONTAINER_PADDING * 2,
+						radius / 2,
+					);
 
-				ctx.fillStyle = "white";
-				ctx.fillText(
-					task.status.name,
-					taskInfoPaddedLeft.x + STATUS_CONTAINER_PADDING,
-					statusContainerY + STATUS_CONTAINER_PADDING,
-				);
+					ctx.fillStyle = "white";
+					ctx.fillText(
+						task.status.name,
+						taskInfoPaddedLeft.x + STATUS_CONTAINER_PADDING,
+						statusContainerY + STATUS_CONTAINER_PADDING,
+					);
+				}
 
-				const dateTextHeight = 12;
-				const formatter = new Intl.DateTimeFormat(undefined, {
-					day: "2-digit",
-					month: "short",
-				});
-				const dateText = formatter.format(task.due_date).toLocaleUpperCase();
+				if (task.due_date) {
+					const dateTextHeight = 12;
+					const formatter = new Intl.DateTimeFormat(undefined, {
+						day: "2-digit",
+						month: "short",
+					});
+					const dateText = formatter.format(task.due_date).toLocaleUpperCase();
 
-				ctx.fillStyle = "white";
-				ctx.font = `${dateTextHeight}px IBM Plex Mono`;
-				const dateMeasurements = ctx.measureText(dateText);
-				ctx.fillText(
-					dateText,
-					taskInfoTopLeft.x +
-						INFO_WIDTH -
-						TASK_INFO_PADDING -
-						dateMeasurements.width,
-					statusContainerY + STATUS_CONTAINER_PADDING,
-				);
+					ctx.fillStyle = "white";
+					ctx.font = `${dateTextHeight}px IBM Plex Mono`;
+					const dateMeasurements = ctx.measureText(dateText);
+					ctx.fillText(
+						dateText,
+						taskInfoTopLeft.x +
+							INFO_WIDTH -
+							TASK_INFO_PADDING -
+							dateMeasurements.width,
+						statusContainerY + STATUS_CONTAINER_PADDING,
+					);
+				}
 			}
 		}
 
@@ -343,47 +347,49 @@ function drawMinifiedTask(ctx, taskData, cords, drawSemiTransparent = false) {
 	);
 
 	// DRAW PROGRESS
-	const red_500 = [202, 50, 61];
-	const yellow = [200, 119, 49];
-	const green = [75, 106, 55];
-	const interpolated = lerpColor3(red_500, yellow, green, taskData.progress);
-	const barHeight = dimensions.height * 0.1;
+	if (taskData.progress >= 0.02) {
+		const red_500 = [202, 50, 61];
+		const yellow = [200, 119, 49];
+		const green = [75, 106, 55];
+		const interpolated = lerpColor3(red_500, yellow, green, taskData.progress);
+		const barHeight = dimensions.height * 0.1;
 
-	ctx.beginPath();
-	ctx.moveTo(topLeft.x, bottomLeft.y - barHeight);
-	ctx.quadraticCurveTo(
-		topLeft.x,
-		bottomLeft.y,
-		topLeft.x + radius,
-		bottomLeft.y,
-	);
-
-	const xProgressBarEnd = topLeft.x + dimensions.width * taskData.progress;
-	ctx.lineTo(xProgressBarEnd - radius, bottomLeft.y);
-
-	if (floatEquals(taskData.progress, 1.0, 1e-10)) {
+		ctx.beginPath();
+		ctx.moveTo(topLeft.x, bottomLeft.y - barHeight);
 		ctx.quadraticCurveTo(
-			bottomLeft.x + dimensions.width,
+			topLeft.x,
 			bottomLeft.y,
-			bottomLeft.x + dimensions.width,
-			bottomLeft.y - barHeight,
+			topLeft.x + radius,
+			bottomLeft.y,
 		);
-	} else {
-		const endRadius = barHeight / 2;
-		ctx.arc(
-			xProgressBarEnd - endRadius,
-			bottomLeft.y - endRadius,
-			endRadius,
-			Math.PI / 2,
-			(3 * Math.PI) / 2,
-			true,
-		);
-	}
-	ctx.lineTo(bottomLeft.x, bottomLeft.y - barHeight);
 
-	ctx.closePath();
-	ctx.fillStyle = `rgba(${interpolated[0]}, ${interpolated[1]}, ${interpolated[2]}, ${drawSemiTransparent ? 0.5 : 1})`;
-	ctx.fill();
+		const xProgressBarEnd = topLeft.x + dimensions.width * taskData.progress;
+		ctx.lineTo(xProgressBarEnd - radius, bottomLeft.y);
+
+		if (floatEquals(taskData.progress, 1.0, 1e-10)) {
+			ctx.quadraticCurveTo(
+				bottomLeft.x + dimensions.width,
+				bottomLeft.y,
+				bottomLeft.x + dimensions.width,
+				bottomLeft.y - barHeight,
+			);
+		} else {
+			const endRadius = barHeight / 2;
+			ctx.arc(
+				xProgressBarEnd - endRadius,
+				bottomLeft.y - endRadius,
+				endRadius,
+				Math.PI / 2,
+				(3 * Math.PI) / 2,
+				true,
+			);
+		}
+		ctx.lineTo(bottomLeft.x, bottomLeft.y - barHeight);
+
+		ctx.closePath();
+		ctx.fillStyle = `rgba(${interpolated[0]}, ${interpolated[1]}, ${interpolated[2]}, ${drawSemiTransparent ? 0.5 : 1})`;
+		ctx.fill();
+	}
 }
 
 /**
