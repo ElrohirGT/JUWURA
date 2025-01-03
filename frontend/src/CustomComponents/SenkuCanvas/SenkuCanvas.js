@@ -343,7 +343,14 @@ class SenkuCanvas extends HTMLElement {
 					MINIFIED_VIEW.cellSize,
 				);
 
-				if (coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE)) {
+				const newCoordinatesHaveATask =
+					state.cells[coordinates.row] &&
+					state.cells[coordinates.row][coordinates.column];
+
+				if (
+					coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE) &&
+					!newCoordinatesHaveATask
+				) {
 					moveTaskToNewCoords(
 						state,
 						state.draggedTaskOriginalCords,
