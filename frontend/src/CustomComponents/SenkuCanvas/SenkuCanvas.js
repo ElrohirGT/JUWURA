@@ -422,12 +422,16 @@ class SenkuCanvas extends HTMLElement {
 					MINIFIED_VIEW.cellSize,
 					MINIFIED_VIEW.cellSize,
 				);
+				const { row, column } = coordinates;
 
 				const newCoordinatesHaveATask =
-					state.cells[coordinates.row] &&
-					state.cells[coordinates.row][coordinates.column];
+					state.cells[row] && state.cells[row][column];
 
-				if (coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE)) {
+				if (
+					coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE) &&
+					row !== state.draggedTaskOriginalCords.row &&
+					column !== state.draggedTaskOriginalCords.column
+				) {
 					if (!newCoordinatesHaveATask) {
 						const taskData = createDefaultTask(
 							state.futureTaskIcon,
