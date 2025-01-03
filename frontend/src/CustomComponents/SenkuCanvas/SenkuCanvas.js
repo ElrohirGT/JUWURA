@@ -1,5 +1,9 @@
 import { clamp } from "../../Utils/math";
-import { CreateTaskEvent, TaskChangedCoordinatesEvent } from "./events";
+import {
+	CreateConnectionEvent,
+	CreateTaskEvent,
+	TaskChangedCoordinatesEvent,
+} from "./events";
 import { ADD_BTN_RADIUS, drawCanvas, MINIFIED_VIEW } from "./render";
 import { GRID_SIZE } from "./render";
 import {
@@ -307,13 +311,15 @@ class SenkuCanvas extends HTMLElement {
 			} else if (clickedOnATask) {
 				if (isLeftClick) {
 					state.mode = "dragTask";
-					state.startDragOffset = {
-						x: ev.clientX - state.translatePosition.x,
-						y: ev.clientY - state.translatePosition.y,
-					};
+					// state.startDragOffset = {
+					// 	x: ev.clientX - state.translatePosition.x,
+					// 	y: ev.clientY - state.translatePosition.y,
+					// };
 					state.draggedTaskOriginalCords = cellCords;
 				} else if (isRightClick) {
-					console.log("TODO: TRY TO CONNECT TASK!");
+					state.mode = "createConnection";
+					state.draggedTaskOriginalCords = cellCords;
+					// console.log("TODO: TRY TO CONNECT TASK!");
 				}
 			} else {
 				state.mode = "dragGrid";
@@ -364,6 +370,53 @@ class SenkuCanvas extends HTMLElement {
 					this.dispatchEvent(event);
 				} else {
 					console.error("Cant move task to cords:", coordinates);
+				}
+			} else if (state.mode === "createConnection") {
+				const canvasPos = canvas.getBoundingClientRect();
+				const mousePosOnCanvas = fromScreenPosToCanvasPos(
+					{
+						x: ev.clientX,
+						y: ev.clientY,
+					},
+					{
+						x: canvasPos.left,
+						y: canvasPos.top,
+					},
+					state.scale,
+					state.translatePosition,
+				);
+				const coordinates = fromCanvasPosToCellCords(
+					mousePosOnCanvas,
+					MINIFIED_VIEW.griddOffset,
+					MINIFIED_VIEW.cellSize,
+					MINIFIED_VIEW.cellSize,
+				);
+
+				const newCoordinatesHaveATask =
+					state.cells[coordinates.row] &&
+					state.cells[coordinates.row][coordinates.column];
+
+				if (
+					coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE) &&
+					newCoordinatesHaveATask
+				) {
+					createConnectionBetweenCords(
+						state,
+						state.draggedTaskOriginalCords,
+						coordinates,
+					);
+
+					const originTaskId =
+						state.cells[state.draggedTaskOriginalCords.row][
+							state.draggedTaskOriginalCords.column
+						].id;
+					const targetTaskId =
+						state.cells[coordinates.row][coordinates.column].id;
+					const event = CreateConnectionEvent({
+						originTaskId,
+						targetTaskId,
+					});
+					this.dispatchEvent(event);
 				}
 			}
 
@@ -465,6 +518,25 @@ function moveTaskToNewCoords(state, originalCords, newCords) {
 		state.cells[row][column],
 	);
 	state.cells[row][column] = undefined;
+}
+
+/**
+ * @param {import("./types").SenkuCanvasState} state
+ * @param {import("./types").CellCoord} originalCords
+ * @param {import("./types").CellCoord} newCords
+ */
+function createConnectionBetweenCords(state, originalCords, newCords) {
+	state.connections.push({
+		start: {
+			row: originalCords.row * 2,
+			column: originalCords.column * 2,
+		},
+
+		end: {
+			row: newCords.row * 2,
+			column: newCords.column * 2,
+		},
+	});
 }
 
 export const SenkuCanvasComponent = {

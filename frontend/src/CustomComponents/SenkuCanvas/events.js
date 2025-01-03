@@ -29,3 +29,11 @@ export function CreateTaskEvent(detail) {
 export function TaskChangedCoordinatesEvent(detail) {
 	return createCustomEvent("task-changed-coordinates", detail);
 }
+
+/**
+ * @param {import("./types").CreateConnectionEventDetails} detail
+ * @returns {CustomEvent<import("./types").CreateConnectionEvent>}
+ */
+export function CreateConnectionEvent(detail) {
+	return createCustomEvent("create-connection", detail);
+}

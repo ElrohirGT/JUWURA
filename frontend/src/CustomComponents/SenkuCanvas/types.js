@@ -69,4 +69,10 @@
  * @property {CellCoord} coordinates
  */
 
+/**
+ * @typedef {Object} CreateConnectionEventDetails
+ * @property {number} originTaskId
+ * @property {number} targetTaskId
+ */
+
 export default {};
