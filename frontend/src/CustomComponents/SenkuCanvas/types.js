@@ -59,7 +59,7 @@
  * @property {Point} startDragOffset
  * @property {boolean} mouseDown
  * @property {SenkuCanvasMode} mode
- * @property {Point} taskTranslatePosition
+ * @property {string} futureTaskIcon
  * @property {CellCoord|undefined} draggedTaskOriginalCords
  */
 

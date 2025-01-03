@@ -64,7 +64,7 @@ export function drawCanvas(canvas, state) {
 		const { row, column } = state.draggedTaskOriginalCords;
 
 		const newCords = fromCanvasPosToCellCords(
-			state.taskTranslatePosition,
+			state.hoverPos,
 			MINIFIED_VIEW.griddOffset,
 			MINIFIED_VIEW.cellSize,
 			MINIFIED_VIEW.cellSize,
@@ -133,14 +133,16 @@ export function drawCanvas(canvas, state) {
 		}
 	}
 
-	if (hoverPos && state.mode === "none") {
+	if (hoverPos) {
 		const debug = false;
-		const { row, column } = fromCanvasPosToCellCords(
+		const hoverCords = fromCanvasPosToCellCords(
 			hoverPos,
 			MINIFIED_VIEW.griddOffset,
 			MINIFIED_VIEW.cellSize,
 			MINIFIED_VIEW.cellSize,
 		);
+		const { row, column } = hoverCords;
+
 		const cellTopLeft = {
 			x: column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
 			y: row * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset,
@@ -150,133 +152,179 @@ export function drawCanvas(canvas, state) {
 			y: cellTopLeft.y + MINIFIED_VIEW.cellSize / 2,
 		};
 
-		// Draw + circle on empty cells when hovering...
-		if (row < GRID_SIZE && row >= 0 && column < GRID_SIZE && column >= 0) {
-			if (!state.cells[row][column]) {
-				ctx.beginPath();
-				ctx.arc(cellCenter.x, cellCenter.y, ADD_BTN_RADIUS, 0, 2 * Math.PI);
-				ctx.fillStyle = "#282828";
-				ctx.fill();
+		if (state.mode === "none") {
+			// Draw + circle on empty cells when hovering...
+			if (row < GRID_SIZE && row >= 0 && column < GRID_SIZE && column >= 0) {
+				if (!state.cells[row][column]) {
+					ctx.beginPath();
+					ctx.arc(cellCenter.x, cellCenter.y, ADD_BTN_RADIUS, 0, 2 * Math.PI);
+					ctx.fillStyle = "#282828";
+					ctx.fill();
 
-				ctx.beginPath();
-				ctx.arc(cellCenter.x, cellCenter.y, ADD_BTN_RADIUS, 0, 2 * Math.PI);
-				ctx.strokeStyle = "#515151";
-				ctx.lineWidth = 1;
-				ctx.stroke();
+					ctx.beginPath();
+					ctx.arc(cellCenter.x, cellCenter.y, ADD_BTN_RADIUS, 0, 2 * Math.PI);
+					ctx.strokeStyle = "#515151";
+					ctx.lineWidth = 1;
+					ctx.stroke();
 
-				const plusSize = ADD_BTN_RADIUS * 3;
-				ctx.font = `${plusSize}px IBM Plex Mono`;
-				ctx.fillStyle = "#515151";
-				ctx.textBaseline = "hanging";
-				ctx.fillText(
-					"+",
-					cellCenter.x - plusSize / 3.25,
-					cellCenter.y - plusSize / 3.25,
-				);
-			}
-			// Draw task information
-			else {
-				const task = state.cells[row][column];
+					const plusSize = ADD_BTN_RADIUS * 3;
+					ctx.font = `${plusSize}px IBM Plex Mono`;
+					ctx.fillStyle = "#515151";
+					ctx.textBaseline = "hanging";
+					ctx.fillText(
+						"+",
+						cellCenter.x - plusSize / 3.25,
+						cellCenter.y - plusSize / 3.25,
+					);
+				}
+				// Draw task information
+				else {
+					const task = state.cells[row][column];
 
-				const MAX_TASK_TITLE_CHARS = 20;
-				const INFO_HEIGHT = 124;
-				const INFO_WIDTH = 326;
-				const TASK_INFO_PADDING = INFO_HEIGHT / 6;
-				const INFO_ITEMS_SPACING = (INFO_HEIGHT - TASK_INFO_PADDING * 2) / 4;
+					const MAX_TASK_TITLE_CHARS = 20;
+					const INFO_HEIGHT = 124;
+					const INFO_WIDTH = 326;
+					const TASK_INFO_PADDING = INFO_HEIGHT / 6;
+					const INFO_ITEMS_SPACING = (INFO_HEIGHT - TASK_INFO_PADDING * 2) / 4;
 
-				const taskInfoTopLeft = {
-					x: cellCenter.x + MINIFIED_VIEW.cellSize / 4,
-					y: cellCenter.y + MINIFIED_VIEW.cellSize / 4,
-				};
-				const taskInfoPaddedLeft = {
-					x: taskInfoTopLeft.x + TASK_INFO_PADDING,
-					y: taskInfoTopLeft.y + TASK_INFO_PADDING,
-				};
+					const taskInfoTopLeft = {
+						x: cellCenter.x + MINIFIED_VIEW.cellSize / 4,
+						y: cellCenter.y + MINIFIED_VIEW.cellSize / 4,
+					};
+					const taskInfoPaddedLeft = {
+						x: taskInfoTopLeft.x + TASK_INFO_PADDING,
+						y: taskInfoTopLeft.y + TASK_INFO_PADDING,
+					};
 
-				const radius = 8;
-				drawCurvedRectangle(
-					ctx,
-					"#363636",
-					taskInfoTopLeft,
-					INFO_WIDTH,
-					INFO_HEIGHT,
-					radius,
-				);
-
-				const progressText = `${(task.progress * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
-				const progressHeight = 14;
-				ctx.font = `${progressHeight}px IBM Plex Mono`;
-				ctx.textBaseline = "top";
-
-				ctx.fillStyle = "white";
-				ctx.fillText(progressText, taskInfoPaddedLeft.x, taskInfoPaddedLeft.y);
-
-				const displayTitle =
-					task.title.length < MAX_TASK_TITLE_CHARS
-						? task.title
-						: task.title.substring(0, MAX_TASK_TITLE_CHARS) + "...";
-				const titleTextHeight = 16;
-				ctx.font = `${titleTextHeight}px Parkinsans`;
-				ctx.textBaseline = "top";
-
-				const titleY =
-					taskInfoPaddedLeft.y + progressHeight + INFO_ITEMS_SPACING;
-				ctx.fillText(
-					displayTitle,
-					taskInfoPaddedLeft.x,
-					titleY,
-					INFO_WIDTH - TASK_INFO_PADDING * 2,
-				);
-
-				const statusTextHeight = 12;
-				const statusContainerY = titleY + titleTextHeight + INFO_ITEMS_SPACING;
-				const STATUS_CONTAINER_PADDING = 6;
-
-				if (task.status) {
-					ctx.font = `${statusTextHeight}px IBM Plex Mono`;
-					const textMeasurements = ctx.measureText(task.status.name);
-
-					ctx.fillStyle = task.status.color;
+					const radius = 8;
 					drawCurvedRectangle(
 						ctx,
-						task.status.color,
-						{
-							x: taskInfoPaddedLeft.x,
-							y: statusContainerY,
+						"#363636",
+						taskInfoTopLeft,
+						INFO_WIDTH,
+						INFO_HEIGHT,
+						radius,
+					);
+
+					const progressText = `${(task.progress * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
+					const progressHeight = 14;
+					ctx.font = `${progressHeight}px IBM Plex Mono`;
+					ctx.textBaseline = "top";
+
+					ctx.fillStyle = "white";
+					ctx.fillText(
+						progressText,
+						taskInfoPaddedLeft.x,
+						taskInfoPaddedLeft.y,
+					);
+
+					const displayTitle =
+						task.title.length < MAX_TASK_TITLE_CHARS
+							? task.title
+							: task.title.substring(0, MAX_TASK_TITLE_CHARS) + "...";
+					const titleTextHeight = 16;
+					ctx.font = `${titleTextHeight}px Parkinsans`;
+					ctx.textBaseline = "top";
+
+					const titleY =
+						taskInfoPaddedLeft.y + progressHeight + INFO_ITEMS_SPACING;
+					ctx.fillText(
+						displayTitle,
+						taskInfoPaddedLeft.x,
+						titleY,
+						INFO_WIDTH - TASK_INFO_PADDING * 2,
+					);
+
+					const statusTextHeight = 12;
+					const statusContainerY =
+						titleY + titleTextHeight + INFO_ITEMS_SPACING;
+					const STATUS_CONTAINER_PADDING = 6;
+
+					if (task.status) {
+						ctx.font = `${statusTextHeight}px IBM Plex Mono`;
+						const textMeasurements = ctx.measureText(task.status.name);
+
+						ctx.fillStyle = task.status.color;
+						drawCurvedRectangle(
+							ctx,
+							task.status.color,
+							{
+								x: taskInfoPaddedLeft.x,
+								y: statusContainerY,
+							},
+							textMeasurements.width + STATUS_CONTAINER_PADDING * 2,
+							statusTextHeight + STATUS_CONTAINER_PADDING * 2,
+							radius / 2,
+						);
+
+						ctx.fillStyle = "white";
+						ctx.fillText(
+							task.status.name,
+							taskInfoPaddedLeft.x + STATUS_CONTAINER_PADDING,
+							statusContainerY + STATUS_CONTAINER_PADDING,
+						);
+					}
+
+					if (task.due_date) {
+						const dateTextHeight = 12;
+						const formatter = new Intl.DateTimeFormat(undefined, {
+							day: "2-digit",
+							month: "short",
+						});
+						const dateText = formatter
+							.format(task.due_date)
+							.toLocaleUpperCase();
+
+						ctx.fillStyle = "white";
+						ctx.font = `${dateTextHeight}px IBM Plex Mono`;
+						const dateMeasurements = ctx.measureText(dateText);
+						ctx.fillText(
+							dateText,
+							taskInfoTopLeft.x +
+								INFO_WIDTH -
+								TASK_INFO_PADDING -
+								dateMeasurements.width,
+							statusContainerY + STATUS_CONTAINER_PADDING,
+						);
+					}
+				}
+			}
+		}
+
+		if (state.mode === "createConnection") {
+			const connMatrix = addBorderCellsToMatrix(state.cells);
+			const indicesAreValid =
+				hoverCords.row >= 0 &&
+				hoverCords.row < GRID_SIZE &&
+				hoverCords.column >= 0 &&
+				hoverCords.column < GRID_SIZE;
+
+			if (indicesAreValid) {
+				if (!connMatrix[hoverCords.row * 2][hoverCords.column * 2]) {
+					const shadowTask = {
+						icon: state.futureTaskIcon,
+						progress: 0,
+						coordinates: hoverCords,
+					};
+
+					drawMinifiedTask(ctx, shadowTask, hoverCords, true);
+					connMatrix[hoverCords.row * 2][hoverCords.column * 2] = shadowTask;
+				}
+
+				drawTaskConnection(
+					ctx,
+					{
+						start: {
+							row: state.draggedTaskOriginalCords.row * 2,
+							column: state.draggedTaskOriginalCords.column * 2,
 						},
-						textMeasurements.width + STATUS_CONTAINER_PADDING * 2,
-						statusTextHeight + STATUS_CONTAINER_PADDING * 2,
-						radius / 2,
-					);
-
-					ctx.fillStyle = "white";
-					ctx.fillText(
-						task.status.name,
-						taskInfoPaddedLeft.x + STATUS_CONTAINER_PADDING,
-						statusContainerY + STATUS_CONTAINER_PADDING,
-					);
-				}
-
-				if (task.due_date) {
-					const dateTextHeight = 12;
-					const formatter = new Intl.DateTimeFormat(undefined, {
-						day: "2-digit",
-						month: "short",
-					});
-					const dateText = formatter.format(task.due_date).toLocaleUpperCase();
-
-					ctx.fillStyle = "white";
-					ctx.font = `${dateTextHeight}px IBM Plex Mono`;
-					const dateMeasurements = ctx.measureText(dateText);
-					ctx.fillText(
-						dateText,
-						taskInfoTopLeft.x +
-							INFO_WIDTH -
-							TASK_INFO_PADDING -
-							dateMeasurements.width,
-						statusContainerY + STATUS_CONTAINER_PADDING,
-					);
-				}
+						end: {
+							row: hoverCords.row * 2,
+							column: hoverCords.column * 2,
+						},
+					},
+					connMatrix,
+				);
 			}
 		}
 

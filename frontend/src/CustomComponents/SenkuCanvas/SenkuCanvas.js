@@ -319,14 +319,12 @@ class SenkuCanvas extends HTMLElement {
 
 			if (clickedOnAddTaskBtn) {
 				const icon = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
-				state.cells[cellCords.row][cellCords.column] = {
+
+				state.cells[cellCords.row][cellCords.column] = createDefaultTask(
 					icon,
-					title: "",
-					projectId: state.projectId,
-					parent_id: null,
-					progress: 0.0,
-					coordinates: cellCords,
-				};
+					state.projectId,
+					cellCords,
+				);
 
 				const event = CreateTaskEvent({
 					project_id: state.projectId,
@@ -340,6 +338,8 @@ class SenkuCanvas extends HTMLElement {
 					state.mode = "dragTask";
 				} else if (isRightClick) {
 					state.mode = "createConnection";
+					state.futureTaskIcon =
+						EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
 				}
 			} else {
 				state.mode = "dragGrid";
@@ -416,10 +416,25 @@ class SenkuCanvas extends HTMLElement {
 					state.cells[coordinates.row] &&
 					state.cells[coordinates.row][coordinates.column];
 
-				if (
-					coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE) &&
-					newCoordinatesHaveATask
-				) {
+				if (coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE)) {
+					if (!newCoordinatesHaveATask) {
+						const taskData = createDefaultTask(
+							state.futureTaskIcon,
+							state.projectId,
+							coordinates,
+						);
+
+						state.cells[coordinates.row][coordinates.column] = taskData;
+
+						const event = CreateTaskEvent({
+							project_id: state.projectId,
+							parent_id: null,
+							icon: taskData.icon,
+						});
+
+						this.dispatchEvent(event);
+					}
+
 					createConnectionBetweenCords(
 						state,
 						state.draggedTaskOriginalCords,
@@ -467,7 +482,8 @@ class SenkuCanvas extends HTMLElement {
 			} else if (state.mouseDown && state.mode === "dragTask") {
 				const canvasPos = canvas.getBoundingClientRect();
 
-				state.taskTranslatePosition = fromScreenPosToCanvasPos(
+				state.hoverPos = fromScreenPosToCanvasPos(
+					// state.taskTranslatePosition = fromScreenPosToCanvasPos(
 					{
 						x: ev.clientX,
 						y: ev.clientY,
@@ -498,7 +514,6 @@ class SenkuCanvas extends HTMLElement {
 
 				state.hoverPos = mousePosOnCanvas;
 				drawCanvas(canvas, this.getState());
-				state.hoverPos = undefined;
 			}
 		});
 
@@ -557,6 +572,23 @@ function createConnectionBetweenCords(state, originalCords, newCords) {
 			column: newCords.column * 2,
 		},
 	});
+}
+
+/**
+ * @param {string} icon
+ * @param {number} projectId
+ * @param {import("./types").CellCoord} cellCords
+ * @returns {import("./types").TaskData}
+ */
+function createDefaultTask(icon, projectId, cellCords) {
+	return {
+		icon,
+		title: "",
+		projectId,
+		parent_id: null,
+		progress: 0.0,
+		coordinates: cellCords,
+	};
 }
 
 export const SenkuCanvasComponent = {
