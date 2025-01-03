@@ -1,5 +1,6 @@
-module Routing exposing (BasePath, NavigationHrefs, Route(..), generateRoutingFuncs, parseUrl)
+module Routing exposing (BasePath, NavigationHrefs, Route(..), generateRoutingFuncs, parseUrl, pushUrlWithBasePath, replaceUrlWithBasePath)
 
+import Browser.Navigation exposing (pushUrl, replaceUrl)
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (href)
 import Url exposing (Url)
@@ -24,7 +25,9 @@ type alias BasePath =
 
 
 type Route
-    = Home
+    = Login
+    | LoginCallback
+    | Home
     | RouteWithParams
     | NotFound
     | Http Int
@@ -48,6 +51,12 @@ genRouteParser maybeBasePath =
                 -- /${basePath}/
                 [ P.map Home (s basePath </> P.top)
 
+                -- /${basePath}/login
+                , P.map Login (s basePath </> s "login" </> P.top)
+
+                -- /${basePath}/callback
+                , P.map LoginCallback (s basePath </> s "callback" </> P.top)
+
                 -- /${basePath}/details
                 , P.map RouteWithParams (s basePath </> s "details")
 
@@ -68,6 +77,12 @@ genRouteParser maybeBasePath =
             P.oneOf
                 -- /
                 [ P.map Home P.top
+
+                -- /login
+                , P.map Login (s "login")
+
+                -- /login
+                , P.map LoginCallback (s "callback")
 
                 -- /details
                 , P.map RouteWithParams (s "details")
@@ -105,6 +120,26 @@ parseUrl basePath url =
             NotFound
 
 
+replaceUrlWithBasePath : Browser.Navigation.Key -> BasePath -> String -> Cmd msg
+replaceUrlWithBasePath key basepath url =
+    case basepath of
+        Just s ->
+            replaceUrl key ("/" ++ s ++ url)
+
+        Nothing ->
+            replaceUrl key url
+
+
+pushUrlWithBasePath : Browser.Navigation.Key -> BasePath -> String -> Cmd msg
+pushUrlWithBasePath key basepath url =
+    case basepath of
+        Just s ->
+            pushUrl key ("/" ++ s ++ url)
+
+        Nothing ->
+            pushUrl key url
+
+
 {-| Holds all the functions that generate attributes to navigate between views.
 -}
 type alias NavigationHrefs msg =
@@ -112,6 +147,7 @@ type alias NavigationHrefs msg =
     , goToJson : Int -> Attribute msg
     , goToHttp : Int -> Attribute msg
     , goToRouteWithParams : Attribute msg
+    , goToLogin : Attribute msg
     , goToHome : Attribute msg
     , goToSenku : Attribute msg
     }
@@ -123,6 +159,7 @@ generateRoutingFuncs basePath =
     , goToJson = goToJson basePath
     , goToHttp = goToHttp basePath
     , goToRouteWithParams = goToRouteWithParams basePath
+    , goToLogin = goToLogin basePath
     , goToHome = goToHome basePath
     , goToSenku = goToSenku basePath
     }
@@ -174,6 +211,18 @@ goToRouteWithParams basePath =
 
         Nothing ->
             href "/details/"
+
+
+{-| Generates an href attribute to go to the login page
+-}
+goToLogin : BasePath -> Attribute msg
+goToLogin basePath =
+    case basePath of
+        Just s ->
+            href (String.concat [ "/", s, "/login/" ])
+
+        Nothing ->
+            href "/login/"
 
 
 {-| Generates an href attribute to go to the home page

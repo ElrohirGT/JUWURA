@@ -1,2 +1,5 @@
+# Editors
+.vscode/
+
 .pgData
 *.seed

@@ -8,6 +8,8 @@ import Pages.Details as DetailsPage
 import Pages.Home as HomePage
 import Pages.Http as HttpPage
 import Pages.Json as JsonPage
+import Pages.Login as LoginPage
+import Pages.LoginCallback as LoginCallbackPage
 import Pages.NotFound as NotFoundPage
 import Pages.Ports as PortsPage
 import Pages.Senku as SenkuPage
@@ -54,19 +56,31 @@ Used to represent the current page and state
 -}
 type AppState
     = NotFound
+    | Login
+    | LoginCallback ( LoginCallbackPage.Model, Cmd LoginCallbackPage.Msg )
     | Senku SenkuPage.Model
     | Details DetailsPage.Model
+    | Home ( HomePage.Model, Cmd HomePage.Msg )
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
     | Json ( JsonPage.Model, Cmd JsonPage.Msg )
-    | Home (HomePage.Model Msg)
     | Ports ( PortsPage.Model, Cmd PortsPage.Msg )
 
 
-fromUrlToAppState : Maybe String -> Url -> AppState
-fromUrlToAppState basePath url =
+fromUrlToAppState : Maybe String -> Url -> Nav.Key -> AppState
+fromUrlToAppState basePath url navKey =
+    let
+        replaceUrl =
+            Routing.replaceUrlWithBasePath navKey basePath
+    in
     case Routing.parseUrl basePath url of
         Routing.Home ->
-            Home (HomePage.init basePath)
+            Home (HomePage.init basePath replaceUrl)
+
+        Routing.Login ->
+            Login
+
+        Routing.LoginCallback ->
+            LoginCallback (LoginCallbackPage.init replaceUrl)
 
         Routing.NotFound ->
             NotFound
@@ -100,9 +114,15 @@ init : Maybe String -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init basePath url navKey =
     let
         initialAppState =
-            fromUrlToAppState basePath url
+            fromUrlToAppState basePath url navKey
     in
     case initialAppState of
+        LoginCallback ( _, command ) ->
+            ( Model navKey basePath initialAppState, Cmd.map LoginCallbackViewMsg command )
+
+        Home ( _, command ) ->
+            ( Model navKey basePath initialAppState, Cmd.map HomeViewMsg command )
+
         Http ( _, command ) ->
             ( Model navKey basePath initialAppState, Cmd.map HttpViewMsg command )
 
@@ -120,6 +140,12 @@ init basePath url navKey =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.state of
+        LoginCallback _ ->
+            Sub.map LoginCallbackViewMsg (LoginCallbackPage.subscriptions True)
+
+        Home innerModel ->
+            Sub.map HomeViewMsg (HomePage.subscriptions (Tuple.first innerModel))
+
         Ports innerModel ->
             Sub.map PortsViewMsg (PortsPage.subscriptions (Tuple.first innerModel))
 
@@ -134,6 +160,10 @@ subscriptions model =
 type Msg
     = UrlChanged Url
     | LinkClicked Browser.UrlRequest
+    | ReplaceUrl String
+    | LoginViewMsg LoginPage.Msg
+    | LoginCallbackViewMsg LoginCallbackPage.Msg
+    | HomeViewMsg HomePage.Msg
     | DetailsViewMsg DetailsPage.Msg
     | HttpViewMsg HttpPage.Msg
     | JsonViewMsg JsonPage.Msg
@@ -145,11 +175,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UrlChanged url ->
-            ( { model
-                | state = fromUrlToAppState model.basePath url
-              }
-            , Cmd.none
-            )
+            let
+                -- Initialize again new subModels, recicling the 'init' logic
+                newAppState =
+                    init model.basePath url model.key
+            in
+            newAppState
 
         LinkClicked request ->
             case request of
@@ -158,6 +189,50 @@ update msg model =
 
                 Browser.External href ->
                     ( model, Nav.load href )
+
+        ReplaceUrl url ->
+            case model.basePath of
+                Just s ->
+                    ( model, Nav.replaceUrl model.key (s ++ url) )
+
+                Nothing ->
+                    ( model, Nav.replaceUrl model.key url )
+
+        LoginViewMsg innerMsg ->
+            case model.state of
+                Login ->
+                    let
+                        newCmd =
+                            LoginPage.update innerMsg
+                    in
+                    ( model, Cmd.map LoginViewMsg newCmd )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        LoginCallbackViewMsg innerMsg ->
+            case model.state of
+                LoginCallback innerModel ->
+                    let
+                        ( newModel, newCmd ) =
+                            LoginCallbackPage.update (Tuple.first innerModel) innerMsg
+                    in
+                    ( { model | state = LoginCallback ( newModel, newCmd ) }, Cmd.map LoginCallbackViewMsg newCmd )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        HomeViewMsg innerMsg ->
+            case model.state of
+                Home innerModel ->
+                    let
+                        ( newModel, newCmd ) =
+                            HomePage.update (Tuple.first innerModel) innerMsg
+                    in
+                    ( { model | state = Home ( newModel, newCmd ) }, Cmd.map HomeViewMsg newCmd )
+
+                _ ->
+                    ( model, Cmd.none )
 
         DetailsViewMsg innerMsg ->
             case model.state of
@@ -234,6 +309,15 @@ view model =
             , body = List.map toUnstyled body
             }
 
+        viewWithMsg staticView msgWrapper =
+            let
+                { title, body } =
+                    staticView
+            in
+            { title = title
+            , body = List.map (Html.map msgWrapper) (List.map toUnstyled body)
+            }
+
         viewStatic staticView pageModel =
             let
                 { title, body } =
@@ -262,8 +346,14 @@ view model =
             }
     in
     case model.state of
+        Login ->
+            viewWithMsg LoginPage.view LoginViewMsg
+
+        LoginCallback pageModel ->
+            viewWithEffects LoginCallbackPage.view pageModel LoginCallbackViewMsg
+
         Home pageModel ->
-            viewStatic HomePage.view pageModel
+            viewWithEffects HomePage.view pageModel HomeViewMsg
 
         Details pageModel ->
             viewWithState DetailsPage.view pageModel DetailsViewMsg
