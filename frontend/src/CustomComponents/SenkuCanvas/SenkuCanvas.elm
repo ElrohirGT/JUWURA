@@ -132,6 +132,30 @@ onCreateConnection mapper =
 
 
 
+-- DeleteTaskEvent
+
+
+type alias DeleteTaskEventDetail =
+    { taskId : Int
+    }
+
+
+deleteTaskEventDetailDecoder : Decode.Decoder ViewTaskEventDetail
+deleteTaskEventDetailDecoder =
+    Decode.succeed DeleteTaskEventDetail
+        |> required "taskId" int
+
+
+onDeleteTask : (ViewTaskEventDetail -> msg) -> Html.Styled.Attribute msg
+onDeleteTask mapper =
+    on "uwu-senku:delete-task"
+        (senkuCanvasEventDecoder deleteTaskEventDetailDecoder
+            |> Decode.map detailsMapper
+            |> Decode.map mapper
+        )
+
+
+
 -- ViewTaskEvent
 
 

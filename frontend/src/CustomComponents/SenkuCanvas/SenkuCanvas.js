@@ -2,6 +2,7 @@ import { clamp } from "../../Utils/math";
 import {
 	CreateConnectionEvent,
 	CreateTaskEvent,
+	DeleteTaskEvent,
 	TaskChangedCoordinatesEvent,
 	ViewTaskEvent,
 } from "./events";
@@ -427,6 +428,12 @@ class SenkuCanvas extends HTMLElement {
 					state.cells[row] && state.cells[row][column];
 
 				if (cellCoordsAreEqual(coordinates, state.draggedTaskOriginalCords)) {
+					const taskId = state.cells[row][column].id;
+					const event = DeleteTaskEvent({
+						taskId,
+					});
+					this.dispatchEvent(event);
+
 					state.cells[row][column] = undefined;
 					const cords = scaleCoords(coordinates, 2);
 					state.connections = state.connections.filter(
