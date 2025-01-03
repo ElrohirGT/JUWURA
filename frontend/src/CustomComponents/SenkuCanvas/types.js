@@ -63,4 +63,10 @@
  * @property {CellCoord|undefined} draggedTaskOriginalCords
  */
 
+/**
+ * @typedef {Object} TaskChangedCoordinatesEventDetails
+ * @property {number} taskId
+ * @property {CellCoord} coordinates
+ */
+
 export default {};

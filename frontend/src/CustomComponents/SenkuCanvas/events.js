@@ -21,3 +21,11 @@ function createCustomEvent(type, detail) {
 export function CreateTaskEvent(detail) {
 	return createCustomEvent("create-task", detail);
 }
+
+/**
+ * @param {import("./types").TaskChangedCoordinatesEventDetails} detail
+ * @returns {CustomEvent<import("./types").TaskChangedCoordinatesEventDetails>}
+ */
+export function TaskChangedCoordinatesEvent(detail) {
+	return createCustomEvent("task-changed-coordinates", detail);
+}

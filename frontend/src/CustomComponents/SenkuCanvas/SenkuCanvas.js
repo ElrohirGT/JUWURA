@@ -1,10 +1,11 @@
 import { clamp } from "../../Utils/math";
-import { CreateTaskEvent } from "./events";
+import { CreateTaskEvent, TaskChangedCoordinatesEvent } from "./events";
 import { ADD_BTN_RADIUS, drawCanvas, MINIFIED_VIEW } from "./render";
 import { GRID_SIZE } from "./render";
 import {
 	canvasPosInsideCircle,
 	canvasPosInsideRectangle,
+	coordinatesAreBetweenIndices,
 	fromCanvasPosToCellCords,
 	fromScreenPosToCanvasPos,
 } from "./utils";
@@ -320,7 +321,45 @@ class SenkuCanvas extends HTMLElement {
 				state.startDragOffset.y = ev.clientY - state.translatePosition.y;
 			}
 		});
-		canvas.addEventListener("mouseup", () => {
+		canvas.addEventListener("mouseup", (ev) => {
+			if (state.mode === "dragTask") {
+				const canvasPos = canvas.getBoundingClientRect();
+				const mousePosOnCanvas = fromScreenPosToCanvasPos(
+					{
+						x: ev.clientX,
+						y: ev.clientY,
+					},
+					{
+						x: canvasPos.left,
+						y: canvasPos.top,
+					},
+					state.scale,
+					state.translatePosition,
+				);
+				const coordinates = fromCanvasPosToCellCords(
+					mousePosOnCanvas,
+					MINIFIED_VIEW.griddOffset,
+					MINIFIED_VIEW.cellSize,
+					MINIFIED_VIEW.cellSize,
+				);
+
+				if (coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE)) {
+					moveTaskToNewCoords(
+						state,
+						state.draggedTaskOriginalCords,
+						coordinates,
+					);
+
+					const event = TaskChangedCoordinatesEvent({
+						coordinates,
+						taskId: state.cells[coordinates.row][coordinates.column].id,
+					});
+					this.dispatchEvent(event);
+				} else {
+					console.error("Cant move task to cords:", coordinates);
+				}
+			}
+
 			state.mouseDown = false;
 			state.mode = "none";
 			drawCanvas(canvas, this.getState());
@@ -389,6 +428,36 @@ class SenkuCanvas extends HTMLElement {
 			drawCanvas(canvas, this.getState());
 		});
 	}
+}
+
+/**
+ * @param {import("./types").SenkuCanvasState} state
+ * @param {import("./types").CellCoord} originalCords
+ * @param {import("./types").CellCoord} newCords
+ */
+function moveTaskToNewCoords(state, originalCords, newCords) {
+	const { row, column } = originalCords;
+	for (let conn of state.connections) {
+		if (conn.start.row === row * 2 && conn.start.column === column * 2) {
+			conn.start = {
+				row: newCords.row * 2,
+				column: newCords.column * 2,
+			};
+		}
+
+		if (conn.end.row === row * 2 && conn.end.column === column * 2) {
+			conn.end = {
+				row: newCords.row * 2,
+				column: newCords.column * 2,
+			};
+		}
+	}
+
+	state.cells[row][column].coordinates = newCords;
+	state.cells[newCords.row][newCords.column] = structuredClone(
+		state.cells[row][column],
+	);
+	state.cells[row][column] = undefined;
 }
 
 export const SenkuCanvasComponent = {

@@ -66,3 +66,20 @@ export function canvasPosInsideRectangle(canvasPos, topLeft, width, height) {
 
 	return xIsBetween && yIsBetween;
 }
+
+/**
+ * The minimum is inclusive
+ *
+ * @param {import("./types").CellCoord} coordinates
+ * @param {number} min
+ * @param {number} max
+ * @returns {boolean}
+ */
+export function coordinatesAreBetweenIndices(coordinates, min, max) {
+	return (
+		coordinates.row >= min &&
+		coordinates.row < max &&
+		coordinates.column >= min &&
+		coordinates.column < max
+	);
+}
