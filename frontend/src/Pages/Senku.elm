@@ -3,7 +3,7 @@ module Pages.Senku exposing (Model, Msg, init, update, view)
 import Array exposing (Array)
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
-import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateConnection, onCreateTask, onTaskChangedCoordinates)
+import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateConnection, onCreateTask, onTaskChangedCoordinates, onViewTask)
 import Data.Issue exposing (Issue)
 import Html.Styled exposing (button, div, text)
 import Html.Styled.Attributes exposing (css, id)
@@ -51,6 +51,7 @@ type Msg
     = CreateTask SenkuCanvas.CreateTaskEventDetail
     | TaskChangedCoords SenkuCanvas.TaskChangedCoordinatesEventDetail
     | CreateConnection SenkuCanvas.CreateConnectionEventDetail
+    | ViewTask SenkuCanvas.ViewTaskEventDetail
 
 
 update : Model -> Msg -> Model
@@ -74,6 +75,13 @@ update model msg =
             let
                 _ =
                     Debug.log "CONNECTION CREATED!" ev
+            in
+            model
+
+        ViewTask ev ->
+            let
+                _ =
+                    Debug.log "DISPLAY TASK INFO" ev
             in
             model
 
@@ -232,6 +240,7 @@ body model =
                 [ onCreateTask CreateTask
                 , onTaskChangedCoordinates TaskChangedCoords
                 , onCreateConnection CreateConnection
+                , onViewTask ViewTask
                 ]
             ]
         ]

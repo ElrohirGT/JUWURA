@@ -75,4 +75,9 @@
  * @property {number} targetTaskId
  */
 
+/**
+ * @typedef {Object} ViewTaskEventDetails
+ * @property {number} taskId
+ */
+
 export default {};

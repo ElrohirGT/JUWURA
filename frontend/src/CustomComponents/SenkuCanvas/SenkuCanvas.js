@@ -3,6 +3,7 @@ import {
 	CreateConnectionEvent,
 	CreateTaskEvent,
 	TaskChangedCoordinatesEvent,
+	ViewTaskEvent,
 } from "./events";
 import { ADD_BTN_RADIUS, drawCanvas, MINIFIED_VIEW } from "./render";
 import { GRID_SIZE } from "./render";
@@ -368,12 +369,22 @@ class SenkuCanvas extends HTMLElement {
 					MINIFIED_VIEW.cellSize,
 					MINIFIED_VIEW.cellSize,
 				);
+				const { row, column } = coordinates;
 
 				const newCoordinatesHaveATask =
-					state.cells[coordinates.row] &&
-					state.cells[coordinates.row][coordinates.column];
+					state.cells[row] && state.cells[row][column];
 
 				if (
+					row === state.draggedTaskOriginalCords.row &&
+					column === state.draggedTaskOriginalCords.column
+				) {
+					const taskId = state.cells[row][column].id;
+					const event = ViewTaskEvent({
+						taskId,
+					});
+
+					this.dispatchEvent(event);
+				} else if (
 					coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE) &&
 					!newCoordinatesHaveATask
 				) {

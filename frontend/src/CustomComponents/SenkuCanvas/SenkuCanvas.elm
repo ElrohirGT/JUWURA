@@ -132,6 +132,30 @@ onCreateConnection mapper =
 
 
 
+-- ViewTaskEvent
+
+
+type alias ViewTaskEventDetail =
+    { taskId : Int
+    }
+
+
+viewTaskEventDetailDecoder : Decode.Decoder ViewTaskEventDetail
+viewTaskEventDetailDecoder =
+    Decode.succeed ViewTaskEventDetail
+        |> required "taskId" int
+
+
+onViewTask : (ViewTaskEventDetail -> msg) -> Html.Styled.Attribute msg
+onViewTask mapper =
+    on "uwu-senku:view-task"
+        (senkuCanvasEventDecoder viewTaskEventDetailDecoder
+            |> Decode.map detailsMapper
+            |> Decode.map mapper
+        )
+
+
+
 -- VIEW
 
 

@@ -37,3 +37,11 @@ export function TaskChangedCoordinatesEvent(detail) {
 export function CreateConnectionEvent(detail) {
 	return createCustomEvent("create-connection", detail);
 }
+
+/**
+ * @param {import("./types").ViewTaskEventDetails} detail
+ * @returns {CustomEvent<import("./types").ViewTaskEventDetails>}
+ */
+export function ViewTaskEvent(detail) {
+	return createCustomEvent("view-task", detail);
+}
