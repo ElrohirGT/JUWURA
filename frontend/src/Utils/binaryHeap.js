@@ -30,9 +30,9 @@ export class BinaryHeap {
 	 */
 	pop() {
 		// Store the first element so we can return it later.
-		let result = this.content[0];
+		const result = this.content[0];
 		// Get the element at the end of the array.
-		let end = this.content.pop();
+		const end = this.content.pop();
 		// If there are any elements left, put the end element at the
 		// start, and let it sink down.
 		if (this.content.length > 0) {
@@ -46,14 +46,14 @@ export class BinaryHeap {
 	 * Removes an element from the list
 	 */
 	remove(node) {
-		let length = this.content.length;
+		const length = this.content.length;
 		// To remove a value, we must search through the array to find
 		// it.
 		for (let i = 0; i < length; i++) {
 			if (!this.equalsFunction(this.content[i], node)) continue;
 			// When it is found, the process seen in 'pop' is repeated
 			// to fill up the hole.
-			let end = this.content.pop();
+			const end = this.content.pop();
 			// If the element we popped was the one we needed to remove,
 			// we're done.
 			if (i == length - 1) break;
@@ -80,12 +80,12 @@ export class BinaryHeap {
 
 	bubbleUp(n) {
 		// Fetch the element that has to be moved.
-		let element = this.content[n],
+		const element = this.content[n],
 			score = this.scoreFunction(element);
 		// When at 0, an element can not go up any further.
 		while (n > 0) {
 			// Compute the parent element's index, and fetch it.
-			let parentN = Math.floor((n + 1) / 2) - 1,
+			const parentN = Math.floor((n + 1) / 2) - 1,
 				parent = this.content[parentN];
 			// If the parent has a lesser score, things are in order and we
 			// are done.
@@ -101,29 +101,29 @@ export class BinaryHeap {
 
 	sinkDown(n) {
 		// Look up the target element and its score.
-		let length = this.content.length,
+		const length = this.content.length,
 			element = this.content[n],
 			elemScore = this.scoreFunction(element);
 
 		while (true) {
 			// Compute the indices of the child elements.
-			let child2N = (n + 1) * 2,
+			const child2N = (n + 1) * 2,
 				child1N = child2N - 1;
 			// This is used to store the new position of the element,
 			// if any.
 			let swap = null;
 			// If the first child exists (is inside the array)...
-			let child1Score = undefined;
+			const child1Score = undefined;
 			if (child1N < length) {
 				// Look it up and compute its score.
-				let child1 = this.content[child1N],
+				const child1 = this.content[child1N],
 					child1Score = this.scoreFunction(child1);
 				// If the score is less than our element's, we need to swap.
 				if (child1Score < elemScore) swap = child1N;
 			}
 			// Do the same checks for the other child.
 			if (child2N < length) {
-				let child2 = this.content[child2N],
+				const child2 = this.content[child2N],
 					child2Score = this.scoreFunction(child2);
 				if (child2Score < (swap == null ? elemScore : child1Score))
 					swap = child2N;

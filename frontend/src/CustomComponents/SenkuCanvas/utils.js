@@ -30,8 +30,8 @@ export function fromCanvasPosToCellCords(
 	cellWidth,
 	cellHeight,
 ) {
-	let column = Math.floor((canvasPos.x - gridOffset) / cellWidth);
-	let row = Math.floor((canvasPos.y - gridOffset) / cellHeight);
+	const column = Math.floor((canvasPos.x - gridOffset) / cellWidth);
+	const row = Math.floor((canvasPos.y - gridOffset) / cellHeight);
 
 	return {
 		column,

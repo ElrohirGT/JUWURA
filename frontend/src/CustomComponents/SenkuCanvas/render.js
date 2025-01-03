@@ -43,8 +43,8 @@ export function drawCanvas(canvas, state) {
 
 	for (let column = 0; column < GRID_SIZE; column += 1) {
 		for (let row = 0; row < GRID_SIZE; row += 1) {
-			let x = column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset;
-			let y = row * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset;
+			const x = column * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset;
+			const y = row * MINIFIED_VIEW.cellSize + MINIFIED_VIEW.griddOffset;
 			ctx.strokeRect(x, y, MINIFIED_VIEW.cellSize, MINIFIED_VIEW.cellSize);
 
 			const cell = state.cells[row][column];

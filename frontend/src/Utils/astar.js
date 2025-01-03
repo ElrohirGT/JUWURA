@@ -57,16 +57,14 @@ function init(grid) {
 }
 
 function heap(comparator) {
-	return new BinaryHeap(function (node) {
-		return node.f;
-	}, comparator);
+	return new BinaryHeap((node) => node.f, comparator);
 }
 
 function manhattan(x1, y1, x2, y2) {
 	// See list of heuristics: http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
 
-	let d1 = Math.abs(x2 - x1);
-	let d2 = Math.abs(y2 - y1);
+	const d1 = Math.abs(x2 - x1);
+	const d2 = Math.abs(y2 - y1);
 	return d1 + d2;
 }
 
@@ -79,9 +77,9 @@ function defaultIsWall(a) {
 }
 
 function neighbors(grid, node, diagonals) {
-	let ret = [];
-	let x = node.x;
-	let y = node.y;
+	const ret = [];
+	const x = node.x;
+	const y = node.y;
 
 	// West
 	if (grid[y - 1] && grid[y - 1][x]) {
@@ -157,7 +155,7 @@ export function search(
 	// console.log("NODE GRID:", nodeGrid);
 	diagonal = !!diagonal;
 
-	let openHeap = heap(comparator);
+	const openHeap = heap(comparator);
 	// If the end === start then we want to keep searching instead of
 	// stopping right at the beginning!
 	let hasFoundStart = !comparator(end.value, start.value);
@@ -166,7 +164,7 @@ export function search(
 
 	while (openHeap.size() > 0) {
 		// Grab the lowest f(x) to process next.  Heap keeps this sorted for us.
-		let currentNode = openHeap.pop();
+		const currentNode = openHeap.pop();
 
 		// End case -- result has been found, return the traced path.
 		if (comparator(currentNode.value, end.value)) {
@@ -174,7 +172,7 @@ export function search(
 				hasFoundStart = true;
 			} else {
 				let curr = currentNode;
-				let ret = [];
+				const ret = [];
 				while (curr.parent) {
 					ret.push(curr);
 					curr = curr.parent;
@@ -187,11 +185,11 @@ export function search(
 		currentNode.closed = true;
 
 		// Find all neighbors for the current node. Optionally find diagonal neighbors as well (false by default).
-		let foundNeighbors = neighbors(nodeGrid, currentNode, diagonal);
+		const foundNeighbors = neighbors(nodeGrid, currentNode, diagonal);
 		// console.log("VECINOS:", foundNeighbors);
 
 		for (let i = 0, il = foundNeighbors.length; i < il; i++) {
-			let neighbor = foundNeighbors[i];
+			const neighbor = foundNeighbors[i];
 			// console.log("NEIGHBOR:", neighbor);
 
 			if (neighbor.closed || isWall(neighbor.value)) {
@@ -202,8 +200,8 @@ export function search(
 
 			// The g score is the shortest distance from start to current node.
 			// We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
-			let gScore = currentNode.g + neighbor.cost;
-			let beenVisited = neighbor.visited;
+			const gScore = currentNode.g + neighbor.cost;
+			const beenVisited = neighbor.visited;
 
 			if (!beenVisited || gScore < neighbor.g) {
 				// Found an optimal (so far) path to this node.  Take score for node to see how good it is.

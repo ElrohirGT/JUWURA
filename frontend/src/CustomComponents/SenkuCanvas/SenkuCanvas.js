@@ -557,7 +557,7 @@ class SenkuCanvas extends HTMLElement {
  */
 function moveTaskToNewCoords(state, originalCords, newCords) {
 	const { row, column } = originalCords;
-	for (let conn of state.connections) {
+	for (const conn of state.connections) {
 		if (conn.start.row === row * 2 && conn.start.column === column * 2) {
 			conn.start = {
 				row: newCords.row * 2,
