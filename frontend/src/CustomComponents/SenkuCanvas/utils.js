@@ -46,7 +46,7 @@ export function fromCanvasPosToCellCords(
  */
 export function canvasPosInsideCircle(canvasPos, center, radius) {
 	const distanceFromCenter = Math.sqrt(
-		Math.pow(canvasPos.x - center.x, 2) + Math.pow(canvasPos.y - center.y, 2),
+		(canvasPos.x - center.x) ** 2 + (canvasPos.y - center.y) ** 2,
 	);
 
 	return distanceFromCenter <= radius;

@@ -221,7 +221,7 @@ export function drawCanvas(canvas, state) {
 					const displayTitle =
 						task.title.length < MAX_TASK_TITLE_CHARS
 							? task.title
-							: task.title.substring(0, MAX_TASK_TITLE_CHARS) + "...";
+							: `${task.title.substring(0, MAX_TASK_TITLE_CHARS)}...`;
 					const titleTextHeight = 16;
 					ctx.font = `${titleTextHeight}px Parkinsans`;
 					ctx.textBaseline = "top";
@@ -661,10 +661,6 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 			} else {
 				finishDrawing();
 			}
-		}
-		// DRAW NOTHING
-		else {
-			continue;
 		}
 	}
 

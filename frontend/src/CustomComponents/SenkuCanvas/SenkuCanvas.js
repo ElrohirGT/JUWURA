@@ -172,10 +172,6 @@ function generateDummyData() {
 class SenkuCanvas extends HTMLElement {
 	static observedAttributes = ["widthPct", "heightPct", "zoom"];
 
-	constructor() {
-		super();
-	}
-
 	/**
 	 * Function that runs when the element is added to the page.
 	 */
@@ -304,7 +300,7 @@ class SenkuCanvas extends HTMLElement {
 
 			const indicesInRange =
 				row >= 0 && row < GRID_SIZE && column >= 0 && column < GRID_SIZE;
-			const clickedOnATaskCell = state.cells[row] && state.cells[row][column];
+			const clickedOnATaskCell = state.cells[row]?.[column];
 			const clickedOnAddTaskBtn =
 				indicesInRange &&
 				!clickedOnATaskCell &&
@@ -374,8 +370,7 @@ class SenkuCanvas extends HTMLElement {
 				);
 				const { row, column } = coordinates;
 
-				const newCoordinatesHaveATask =
-					state.cells[row] && state.cells[row][column];
+				const newCoordinatesHaveATask = state.cells[row]?.[column];
 
 				if (cellCoordsAreEqual(coordinates, state.draggedTaskOriginalCords)) {
 					const taskId = state.cells[row][column].id;
@@ -424,8 +419,7 @@ class SenkuCanvas extends HTMLElement {
 				);
 				const { row, column } = coordinates;
 
-				const newCoordinatesHaveATask =
-					state.cells[row] && state.cells[row][column];
+				const newCoordinatesHaveATask = state.cells[row]?.[column];
 
 				if (cellCoordsAreEqual(coordinates, state.draggedTaskOriginalCords)) {
 					const taskId = state.cells[row][column].id;

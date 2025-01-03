@@ -82,22 +82,22 @@ function neighbors(grid, node, diagonals) {
 	const y = node.y;
 
 	// West
-	if (grid[y - 1] && grid[y - 1][x]) {
+	if (grid[y - 1]?.[x]) {
 		ret.push(grid[y - 1][x]);
 	}
 
 	// East
-	if (grid[y + 1] && grid[y + 1][x]) {
+	if (grid[y + 1]?.[x]) {
 		ret.push(grid[y + 1][x]);
 	}
 
 	// South
-	if (grid[y] && grid[y][x - 1]) {
+	if (grid[y]?.[x - 1]) {
 		ret.push(grid[y][x - 1]);
 	}
 
 	// North
-	if (grid[y] && grid[y][x + 1]) {
+	if (grid[y]?.[x + 1]) {
 		ret.push(grid[y][x + 1]);
 	}
 
@@ -153,7 +153,6 @@ export function search(
 ) {
 	const nodeGrid = init(grid);
 	// console.log("NODE GRID:", nodeGrid);
-	diagonal = !!diagonal;
 
 	const openHeap = heap(comparator);
 	// If the end === start then we want to keep searching instead of

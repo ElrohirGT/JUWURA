@@ -12,9 +12,9 @@
 export function lerpColor3(start, middle, end, progress) {
 	if (progress < 0.5) {
 		return lerpColor(start, middle, progress * 2);
-	} else {
-		return lerpColor(middle, end, (progress - 0.5) * 2);
 	}
+
+	return lerpColor(middle, end, (progress - 0.5) * 2);
 }
 
 /**
