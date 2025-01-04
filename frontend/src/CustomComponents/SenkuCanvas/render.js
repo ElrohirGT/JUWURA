@@ -580,7 +580,7 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 			finishDrawing();
 
 			// DRAWING END NOTCH
-			const notchRadius = 3;
+			const notchRadius = 6;
 			ctx.beginPath();
 			if (direction.x > 0) {
 				// LEFT NOTCH
