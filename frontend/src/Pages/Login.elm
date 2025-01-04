@@ -1,6 +1,6 @@
-module Pages.Login exposing (..)
+module Pages.Login exposing (Msg(..), update, view)
 
-import Css exposing (alignItems, backgroundColor, bold, border, borderRadius, center, color, column, cursor, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, fontStyle, fontWeight, height, hex, hover, inline, inlineBlock, int, justifyContent, maxWidth, padding2, pct, pointer, px, zero)
+import Css exposing (alignItems, backgroundColor, border, borderRadius, center, color, column, cursor, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, fontWeight, height, hover, int, justifyContent, maxWidth, padding2, pct, pointer, px, zero)
 import Html.Styled exposing (button, div, text)
 import Html.Styled.Attributes exposing (css)
 import Html.Styled.Events exposing (onClick)

@@ -1,4 +1,4 @@
-module Data.Issue exposing (..)
+module Data.Issue exposing (Issue, IssueField)
 
 
 type alias IssueField =
