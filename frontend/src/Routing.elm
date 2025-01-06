@@ -33,7 +33,7 @@ type Route
     | Http Int
     | Json Int
     | Ports
-    | Senku
+    | Project
 
 
 {-| Generates a route parser given a base path.
@@ -69,8 +69,8 @@ genRouteParser maybeBasePath =
                 -- /${basePath}/ports
                 , P.map Ports (s basePath </> s "ports")
 
-                -- /${basePath}/senku
-                , P.map Senku (s basePath </> s "senku")
+                -- /${basePath}/project
+                , P.map Project (s basePath </> s "project")
                 ]
 
         Nothing ->
@@ -93,11 +93,11 @@ genRouteParser maybeBasePath =
                 -- /json
                 , P.map Json (s "json" </> P.int)
 
-                -- /json
+                -- /ports
                 , P.map Ports (s "ports")
 
-                -- /json
-                , P.map Senku (s "senku")
+                -- /project
+                , P.map Project (s "project")
                 ]
 
 
@@ -151,7 +151,7 @@ generateRoutingFuncs basePath =
     , goToRouteWithParams = goToRouteWithParams basePath
     , goToLogin = goToLogin basePath
     , goToHome = goToHome basePath
-    , goToSenku = goToSenku basePath
+    , goToSenku = goToProject basePath
     }
 
 
@@ -229,11 +229,11 @@ goToHome basePath =
 
 {-| Generates an href attribute to go to the senku page
 -}
-goToSenku : BasePath -> Attribute msg
-goToSenku basePath =
+goToProject : BasePath -> Attribute msg
+goToProject basePath =
     case basePath of
         Just s ->
-            href (String.concat [ "/", s, "/senku" ])
+            href (String.concat [ "/", s, "/project" ])
 
         Nothing ->
-            href "/"
+            href "/project"
