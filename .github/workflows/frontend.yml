@@ -41,7 +41,7 @@ jobs:
       - name: Linting ELM
         run: elm-review
       - name: Installing dependencies
-        run: pnpm run install
+        run: pnpm install
       - name: Formatting JS
         run: pnpm run format:check
       - name: Linting JS

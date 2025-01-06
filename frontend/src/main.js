@@ -1,9 +1,11 @@
 import "./style.css";
-import "./CustomComponents/Icon/Icon.js";
-import "./CustomComponents/SenkuCanvas/SenkuCanvas.js";
+import { IconComponent } from "./CustomComponents/Icon/Icon.js";
+import { SenkuCanvasComponent } from "./CustomComponents/SenkuCanvas/SenkuCanvas.js";
 import { Elm } from "./Main.elm";
-import { initializeLocalStoragePorts} from "./Ports/LocalStorage/LocalStorage.js";
-import { initializeOauthPorts} from "./Ports/Auth/Auth.js";
+import { initializeOauthPorts } from "./Ports/Auth/Auth.js";
+
+SenkuCanvasComponent.register();
+IconComponent.register();
 
 // NOTE: We need to use substring to remove the / at the beginning
 const basePath = import.meta.env.BASE_URL.substring(1);
@@ -32,4 +34,4 @@ socket.addEventListener("message", (event) => {
 // initializeLocalStoragePorts(app)
 
 // OAUTH
-initializeOauthPorts(app)
+initializeOauthPorts(app);

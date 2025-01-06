@@ -39,7 +39,7 @@ jobs:
       - name: Formatting Zig
         run: zig fmt --check .
       - name: Installing JS dependencies
-        run: pnpm run install
+        run: pnpm install
       - name: Formatting JS
         run: pnpm run format:check
       - name: Linting JS

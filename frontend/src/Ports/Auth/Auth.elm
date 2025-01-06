@@ -1,7 +1,5 @@
 port module Ports.Auth.Auth exposing (UserCredentials, UserProfile, checkUserSession, loginRedirect, logoutRedirect, onCheckedUserSession, onOauthResult, parseCallback)
 
-import Pages.Http exposing (Model(..))
-
 
 type alias UserCredentials =
     { profile : UserProfile

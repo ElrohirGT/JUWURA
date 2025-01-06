@@ -1,9 +1,9 @@
-module Pages.Senku exposing (Model, init, view)
+module Pages.Senku exposing (Cell, Model, Msg, ZoomLevel, init, update, view)
 
 import Array exposing (Array)
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
-import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas
+import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask)
 import Data.Issue exposing (Issue)
 import Html.Styled exposing (button, div, text)
 import Html.Styled.Attributes exposing (css, id)
@@ -17,8 +17,6 @@ import Utils exposing (viteAsset)
 
 type ZoomLevel
     = Low
-    | Medium
-    | High
 
 
 type alias Cell =
@@ -44,22 +42,57 @@ init =
 
 
 
+-- UPDATE
+
+
+type Msg
+    = CreateTask SenkuCanvas.CreateTaskEventDetail
+    | TaskChangedCoords SenkuCanvas.TaskChangedCoordinatesEventDetail
+    | CreateConnection SenkuCanvas.CreateConnectionEventDetail
+    | ViewTask SenkuCanvas.ViewTaskEventDetail
+    | DeleteTask SenkuCanvas.DeleteTaskEventDetail
+    | DeleteConnection SenkuCanvas.DeleteConnectionEventDetail
+
+
+update : Model -> Msg -> Model
+update model msg =
+    case msg of
+        CreateTask _ ->
+            model
+
+        TaskChangedCoords _ ->
+            model
+
+        CreateConnection _ ->
+            model
+
+        ViewTask _ ->
+            model
+
+        DeleteTask _ ->
+            model
+
+        DeleteConnection _ ->
+            model
+
+
+
 -- VIEW
 
 
-view : Model -> { title : String, body : List (Html.Styled.Html msg) }
+view : Model -> { title : String, body : List (Html.Styled.Html Msg) }
 view model =
     { title = "Senku View"
     , body = body model
     }
 
 
-body : Model -> List (Html.Styled.Html msg)
-body model =
+body : Model -> List (Html.Styled.Html Msg)
+body _ =
     let
         sidebardWidthPct : Float
         sidebardWidthPct =
-            72.0 / 1728.0 * 100.0
+            74.0 / 1976.0 * 100.0
 
         topbarHeightPct : Float
         topbarHeightPct =
@@ -187,13 +220,20 @@ body model =
                 , height (vh 100)
                 , width (vw sidebardWidthPct)
                 , backgroundColor cssColors.black_500
-                , borderRadius4 zero cssSpacing.xl_3 zero zero
+                , borderRadius4 zero cssSpacing.l cssSpacing.l zero
                 ]
             ]
             []
         , -- Main Content
           div [ css [ paddingLeft (vw sidebardWidthPct) ] ]
             [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct))
+                [ onCreateTask CreateTask
+                , onTaskChangedCoordinates TaskChangedCoords
+                , onCreateConnection CreateConnection
+                , onViewTask ViewTask
+                , onDeleteTask DeleteTask
+                , onDeleteConnection DeleteConnection
+                ]
             ]
         ]
     ]
