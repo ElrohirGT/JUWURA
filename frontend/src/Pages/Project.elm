@@ -1,12 +1,11 @@
-module Pages.Senku exposing (Cell, Model, Msg, ZoomLevel, init, update, view)
+module Pages.Project exposing (Model, Msg, init, update, view)
 
-import Array exposing (Array)
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
 import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask)
-import Data.Issue exposing (Issue)
 import Html.Styled exposing (button, div, text)
 import Html.Styled.Attributes exposing (css, id)
+import Html.Styled.Events exposing (onClick)
 import Theme exposing (cssColors, cssFontSizes, cssSpacing, spacing)
 import Utils exposing (viteAsset)
 
@@ -15,30 +14,14 @@ import Utils exposing (viteAsset)
 -- MODEL
 
 
-type ZoomLevel
-    = Low
-
-
-type alias Cell =
-    Maybe
-        { task : Issue
-        }
-
-
-type alias Model =
-    { cells : Array (Array Cell)
-    , zoomLevel : ZoomLevel
-    }
-
-
-gridSize : number
-gridSize =
-    10
+type Model
+    = SenkuView
+    | TableView
 
 
 init : Model
 init =
-    Model (Array.repeat gridSize <| Array.repeat gridSize Maybe.Nothing) Low
+    SenkuView
 
 
 
@@ -52,11 +35,19 @@ type Msg
     | ViewTask SenkuCanvas.ViewTaskEventDetail
     | DeleteTask SenkuCanvas.DeleteTaskEventDetail
     | DeleteConnection SenkuCanvas.DeleteConnectionEventDetail
+    | GoToBacklog
+    | GoToOverview
 
 
 update : Model -> Msg -> Model
 update model msg =
     case msg of
+        GoToBacklog ->
+            TableView
+
+        GoToOverview ->
+            SenkuView
+
         CreateTask _ ->
             model
 
@@ -88,7 +79,7 @@ view model =
 
 
 body : Model -> List (Html.Styled.Html Msg)
-body _ =
+body model =
     let
         sidebardWidthPct : Float
         sidebardWidthPct =
@@ -179,11 +170,29 @@ body _ =
                     , alignItems stretch
                     ]
                 ]
-                [ div [ css viewNavbarContainerStyles ]
+                [ div
+                    [ css
+                        (if model == TableView then
+                            activeViewbarContainerStyles
+
+                         else
+                            viewNavbarContainerStyles
+                        )
+                    , onClick GoToBacklog
+                    ]
                     [ Icon.view (viteAsset "~icons/fa6-solid/table")
                     , text "BACKLOG"
                     ]
-                , div [ css activeViewbarContainerStyles ]
+                , div
+                    [ css
+                        (if model == SenkuView then
+                            activeViewbarContainerStyles
+
+                         else
+                            viewNavbarContainerStyles
+                        )
+                    , onClick GoToOverview
+                    ]
                     [ Icon.view (viteAsset "~icons/fa6-solid/share-nodes")
                     , text "OVERVIEW"
                     ]
@@ -226,14 +235,19 @@ body _ =
             []
         , -- Main Content
           div [ css [ paddingLeft (vw sidebardWidthPct) ] ]
-            [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct))
-                [ onCreateTask CreateTask
-                , onTaskChangedCoordinates TaskChangedCoords
-                , onCreateConnection CreateConnection
-                , onViewTask ViewTask
-                , onDeleteTask DeleteTask
-                , onDeleteConnection DeleteConnection
+            (if model == SenkuView then
+                [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct))
+                    [ onCreateTask CreateTask
+                    , onTaskChangedCoordinates TaskChangedCoords
+                    , onCreateConnection CreateConnection
+                    , onViewTask ViewTask
+                    , onDeleteTask DeleteTask
+                    , onDeleteConnection DeleteConnection
+                    ]
                 ]
-            ]
+
+             else
+                []
+            )
         ]
     ]

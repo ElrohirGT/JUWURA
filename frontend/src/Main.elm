@@ -12,7 +12,7 @@ import Pages.Login as LoginPage
 import Pages.LoginCallback as LoginCallbackPage
 import Pages.NotFound as NotFoundPage
 import Pages.Ports as PortsPage
-import Pages.Senku as SenkuPage
+import Pages.Project as ProjectPage
 import Routing
 import Url exposing (Url)
 
@@ -58,7 +58,7 @@ type AppState
     = NotFound
     | Login
     | LoginCallback ( LoginCallbackPage.Model, Cmd LoginCallbackPage.Msg )
-    | Senku SenkuPage.Model
+    | Project ProjectPage.Model
     | Details DetailsPage.Model
     | Home ( HomePage.Model, Cmd HomePage.Msg )
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
@@ -85,8 +85,8 @@ fromUrlToAppState basePath url navKey =
         Routing.NotFound ->
             NotFound
 
-        Routing.Senku ->
-            Senku SenkuPage.init
+        Routing.Project ->
+            Project ProjectPage.init
 
         Routing.RouteWithParams ->
             Details (DetailsPage.init basePath)
@@ -167,7 +167,7 @@ type Msg
     | HttpViewMsg HttpPage.Msg
     | JsonViewMsg JsonPage.Msg
     | PortsViewMsg PortsPage.Msg
-    | SenkuViewMsg SenkuPage.Msg
+    | SenkuViewMsg ProjectPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -266,12 +266,12 @@ update msg model =
 
         SenkuViewMsg innerMsg ->
             case model.state of
-                Senku innerModel ->
+                Project innerModel ->
                     let
                         newModel =
-                            SenkuPage.update innerModel innerMsg
+                            ProjectPage.update innerModel innerMsg
                     in
-                    ( { model | state = Senku newModel }, Cmd.none )
+                    ( { model | state = Project newModel }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -347,5 +347,5 @@ view model =
         NotFound ->
             viewStateLess NotFoundPage.view
 
-        Senku pageModel ->
-            viewWithState SenkuPage.view pageModel SenkuViewMsg
+        Project pageModel ->
+            viewWithState ProjectPage.view pageModel SenkuViewMsg
