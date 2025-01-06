@@ -12,13 +12,13 @@ export default defineConfig({
 				families: [
 					{
 						name: "Parkinsans",
-						styles: "wght@300..800"
-
-					}, 
+						styles: "wght@300..800",
+					},
 					{
 						name: "IBM Plex Mono",
-						styles: "ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700"
-					}
+						styles:
+							"ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700",
+					},
 				],
 			},
 		}),
@@ -34,9 +34,9 @@ export default defineConfig({
 		}),
 	],
 	preview: {
-		port : 3001
+		port: 3001,
 	},
 	server: {
-		port: 3001
-	}
+		port: 3001,
+	},
 });
