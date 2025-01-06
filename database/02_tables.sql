@@ -29,17 +29,20 @@ CREATE TABLE task (
     parent_id INTEGER REFERENCES task (id),
     project_id INTEGER REFERENCES project (id) NOT NULL,
     short_title VARCHAR(16) NOT NULL,
-    icon CHAR(1) NOT NULL
+    icon CHAR(1) NOT NULL,
+    senku_row INTEGER NOT NULL DEFAULT 0,
+    senku_column INTEGER NOT NULL DEFAULT 0
 );
 COMMENT ON TABLE task IS
 'Stores all the task of all the projects, only some fields are required';
 
-CREATE TABLE task_unblock (
+CREATE TABLE task_connection (
     target_task INTEGER REFERENCES task (id) NOT NULL,
     unblocked_task INTEGER REFERENCES task (id) NOT NULL
 );
-COMMENT ON TABLE task_unblock IS
+COMMENT ON TABLE task_connection IS
 'Stores all the tasks that unblock once target_task is completed';
+
 
 CREATE TABLE task_field_type (
     id SERIAL PRIMARY KEY,

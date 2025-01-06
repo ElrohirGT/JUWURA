@@ -240,7 +240,7 @@ func main() {
 
 	// Generate tasks...
 	taskCount := 10
-	fmt.Println("INSERT INTO task (project_id, parent_id, short_title, icon) VALUES")
+	fmt.Println("INSERT INTO task (project_id, parent_id, short_title, icon, senku_row, senku_column) VALUES")
 	for projectIdx := range projectCount {
 		for i := range taskCount {
 			projectId := projectIdx + 1
@@ -250,7 +250,7 @@ func main() {
 			}
 			shortTitle := fmt.Sprintf("T-%d", i+1)
 			icon := from(random, emojis)
-			fmt.Printf("(%d, %s, '%s', '%s')", projectId, parentId, shortTitle, icon)
+			fmt.Printf("(%d, %s, '%s', '%s', DEFAULT, DEFAULT)", projectId, parentId, shortTitle, icon)
 
 			endInserts((projectIdx+1)*(i+1)-1, projectCount*taskCount)
 		}
@@ -302,7 +302,7 @@ func main() {
 	fmt.Println()
 
 	// Generate tasks unblocks...
-	fmt.Println("INSERT INTO task_unblock (target_task, unblocked_task) VALUES")
+	fmt.Println("INSERT INTO task_connection (target_task, unblocked_task) VALUES")
 	relationCount := 5
 	for projectIdx := range projectCount {
 		// Each project has #`taskCount` tasks,
