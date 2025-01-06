@@ -85,4 +85,10 @@
  * @property {number} taskId
  */
 
+/**
+ * @typedef {Object} DeleteConnectionEventDetails
+ * @property {number} originTaskId
+ * @property {number} targetTaskId
+ */
+
 export default {};

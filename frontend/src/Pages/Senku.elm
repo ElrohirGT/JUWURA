@@ -3,7 +3,7 @@ module Pages.Senku exposing (Cell, Model, Msg, ZoomLevel, init, update, view)
 import Array exposing (Array)
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
-import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateConnection, onCreateTask, onDeleteTask, onTaskChangedCoordinates, onViewTask)
+import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask)
 import Data.Issue exposing (Issue)
 import Html.Styled exposing (button, div, text)
 import Html.Styled.Attributes exposing (css, id)
@@ -51,10 +51,15 @@ type Msg
     | CreateConnection SenkuCanvas.CreateConnectionEventDetail
     | ViewTask SenkuCanvas.ViewTaskEventDetail
     | DeleteTask SenkuCanvas.DeleteTaskEventDetail
+    | DeleteConnection SenkuCanvas.DeleteConnectionEventDetail
 
 
 update : Model -> Msg -> Model
 update model msg =
+    let
+        _ =
+            Debug.log "EVENT!" msg
+    in
     case msg of
         CreateTask _ ->
             model
@@ -69,6 +74,9 @@ update model msg =
             model
 
         DeleteTask _ ->
+            model
+
+        DeleteConnection _ ->
             model
 
 
@@ -228,6 +236,7 @@ body model =
                 , onCreateConnection CreateConnection
                 , onViewTask ViewTask
                 , onDeleteTask DeleteTask
+                , onDeleteConnection DeleteConnection
                 ]
             ]
         ]

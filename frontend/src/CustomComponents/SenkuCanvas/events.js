@@ -53,3 +53,11 @@ export function ViewTaskEvent(detail) {
 export function DeleteTaskEvent(detail) {
 	return createCustomEvent("delete-task", detail);
 }
+
+/**
+ * @param {import("./types").DeleteConnectionEventDetails} detail
+ * @returns { CustomEvent<import("./types").DeleteConnectionEventDetails>}
+ */
+export function DeleteConnectionEvent(detail) {
+	return createCustomEvent("delete-connection", detail);
+}

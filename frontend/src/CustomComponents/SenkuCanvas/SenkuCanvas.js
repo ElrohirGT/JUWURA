@@ -2,6 +2,7 @@ import { clamp } from "../../Utils/math";
 import {
 	CreateConnectionEvent,
 	CreateTaskEvent,
+	DeleteConnectionEvent,
 	DeleteTaskEvent,
 	TaskChangedCoordinatesEvent,
 	ViewTaskEvent,
@@ -436,6 +437,12 @@ class SenkuCanvas extends HTMLElement {
 							!cellCoordsAreEqual(conn.end, cords),
 					);
 				} else if (coordinatesAreBetweenIndices(coordinates, 0, GRID_SIZE)) {
+					const { existingConnection, index } = findConnection(
+						state,
+						scaleCoords(state.draggedTaskOriginalCords, 2),
+						scaleCoords(coordinates, 2),
+					);
+
 					if (!newCoordinatesHaveATask) {
 						const taskData = createDefaultTask(
 							state.futureTaskIcon,
@@ -452,25 +459,36 @@ class SenkuCanvas extends HTMLElement {
 						});
 
 						this.dispatchEvent(event);
+					} else if (existingConnection) {
+						state.connections.splice(index, 1);
+						let { start, end } = existingConnection;
+						start = scaleCoords(start, 0.5);
+						end = scaleCoords(end, 0.5);
+
+						const event = DeleteConnectionEvent({
+							originTaskId: state.cells[start.row][start.column].id,
+							targetTaskId: state.cells[end.row][end.column].id,
+						});
+						this.dispatchEvent(event);
+					} else {
+						createConnectionBetweenCords(
+							state,
+							state.draggedTaskOriginalCords,
+							coordinates,
+						);
+
+						const originTaskId =
+							state.cells[state.draggedTaskOriginalCords.row][
+								state.draggedTaskOriginalCords.column
+							].id;
+						const targetTaskId =
+							state.cells[coordinates.row][coordinates.column].id;
+						const event = CreateConnectionEvent({
+							originTaskId,
+							targetTaskId,
+						});
+						this.dispatchEvent(event);
 					}
-
-					createConnectionBetweenCords(
-						state,
-						state.draggedTaskOriginalCords,
-						coordinates,
-					);
-
-					const originTaskId =
-						state.cells[state.draggedTaskOriginalCords.row][
-							state.draggedTaskOriginalCords.column
-						].id;
-					const targetTaskId =
-						state.cells[coordinates.row][coordinates.column].id;
-					const event = CreateConnectionEvent({
-						originTaskId,
-						targetTaskId,
-					});
-					this.dispatchEvent(event);
 				}
 			}
 
@@ -609,6 +627,25 @@ function createDefaultTask(icon, projectId, cellCords) {
 		progress: 0.0,
 		coordinates: cellCords,
 	};
+}
+
+/**
+ * @param {import("./types").SenkuCanvasState} state
+ * @param {import("./types").CellCoord} cordsA
+ * @param {import("./types").CellCoord} cordsB
+ * @returns {{existingConnection: import("./types").TaskConnection, index: number}}
+ */
+function findConnection(state, cordsA, cordsB) {
+	const index = state.connections.findIndex((conn) => {
+		return (
+			(cellCoordsAreEqual(conn.start, cordsA) &&
+				cellCoordsAreEqual(conn.end, cordsB)) ||
+			(cellCoordsAreEqual(conn.start, cordsB) &&
+				cellCoordsAreEqual(conn.end, cordsA))
+		);
+	});
+	const existingConnection = state.connections[index];
+	return { index, existingConnection };
 }
 
 export const SenkuCanvasComponent = {

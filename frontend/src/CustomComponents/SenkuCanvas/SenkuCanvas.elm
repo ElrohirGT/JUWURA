@@ -1,4 +1,4 @@
-module CustomComponents.SenkuCanvas.SenkuCanvas exposing (CellCoordinates, CreateConnectionEventDetail, CreateTaskEventDetail, DeleteTaskEventDetail, Model, SenkuCanvasEvent, TaskChangedCoordinatesEventDetail, ViewTaskEventDetail, init, onCreateConnection, onCreateTask, onDeleteTask, onTaskChangedCoordinates, onViewTask, view)
+module CustomComponents.SenkuCanvas.SenkuCanvas exposing (CellCoordinates, CreateConnectionEventDetail, CreateTaskEventDetail, DeleteConnectionEventDetail, DeleteTaskEventDetail, Model, SenkuCanvasEvent, TaskChangedCoordinatesEventDetail, ViewTaskEventDetail, init, onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask, view)
 
 import Html.Styled exposing (Html, node)
 import Html.Styled.Attributes exposing (attribute)
@@ -174,6 +174,32 @@ onViewTask : (ViewTaskEventDetail -> msg) -> Html.Styled.Attribute msg
 onViewTask mapper =
     on "uwu-senku:view-task"
         (senkuCanvasEventDecoder viewTaskEventDetailDecoder
+            |> Decode.map detailsMapper
+            |> Decode.map mapper
+        )
+
+
+
+-- DeleteTaskEvent
+
+
+type alias DeleteConnectionEventDetail =
+    { originTaskId : Int
+    , targetTaskId : Int
+    }
+
+
+deleteConnectionEventDetail : Decode.Decoder DeleteConnectionEventDetail
+deleteConnectionEventDetail =
+    Decode.succeed DeleteConnectionEventDetail
+        |> required "originTaskId" int
+        |> required "targetTaskId" int
+
+
+onDeleteConnection : (DeleteConnectionEventDetail -> msg) -> Html.Styled.Attribute msg
+onDeleteConnection mapper =
+    on "uwu-senku:delete-connection"
+        (senkuCanvasEventDecoder deleteConnectionEventDetail
             |> Decode.map detailsMapper
             |> Decode.map mapper
         )
