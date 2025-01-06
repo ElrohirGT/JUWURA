@@ -2,8 +2,7 @@ import "./style.css";
 import { IconComponent } from "./CustomComponents/Icon/Icon.js";
 import { SenkuCanvasComponent } from "./CustomComponents/SenkuCanvas/SenkuCanvas.js";
 import { Elm } from "./Main.elm";
-import { initializeLocalStoragePorts} from "./Ports/LocalStorage/LocalStorage.js";
-import { initializeOauthPorts} from "./Ports/Auth/Auth.js";
+import { initializeOauthPorts } from "./Ports/Auth/Auth.js";
 
 SenkuCanvasComponent.register();
 IconComponent.register();
@@ -35,4 +34,4 @@ socket.addEventListener("message", (event) => {
 // initializeLocalStoragePorts(app)
 
 // OAUTH
-initializeOauthPorts(app)
+initializeOauthPorts(app);

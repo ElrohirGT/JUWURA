@@ -56,10 +56,6 @@ type Msg
 
 update : Model -> Msg -> Model
 update model msg =
-    let
-        _ =
-            Debug.log "EVENT!" msg
-    in
     case msg of
         CreateTask _ ->
             model
@@ -92,7 +88,7 @@ view model =
 
 
 body : Model -> List (Html.Styled.Html Msg)
-body model =
+body _ =
     let
         sidebardWidthPct : Float
         sidebardWidthPct =
