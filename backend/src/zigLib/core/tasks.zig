@@ -47,14 +47,14 @@ pub const Task = struct {
     id: i32,
     parent_id: ?i32 = null,
     project_id: i32,
-    short_title: []const u8,
+    display_id: []const u8,
     icon: []const u8,
     fields: []TaskField,
 
     /// Frees all the memory associated with the task.
     /// This includes the task fields!
     pub fn deinit(self: Task, alloc: std.mem.Allocator) void {
-        alloc.free(self.short_title);
+        alloc.free(self.display_id);
         alloc.free(self.icon);
 
         for (self.fields) |field| {
@@ -66,7 +66,7 @@ pub const Task = struct {
         const id = row.get(i32, 0);
         const parent_id = row.get(?i32, 1);
         const project_id = row.get(i32, 2);
-        const short_title = try alloc.dupe(u8, row.get([]const u8, 3));
+        const display_id = try alloc.dupe(u8, row.get([]const u8, 3));
         const icon = try alloc.dupe(u8, row.get([]const u8, 4));
         const fields = &[_]TaskField{};
 
@@ -74,7 +74,7 @@ pub const Task = struct {
             .id = id,
             .project_id = project_id,
             .parent_id = parent_id,
-            .short_title = short_title,
+            .display_id = display_id,
             .icon = icon,
             .fields = fields,
         };
@@ -219,7 +219,7 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
         const short_title = std.fmt.allocPrint(alloc, "T-{d}", .{display_id}) catch unreachable;
         defer alloc.free(short_title);
 
-        const query = "INSERT INTO task (parent_id, project_id, short_title, icon) VALUES ($1, $2, $3, $4) RETURNING *";
+        const query = "INSERT INTO task (parent_id, project_id, display_id, icon) VALUES ($1, $2, $3, $4) RETURNING *";
         const params = .{ req.parent_id, req.project_id, short_title, req.icon };
         uwu_log.logInfo("Creating task in project!")
             .int("projectId", req.project_id)
@@ -256,7 +256,7 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
     uwu_log.logInfo("Task created!")
         .int("projectId", task.project_id)
         .int("parentId", task.parent_id)
-        .string("short_title", task.short_title)
+        .string("short_title", task.display_id)
         .string("icon", task.icon)
         .log();
 
@@ -266,7 +266,7 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
 pub const UpdateTaskRequest = struct {
     task_id: i32,
     parent_id: ?i32 = null,
-    short_title: []const u8,
+    display_id: []const u8,
     icon: []const u8,
 };
 pub const UpdateTaskResponse = struct { task: Task };
@@ -280,16 +280,16 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
         const query =
             \\ UPDATE task SET
             \\ parent_id = $2,
-            \\ short_title = $3,
+            \\ display_id = $3,
             \\ icon = $4
             \\ WHERE id = $1
             \\ RETURNING *
         ;
-        const params = .{ req.task_id, req.parent_id, req.short_title, req.icon };
+        const params = .{ req.task_id, req.parent_id, req.display_id, req.icon };
         uwu_log.logInfo("Updating task in project...")
             .int("task_id", req.task_id)
             .int("parent_id", req.parent_id)
-            .string("short_title", req.short_title)
+            .string("short_title", req.display_id)
             .string("icon", req.icon)
             .log();
 
@@ -306,7 +306,7 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
     uwu_log.logInfo("Task updated!")
         .int("task_id", task.id)
         .int("parent_id", task.parent_id)
-        .string("short_title", task.short_title)
+        .string("short_title", task.display_id)
         .log();
 
     return UpdateTaskResponse{ .task = task };

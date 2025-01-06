@@ -28,7 +28,7 @@ CREATE TABLE task (
     id SERIAL PRIMARY KEY,
     parent_id INTEGER REFERENCES task (id),
     project_id INTEGER REFERENCES project (id) NOT NULL,
-    short_title VARCHAR(16) NOT NULL,
+    display_id VARCHAR(16) NOT NULL,
     icon CHAR(1) NOT NULL,
     senku_row INTEGER NOT NULL DEFAULT 0,
     senku_column INTEGER NOT NULL DEFAULT 0

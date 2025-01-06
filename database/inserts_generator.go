@@ -240,7 +240,7 @@ func main() {
 
 	// Generate tasks...
 	taskCount := 10
-	fmt.Println("INSERT INTO task (project_id, parent_id, short_title, icon, senku_row, senku_column) VALUES")
+	fmt.Println("INSERT INTO task (project_id, parent_id, display_id, icon, senku_row, senku_column) VALUES")
 	for projectIdx := range projectCount {
 		for i := range taskCount {
 			projectId := projectIdx + 1

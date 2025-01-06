@@ -62,7 +62,7 @@ describe("Update Task test suite", () => {
 		const data = {
 			task_id: taskId,
 			parent_id: null,
-			short_title: "Task Title",
+			display_id: "Task Title",
 			icon: "💀",
 		};
 		const updatedTaskId = await updateTask(
@@ -85,7 +85,7 @@ describe("Update Task test suite", () => {
 		const data = {
 			task_id: taskId,
 			parent_id: parentId,
-			short_title: "Task Title",
+			display_id: "Task Title",
 			icon: "💀",
 		};
 		const updatedTaskId = await updateTask(
@@ -105,11 +105,14 @@ describe("Update Task test suite", () => {
 			{
 				// Invalid task payload
 				update_task: {
-					project_id: 0,
+					task_id: 0,
+					parent_id: null,
+					display_id: "Task Title",
+					icon: "💀",
 				},
 			},
 			"UpdateTaskError",
-		));
+		)());
 
 	test(
 		"Update task response is sent to all connected clients",
@@ -123,7 +126,7 @@ describe("Update Task test suite", () => {
 					update_task: {
 						task_id: taskId,
 						parent_id: null,
-						short_title: "SHORT TITLE",
+						display_id: "SHORT TITLE",
 						icon: "🤣",
 					},
 				},
@@ -133,7 +136,7 @@ describe("Update Task test suite", () => {
 							id: taskId,
 							icon: "🤣",
 							parent_id: null,
-							short_title: "SHORT TITLE",
+							display_id: "SHORT TITLE",
 							project_id: projectId,
 							fields: [],
 						},
@@ -180,7 +183,7 @@ describe("Create Task test suite", () => {
 				},
 			},
 			"CreateTaskError",
-		));
+		)());
 
 	test(
 		"Create task response is sent to all connected clients",
@@ -203,7 +206,7 @@ describe("Create Task test suite", () => {
 							id: expect.any(Number),
 							project_id: expect.any(Number),
 							parent_id: null,
-							short_title: expect.any(String),
+							display_id: expect.any(String),
 							icon: "😀",
 							fields: [],
 						},

@@ -92,7 +92,7 @@ export async function createTask(email, projectId, parentId, icon) {
 				id: expect.any(Number),
 				project_id: expect.any(Number),
 				parent_id: parentId,
-				short_title: expect.any(String),
+				display_id: expect.any(String),
 				icon: expect.any(String),
 				fields: [],
 			},
@@ -121,7 +121,7 @@ export async function createTask(email, projectId, parentId, icon) {
  * @property {number} id
  * @property {number} project_id
  * @property {number|null} parent_id
- * @property {string} short_title
+ * @property {string} display_id
  * @property {string} icon
  * @property {[]TaskField} fields
  */
@@ -130,7 +130,7 @@ export async function createTask(email, projectId, parentId, icon) {
  * @typedef {Object} UpdateTaskRequest
  * @property{number} task_id
  * @property{number|null} parent_id
- * @property{string} short_title
+ * @property{string} display_id
  * @property{string} icon
  */
 
@@ -167,7 +167,7 @@ export async function updateTask(email, projectId, taskData) {
 				id: taskData.task_id,
 				icon: taskData.icon,
 				parent_id: taskData.parent_id,
-				short_title: taskData.short_title,
+				display_id: taskData.display_id,
 				project_id: projectId,
 				fields: [],
 			},
