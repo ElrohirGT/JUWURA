@@ -115,14 +115,14 @@ func main() {
 	}
 
 	taskStatuses := []string{
-		"TODO",
-		"DOING",
-		"DONE",
+		fmt.Sprintf(`{"name": "%s", "color": "#d3d3d3", "isDone": false}`, "TODO"),
+		fmt.Sprintf(`{"name": "%s", "color": "#3b5083", "isDone": false}`, "DOING"),
+		fmt.Sprintf(`{"name": "%s", "color": "#4b6a37", "isDone": true}`, "DONE"),
 	}
 	taskPriorities := []string{
-		"HIGH",
-		"MEDIUM",
-		"LOW",
+		fmt.Sprintf(`{"name": "%s", "color": "#d3d3d3"}`, "LOW"),
+		fmt.Sprintf(`{"name": "%s", "color": "#c87731"}`, "MEDIUM"),
+		fmt.Sprintf(`{"name": "%s", "color": "##ca323d"}`, "HIGH"),
 	}
 	taskFieldTypes := []string{"TEXT", "DATE", "CHOICE", "NUMBER", "ASSIGNEE"}
 	defaultTaskFields := [][]string{
