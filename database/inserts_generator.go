@@ -268,25 +268,25 @@ func main() {
 				value := "NULL"
 				switch i {
 				case 0:
-					okValue := fmt.Sprintf("'%s'", from(random, taskNames))
+					okValue := fmt.Sprintf(`'"%s"'`, from(random, taskNames))
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 1:
-					okValue := fmt.Sprintf("NOW() + interval '%d day'", random.Intn(20))
+					okValue := fmt.Sprintf("to_jsonb(NOW() + interval '%d day')", random.Intn(20))
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 2:
-					okValue := fmt.Sprintf("'%s'", from(random, taskStatuses))
+					okValue := fmt.Sprintf(`'%s'`, from(random, taskStatuses))
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 3:
-					okValue := fmt.Sprintf("'%s'", from(random, taskPriorities))
+					okValue := fmt.Sprintf(`'%s'`, from(random, taskPriorities))
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 4:
-					okValue := fmt.Sprintf("%d", random.Intn(15)+1)
+					okValue := fmt.Sprintf(`'"%d"'`, random.Intn(15)+1)
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 5:
 					okValue := fmt.Sprintf("'[\"%s\"]'", from(random, membersByProject[projectIdx]))
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 6:
-					okValue := fmt.Sprintf("'%s'", "This is a test description!")
+					okValue := fmt.Sprintf(`'"%s"'`, "This is a test description!")
 					value = nullEveryPercent(random, 0.5, okValue)
 				}
 				fmt.Printf("(%d, %d, %s)", taskId, taskFieldId, value)

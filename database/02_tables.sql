@@ -65,8 +65,9 @@ COMMENT ON TABLE task_field IS
 CREATE TABLE task_field_option (
     id SERIAL PRIMARY KEY,
     task_field INTEGER REFERENCES task_field (id) NOT NULL,
-    value TEXT
+    value JSONB
 );
+CREATE INDEX task_field_option_value_idx ON task_field_option USING gin (value);
 COMMENT ON TABLE task_field_option IS
 'If a task field needs to select from multiple predefined values,
 the options to that task_field are saved here';
@@ -74,9 +75,12 @@ the options to that task_field are saved here';
 CREATE TABLE task_fields_for_task (
     task_id INTEGER REFERENCES task (id) NOT NULL,
     task_field_id INTEGER REFERENCES task_field (id) NOT NULL,
-    value TEXT,
+    value JSONB,
 
     UNIQUE (task_id, task_field_id)
+);
+CREATE INDEX task_fields_for_task_value_idx ON task_fields_for_task USING gin (
+    value
 );
 COMMENT ON TABLE task_fields_for_task IS
 'Relates all the custom task fields to a task';
