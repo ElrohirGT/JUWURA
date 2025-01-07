@@ -45,6 +45,10 @@ pub fn build(b: *std.Build) void {
     main_exe.root_module.addImport("zap", zap_dep.module("zap"));
     lib.root_module.addImport("zap", zap_dep.module("zap"));
 
+    const jwt_dep = b.dependency("zig-jwt", .{ .target = target, .optimize = optimize });
+    main_exe.root_module.addImport("jwt", jwt_dep.module("jwt"));
+    lib.root_module.addImport("jwt", jwt_dep.module("jwt"));
+
     const pg_dep = b.dependency("pg", .{ .target = target, .optimize = optimize });
     main_exe.root_module.addImport("pg", pg_dep.module("pg"));
     lib.root_module.addImport("pg", pg_dep.module("pg"));
