@@ -58,14 +58,24 @@ export async function editTaskField(
  * @param {number} projectId - The id of the project
  * @param {number|null} parentId - The ID of the parent task
  * @param {string} icon - The task type
+ * @param {number} row - The 0 index row of the senku canvas
+ * @param {number} column - The 0 index column of the senku canvas
  * @returns {Promise<number>} The created task id
  */
-export async function createTask(email, projectId, parentId, icon) {
+export async function createTask(
+	email,
+	projectId,
+	parentId,
+	icon,
+	row,
+	column,
+) {
 	const payload = {
 		create_task: {
 			project_id: projectId,
 			parent_id: parentId,
 			icon,
+			cords: { row, column },
 		},
 	};
 

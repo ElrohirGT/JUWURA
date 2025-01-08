@@ -4,6 +4,7 @@ const pg = @import("pg");
 const uwu_lib = @import("../root.zig");
 const uwu_log = uwu_lib.log;
 const uwu_db = uwu_lib.db;
+const uwu_senku = uwu_lib.core.senku;
 
 pub const Errors = error{
     CreateTaskError,
@@ -42,6 +43,7 @@ pub const TaskField = struct {
         };
     }
 };
+
 /// Container for all task data.
 pub const Task = struct {
     id: i32,
@@ -169,6 +171,7 @@ pub const CreateTaskRequest = struct {
     project_id: i32,
     parent_id: ?i32 = null,
     icon: []const u8,
+    cords: uwu_senku.CellCoordinates,
 };
 pub const CreateTaskResponse = struct { task: Task };
 pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequest) !CreateTaskResponse {
@@ -219,13 +222,15 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
         const short_title = std.fmt.allocPrint(alloc, "T-{d}", .{display_id}) catch unreachable;
         defer alloc.free(short_title);
 
-        const query = "INSERT INTO task (parent_id, project_id, display_id, icon) VALUES ($1, $2, $3, $4) RETURNING *";
-        const params = .{ req.parent_id, req.project_id, short_title, req.icon };
+        const query = "INSERT INTO task (parent_id, project_id, display_id, icon, senku_row, senku_column) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
+        const params = .{ req.parent_id, req.project_id, short_title, req.icon, req.cords.row, req.cords.column };
         uwu_log.logInfo("Creating task in project!")
             .int("projectId", req.project_id)
             .int("parentId", req.parent_id)
             .string("short_title", short_title)
             .string("icon", req.icon)
+            .int("row", req.cords.row)
+            .int("column", req.cords.column)
             .log();
 
         var dataRow = conn.row(query, params) catch |err| {
