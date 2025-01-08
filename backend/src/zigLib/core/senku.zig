@@ -53,7 +53,8 @@ const Cell = struct {
 
 const TaskConnection = struct { start: CellCoordinates, end: CellCoordinates };
 
-pub const SenkuState = struct { state: [][]?Cell, connections: []TaskConnection };
+pub const GRID_SIZE = 10;
+pub const SenkuState = struct { cells: [][]?Cell, connections: []TaskConnection };
 
 pub const GetSenkuStateRequest = struct { project_id: i32 };
 pub const GetSenkuStateResponse = struct { state: SenkuState };
@@ -64,7 +65,7 @@ pub fn get_senku_state(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetSenkuSt
     uwu_log.logInfo("Connection aquired!").log();
 
     uwu_log.logInfo("Getting tasks from DB...");
-    var tasks: []Cell = get_tasks_block: {
+    const tasks: []Cell = get_tasks_block: {
         const params = .{req.project_id};
         const query =
             \\ select 
@@ -182,10 +183,68 @@ pub fn get_senku_state(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetSenkuSt
 
         break :get_tasks_block tasks.toOwnedSlice() catch unreachable;
     };
-    // FIXME: defer freeing of tasks!
+
+    const cells = [GRID_SIZE][GRID_SIZE]?Cell{};
+    for (tasks) |task| {
+        const cords = task.coordinates;
+        cells[cords.row][cords.column] = task;
+    }
 
     uwu_log.logInfo("Got epic tasks from DB!").int("count", tasks.len).log();
 
     uwu_log.logInfo("Getting task connections...");
-    // TODO: Get task connections
+    const connections: []TaskConnection = get_connections_block: {
+        const params = .{req.project_id};
+        const query =
+            \\select 
+            \\	t1.senku_row as t1_row,
+            \\	t1.senku_column as t1_column,
+            \\	t2.senku_row as t2_row,
+            \\	t2.senku_column as t2_column
+            \\from
+            \\	task_connection tc
+            \\inner join task t1 on
+            \\	t1.id = tc.target_task
+            \\inner join task t2 on
+            \\	t2.id = tc.unblocked_task
+            \\where
+            \\	t2.project_id = $1
+            \\	and t1.project_id = $1
+        ;
+
+        uwu_log.logInfo("Getting task connections from DB...").int("project_id", req.project_id).log();
+
+        var result = conn.query(query, params) catch |err| {
+            var l = uwu_log.logErr("Error getting task connections!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            return error.DBQueryError;
+        };
+        defer result.deinit();
+
+        var connections = std.ArrayList(TaskConnection).init(alloc);
+        while (try result.next() catch |err| {
+            var l = uwu_log.logErr("Error while iterating to next task connection!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            return error.DBQueryError;
+        }) |row| {
+            const connection = TaskConnection.fromDBRow(alloc, row) catch |err| {
+                var l = uwu_log.logErr("Error when parsing from DB result to struct!").src(@src());
+                uwu_db.logPgError(l, err, conn);
+                l.log();
+
+                return error.DBQueryError;
+            };
+            connections.append(connection);
+        }
+        defer connections.deinit();
+
+        break :get_connections_block connections.toOwnedSlice() catch unreachable;
+    };
+
+    const state: SenkuState = .{ .state = cells, .connections = connections };
+    return state;
 }
