@@ -250,7 +250,9 @@ func main() {
 			}
 			shortTitle := fmt.Sprintf("T-%d", i+1)
 			icon := from(random, emojis)
-			fmt.Printf("(%d, %s, '%s', '%s', DEFAULT, DEFAULT)", projectId, parentId, shortTitle, icon)
+			row := random.Intn(10)
+			column := random.Intn(10)
+			fmt.Printf("(%d, %s, '%s', '%s', %d, %d)", projectId, parentId, shortTitle, icon, row, column)
 
 			endInserts((projectIdx+1)*(i+1)-1, projectCount*taskCount)
 		}
