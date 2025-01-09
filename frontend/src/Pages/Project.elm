@@ -1,4 +1,4 @@
-module Pages.Project exposing (Model, Msg, init, update, view)
+module Pages.Project exposing (Model, Msg, init, subscriptions, update, view)
 
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
@@ -6,6 +6,8 @@ import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreat
 import Html.Styled exposing (button, div, text)
 import Html.Styled.Attributes exposing (css, id)
 import Html.Styled.Events exposing (onClick)
+import Json.Decode as Decode
+import Ports.Ws.Ws as WsPort
 import Theme exposing (cssColors, cssFontSizes, cssSpacing, spacing)
 import Utils exposing (viteAsset)
 
@@ -15,13 +17,15 @@ import Utils exposing (viteAsset)
 
 
 type Model
-    = SenkuView
+    = Connecting
+    | WSConnectionFailed
+    | SenkuView
     | TableView
 
 
-init : Model
+init : ( Model, Cmd msg )
 init =
-    SenkuView
+    ( Connecting, WsPort.sendMessage (WsPort.Connect { projectId = 1, email = "correo1@gmail.com" }) )
 
 
 
@@ -37,34 +41,51 @@ type Msg
     | DeleteConnection SenkuCanvas.DeleteConnectionEventDetail
     | GoToBacklog
     | GoToOverview
+    | WSMessage (Result Decode.Error WsPort.WSResponses)
 
 
-update : Model -> Msg -> Model
+update : Model -> Msg -> ( Model, Cmd Msg )
 update model msg =
+    let
+        _ =
+            Debug.log "inner update" msg
+    in
     case msg of
+        WSMessage _ ->
+            ( TableView, Cmd.none )
+
         GoToBacklog ->
-            TableView
+            ( TableView, Cmd.none )
 
         GoToOverview ->
-            SenkuView
+            ( SenkuView, Cmd.none )
 
         CreateTask _ ->
-            model
+            ( model, Cmd.none )
 
         TaskChangedCoords _ ->
-            model
+            ( model, Cmd.none )
 
         CreateConnection _ ->
-            model
+            ( model, Cmd.none )
 
         ViewTask _ ->
-            model
+            ( model, Cmd.none )
 
         DeleteTask _ ->
-            model
+            ( model, Cmd.none )
 
         DeleteConnection _ ->
-            model
+            ( model, Cmd.none )
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    WsPort.onMessage WSMessage
 
 
 
