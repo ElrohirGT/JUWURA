@@ -94,8 +94,8 @@ update model msg =
         CreateTask info ->
             ( model, WsPort.sendMessage (WsPort.CreateTaskRequest info) )
 
-        TaskChangedCoords _ ->
-            ( model, Cmd.none )
+        TaskChangedCoords info ->
+            ( model, WsPort.sendMessage (WsPort.TaskChangedCordsRequest info) )
 
         CreateConnection _ ->
             ( model, Cmd.none )

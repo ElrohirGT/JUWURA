@@ -15,6 +15,7 @@ type WSRequests
         }
     | GetSenkuStateRequest { projectId : Int }
     | CreateTaskRequest SenkuCanvas.CreateTaskEventDetail
+    | TaskChangedCordsRequest SenkuCanvas.TaskChangedCoordinatesEventDetail
 
 
 type WSResponses
@@ -109,6 +110,21 @@ wsPortMessagesEncoder value =
                                 , ( "parent_id", maybeEncoder Encode.int payload.parentId )
                                 , ( "icon", Encode.string payload.icon )
                                 , ( "cords", SenkuCanvas.cellCoordinatesEncoder payload.cords )
+                                ]
+                          )
+                        ]
+                  )
+                ]
+
+        TaskChangedCordsRequest payload ->
+            Encode.object
+                [ ( "type", Encode.string "TASK_CHANGED_CORDS_REQUEST" )
+                , ( "payload"
+                  , Encode.object
+                        [ ( "change_task_cords"
+                          , Encode.object
+                                [ ( "task_id", Encode.int payload.taskId )
+                                , ( "cords", SenkuCanvas.cellCoordinatesEncoder payload.coordinates )
                                 ]
                           )
                         ]
