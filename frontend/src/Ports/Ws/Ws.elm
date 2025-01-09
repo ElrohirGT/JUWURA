@@ -1,7 +1,7 @@
 port module Ports.Ws.Ws exposing (WSRequests(..), WSResponses(..), onMessage, sendMessage)
 
 import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas
-import Json.Decode as Decode exposing (int, null, string)
+import Json.Decode as Decode exposing (null, string)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
 

@@ -1,8 +1,8 @@
-module Pages.Project exposing (Model, Msg, init, subscriptions, update, view)
+module Pages.Project exposing (Model, Msg, PageState, init, subscriptions, update, view)
 
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
-import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (CellCoordinates, onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask)
+import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask)
 import Html.Styled exposing (button, div, pre, text)
 import Html.Styled.Attributes exposing (css, id)
 import Html.Styled.Events exposing (onClick)
@@ -61,10 +61,6 @@ type Msg
 
 update : Model -> Msg -> ( Model, Cmd Msg )
 update model msg =
-    let
-        _ =
-            Debug.log "inner update" msg
-    in
     case msg of
         WSMessage result ->
             case result of

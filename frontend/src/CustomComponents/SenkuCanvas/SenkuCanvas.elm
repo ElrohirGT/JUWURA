@@ -1,4 +1,4 @@
-module CustomComponents.SenkuCanvas.SenkuCanvas exposing (CellCoordinates, CreateConnectionEventDetail, CreateTaskEventDetail, DeleteConnectionEventDetail, DeleteTaskEventDetail, Model, SenkuCanvasEvent, SenkuState, TaskChangedCoordinatesEventDetail, ViewTaskEventDetail, init, onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask, senkuStateDecoder, view)
+module CustomComponents.SenkuCanvas.SenkuCanvas exposing (Cell, CellConnection, CellCoordinates, CreateConnectionEventDetail, CreateTaskEventDetail, DeleteConnectionEventDetail, DeleteTaskEventDetail, Model, SenkuCanvasEvent, SenkuState, TaskChangedCoordinatesEventDetail, ViewTaskEventDetail, init, onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask, senkuStateDecoder, view)
 
 import Html.Styled exposing (Html, node)
 import Html.Styled.Attributes exposing (attribute)
