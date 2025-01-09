@@ -1,4 +1,4 @@
-module CustomComponents.SenkuCanvas.SenkuCanvas exposing (Cell, CellConnection, CellCoordinates, CreateConnectionEventDetail, CreateTaskEventDetail, DeleteConnectionEventDetail, DeleteTaskEventDetail, Model, SenkuCanvasEvent, SenkuState, TaskChangedCoordinatesEventDetail, ViewTaskEventDetail, init, onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask, senkuStateDecoder, view)
+module CustomComponents.SenkuCanvas.SenkuCanvas exposing (Cell, CellConnection, CellCoordinates, CreateConnectionEventDetail, CreateTaskEventDetail, DeleteConnectionEventDetail, DeleteTaskEventDetail, Model, SenkuCanvasEvent, SenkuState, TaskChangedCoordinatesEventDetail, ViewTaskEventDetail, cellCoordinatesEncoder, init, onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask, senkuStateDecoder, view)
 
 import Html.Styled exposing (Html, node)
 import Html.Styled.Attributes exposing (attribute)
@@ -6,6 +6,7 @@ import Html.Styled.Events exposing (on)
 import Json.Decode as Decode exposing (float, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
+import Utils exposing (maybeEncoder)
 
 
 
@@ -109,16 +110,6 @@ senkuStateDecoder =
         |> required "connections" (list cellConnectionDecoder)
 
 
-maybeEncoder : (a -> Encode.Value) -> Maybe a -> Encode.Value
-maybeEncoder encoder value =
-    case value of
-        Just a ->
-            encoder a
-
-        Nothing ->
-            Encode.null
-
-
 cellEncoder : Cell -> Encode.Value
 cellEncoder cell =
     Encode.object
@@ -164,6 +155,7 @@ type alias CreateTaskEventDetail =
     { parentId : Maybe Int
     , projectId : Int
     , icon : String
+    , cords : CellCoordinates
     }
 
 
@@ -173,6 +165,7 @@ createTaskDetailDecoder =
         |> required "parent_id" (nullable int)
         |> required "project_id" int
         |> required "icon" string
+        |> required "cords" cellCoordinatesDecoder
 
 
 onCreateTask : (CreateTaskEventDetail -> msg) -> Html.Styled.Attribute msg

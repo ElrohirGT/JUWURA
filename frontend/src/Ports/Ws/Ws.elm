@@ -1,9 +1,11 @@
 port module Ports.Ws.Ws exposing (WSRequests(..), WSResponses(..), onMessage, sendMessage)
 
 import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas
+import Data.Task exposing (Task, taskDecoder)
 import Json.Decode as Decode exposing (null, string)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
+import Utils exposing (maybeEncoder)
 
 
 type WSRequests
@@ -11,13 +13,15 @@ type WSRequests
         { projectId : Int
         , email : String
         }
-    | GetSenkuState { projectId : Int }
+    | GetSenkuStateRequest { projectId : Int }
+    | CreateTaskRequest SenkuCanvas.CreateTaskEventDetail
 
 
 type WSResponses
     = UserConnectedResponse String
     | ConnectionErrorResponse
     | GetSenkuStateResponse SenkuCanvas.SenkuState
+    | CreateTaskResponse Task
 
 
 userConnectedResponseDecoder : Decode.Decoder WSResponses
@@ -45,12 +49,29 @@ unit v =
 getSenkuStateResponseDecoder : Decode.Decoder WSResponses
 getSenkuStateResponseDecoder =
     Decode.succeed GetSenkuStateResponse
-        |> required "get_senku_state" (Decode.succeed unit |> required "state" SenkuCanvas.senkuStateDecoder)
+        |> required "get_senku_state"
+            (Decode.succeed unit
+                |> required "state" SenkuCanvas.senkuStateDecoder
+            )
+
+
+createTaskResponseDecoder : Decode.Decoder WSResponses
+createTaskResponseDecoder =
+    Decode.succeed CreateTaskResponse
+        |> required "create_task"
+            (Decode.succeed unit
+                |> required "task" taskDecoder
+            )
 
 
 wsPortResponsesDecoder : Decode.Decoder WSResponses
 wsPortResponsesDecoder =
-    Decode.oneOf [ userConnectedResponseDecoder, connectionErrorResponseDecoder, getSenkuStateResponseDecoder ]
+    Decode.oneOf
+        [ userConnectedResponseDecoder
+        , connectionErrorResponseDecoder
+        , getSenkuStateResponseDecoder
+        , createTaskResponseDecoder
+        ]
 
 
 wsPortMessagesEncoder : WSRequests -> Encode.Value
@@ -63,7 +84,7 @@ wsPortMessagesEncoder value =
                 , ( "email", Encode.string payload.email )
                 ]
 
-        GetSenkuState payload ->
+        GetSenkuStateRequest payload ->
             Encode.object
                 [ ( "type", Encode.string "GET_SENKU_STATE" )
                 , ( "payload"
@@ -71,6 +92,23 @@ wsPortMessagesEncoder value =
                         [ ( "get_senku_state"
                           , Encode.object
                                 [ ( "project_id", Encode.int payload.projectId )
+                                ]
+                          )
+                        ]
+                  )
+                ]
+
+        CreateTaskRequest payload ->
+            Encode.object
+                [ ( "type", Encode.string "CREATE_TASK_REQUEST" )
+                , ( "payload"
+                  , Encode.object
+                        [ ( "create_task"
+                          , Encode.object
+                                [ ( "project_id", Encode.int payload.projectId )
+                                , ( "parent_id", maybeEncoder Encode.int payload.parentId )
+                                , ( "icon", Encode.string payload.icon )
+                                , ( "cords", SenkuCanvas.cellCoordinatesEncoder payload.cords )
                                 ]
                           )
                         ]

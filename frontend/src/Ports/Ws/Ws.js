@@ -53,7 +53,7 @@ export function initializeWsPorts(app) {
 						}
 					});
 				} catch (err) {}
-			} else if (message.type === "GET_SENKU_STATE") {
+			} else {
 				socket.send(JSON.stringify(message.payload));
 			}
 		},

@@ -79,6 +79,9 @@ update model msg =
                             else
                                 ( model, Cmd.none )
 
+                        WsPort.CreateTaskResponse _ ->
+                            ( model, WsPort.sendMessage (WsPort.GetSenkuStateRequest { projectId = model.projectId }) )
+
                 Err error ->
                     ( { model | state = WSParsingError error }, Cmd.none )
 
@@ -86,10 +89,10 @@ update model msg =
             ( { model | state = TableView }, Cmd.none )
 
         GoToOverview ->
-            ( { model | state = Loading }, WsPort.sendMessage (WsPort.GetSenkuState { projectId = model.projectId }) )
+            ( { model | state = Loading }, WsPort.sendMessage (WsPort.GetSenkuStateRequest { projectId = model.projectId }) )
 
-        CreateTask _ ->
-            ( model, Cmd.none )
+        CreateTask info ->
+            ( model, WsPort.sendMessage (WsPort.CreateTaskRequest info) )
 
         TaskChangedCoords _ ->
             ( model, Cmd.none )

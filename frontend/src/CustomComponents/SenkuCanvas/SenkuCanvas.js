@@ -371,6 +371,7 @@ class SenkuCanvas extends HTMLElement {
 					project_id: state.projectId,
 					parent_id: null,
 					icon,
+					cords: cellCords,
 				});
 				this.dispatchEvent(event);
 			} else if (clickedOnATask) {
@@ -496,6 +497,7 @@ class SenkuCanvas extends HTMLElement {
 							project_id: state.projectId,
 							parent_id: null,
 							icon: taskData.icon,
+							cords: coordinates,
 						});
 
 						this.dispatchEvent(event);
