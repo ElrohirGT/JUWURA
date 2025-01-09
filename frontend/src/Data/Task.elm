@@ -1,4 +1,4 @@
-module Data.Task exposing (..)
+module Data.Task exposing (Task, TaskField, taskDecoder)
 
 import Json.Decode as Decode exposing (int, list, nullable, string)
 import Json.Decode.Pipeline exposing (required)
