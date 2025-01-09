@@ -7,6 +7,7 @@ import Html.Styled exposing (button, div, pre, text)
 import Html.Styled.Attributes exposing (css, id)
 import Html.Styled.Events exposing (onClick)
 import Json.Decode as Decode
+import Platform.Cmd as Cmd
 import Ports.Ws.Ws as WsPort
 import Theme exposing (cssColors, cssFontSizes, cssSpacing, spacing)
 import Utils exposing (viteAsset)
@@ -27,6 +28,7 @@ type PageState
 
 type alias Model =
     { projectId : Int
+    , email : String
     , state : PageState
     }
 
@@ -34,6 +36,7 @@ type alias Model =
 init : Int -> String -> ( Model, Cmd msg )
 init projectId email =
     ( { projectId = projectId
+      , email = email
       , state = WSConnecting
       }
     , WsPort.sendMessage (WsPort.ConnectRequest { projectId = projectId, email = email })
@@ -73,8 +76,12 @@ update model msg =
                         WsPort.GetSenkuStateResponse state ->
                             ( { model | state = SenkuView state }, Cmd.none )
 
-                        _ ->
-                            ( model, Cmd.none )
+                        WsPort.UserConnectedResponse email ->
+                            if email == model.email then
+                                ( { model | state = TableView }, Cmd.none )
+
+                            else
+                                ( model, Cmd.none )
 
                 Err error ->
                     ( { model | state = WSParsingError error }, Cmd.none )
