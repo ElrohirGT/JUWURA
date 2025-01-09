@@ -19,6 +19,9 @@ export function initializeWsPorts(app) {
 	/** @type {string|WebSocket}*/
 	let socket = "UNITILIAZED WEB SOCKET";
 
+	/**
+	* @param {{data: string}} event
+	*/
 	const sendDataToElm = (event) => {
 		console.log("RECEIVED MSG FROM WESOCKET:", event.data);
 		app.ports.wsMessageReceiver.send(event.data);
@@ -44,7 +47,9 @@ export function initializeWsPorts(app) {
 					socket.addEventListener("error", () => {
 						if (socket.readyState === 3) {
 							console.error("CANT ESTABLISH CONNECTION!");
-							sendDataToElm({ data: { connection_error: 0 } });
+							sendDataToElm({
+								data: JSON.stringify({ connection_error: null }),
+							});
 						}
 					});
 				} catch (err) {}

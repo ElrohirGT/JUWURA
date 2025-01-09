@@ -3,7 +3,7 @@ module Pages.Project exposing (Model, Msg, init, subscriptions, update, view)
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
 import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask)
-import Html.Styled exposing (button, div, h1, pre, text)
+import Html.Styled exposing (button, div, pre, text)
 import Html.Styled.Attributes exposing (css, id)
 import Html.Styled.Events exposing (onClick)
 import Json.Decode as Decode
@@ -17,7 +17,8 @@ import Utils exposing (viteAsset)
 
 
 type PageState
-    = Connecting
+    = WSConnecting
+    | WSConnectionError
     | WSParsingError Decode.Error
     | SenkuView
     | TableView
@@ -31,10 +32,11 @@ type alias Model =
 
 init : Int -> String -> ( Model, Cmd msg )
 init projectId email =
-    ( {
-    projectId = projectId
-    ,state = Connecting
-    }, WsPort.sendMessage (WsPort.Connect { projectId = 1, email = email }) )
+    ( { projectId = projectId
+      , state = WSConnecting
+      }
+    , WsPort.sendMessage (WsPort.Connect { projectId = 1, email = email })
+    )
 
 
 
@@ -63,16 +65,21 @@ update model msg =
         WSMessage result ->
             case result of
                 Ok response ->
-                    ( model , Cmd.none )
+                    case response of
+                        WsPort.ConnectionError _ ->
+                            ( { model | state = WSConnectionError }, Cmd.none )
+
+                        _ ->
+                            ( model, Cmd.none )
 
                 Err error ->
-                    ( {model | state =WSParsingError error}, Cmd.none )
+                    ( { model | state = WSParsingError error }, Cmd.none )
 
         GoToBacklog ->
-            ( {model | state =TableView}, Cmd.none )
+            ( { model | state = TableView }, Cmd.none )
 
         GoToOverview ->
-            ( {model | state =SenkuView}, WsPort.sendMessage (WsPort.GetSenkuState { projectId = 1 }) )
+            ( { model | state = SenkuView }, WsPort.sendMessage (WsPort.GetSenkuState { projectId = 1 }) )
 
         CreateTask _ ->
             ( model, Cmd.none )
@@ -179,6 +186,11 @@ body model =
                         , onDeleteTask DeleteTask
                         , onDeleteConnection DeleteConnection
                         ]
+                    ]
+
+                WSConnectionError ->
+                    [ pre [ css [ color Theme.cssColors.white_50 ] ]
+                        [ text "An error ocurred connecting to the websocket!" ]
                     ]
 
                 WSParsingError err ->

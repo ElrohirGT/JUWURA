@@ -1,6 +1,6 @@
 port module Ports.Ws.Ws exposing (WSRequests(..), WSResponses(..), onMessage, sendMessage)
 
-import Json.Decode as Decode exposing (string)
+import Json.Decode as Decode exposing (int, null, string)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
 
@@ -15,6 +15,7 @@ type WSRequests
 
 type WSResponses
     = UserConnected String
+    | ConnectionError ()
 
 
 userConnectedResponseDecoder : Decode.Decoder WSResponses
@@ -23,9 +24,15 @@ userConnectedResponseDecoder =
         |> required "user_connected" string
 
 
+connectionErrorResponseDecoder : Decode.Decoder WSResponses
+connectionErrorResponseDecoder =
+    Decode.succeed ConnectionError
+        |> required "connection_error" (null ())
+
+
 wsPortResponsesDecoder : Decode.Decoder WSResponses
 wsPortResponsesDecoder =
-    Decode.oneOf [ userConnectedResponseDecoder ]
+    Decode.oneOf [ userConnectedResponseDecoder, connectionErrorResponseDecoder ]
 
 
 wsPortMessagesEncoder : WSRequests -> Encode.Value
