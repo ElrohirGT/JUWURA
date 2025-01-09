@@ -6,7 +6,13 @@
  */
 
 /**
- * @typedef {ElmWSConnectMessage} ElmWSMessage
+ * @typedef {Object} ElmWSGetSenkuStateMessage
+ * @property {"GET_SENKU_STATE"} type
+ * @property {{get_senku_state: {project_id: number}}} payload
+ */
+
+/**
+ * @typedef {ElmWSConnectMessage|ElmWSGetSenkuStateMessage} ElmWSMessage
  */
 
 export function initializeWsPorts(app) {
@@ -16,6 +22,7 @@ export function initializeWsPorts(app) {
 	const sendDataToElm = (event) => {
 		console.log("RECEIVED MSG FROM WESOCKET:", event.data);
 		app.ports.wsMessageReceiver.send(event.data);
+		// app.ports.wsMessageReceiver.send(JSON.stringify({ hello: "INVALID!" }));
 	};
 
 	app.ports.wsSendMessage.subscribe(
@@ -31,8 +38,18 @@ export function initializeWsPorts(app) {
 
 				const url = `${import.meta.env.VITE_BACKEND_URL}?email=${message.email}&projectId=${message.projectId}`;
 				console.log("Trying to connect to url:", url);
-				socket = new WebSocket(url);
-				socket.addEventListener("message", sendDataToElm);
+				try {
+					socket = new WebSocket(url);
+					socket.addEventListener("message", sendDataToElm);
+					socket.addEventListener("error", () => {
+						if (socket.readyState === 3) {
+							console.error("CANT ESTABLISH CONNECTION!");
+							sendDataToElm({ data: { connection_error: 0 } });
+						}
+					});
+				} catch (err) {}
+			} else if (message.type === "GET_SENKU_STATE") {
+				socket.send(message.payload);
 			}
 		},
 	);

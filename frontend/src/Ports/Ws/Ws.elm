@@ -10,6 +10,7 @@ type WSRequests
         { projectId : Int
         , email : String
         }
+    | GetSenkuState { projectId : Int }
 
 
 type WSResponses
@@ -32,9 +33,23 @@ wsPortMessagesEncoder value =
     case value of
         Connect payload ->
             Encode.object
-                [ ( "projectId", Encode.int payload.projectId )
+                [ ( "type", Encode.string "CONNECT" )
+                , ( "projectId", Encode.int payload.projectId )
                 , ( "email", Encode.string payload.email )
-                , ( "type", Encode.string "CONNECT" )
+                ]
+
+        GetSenkuState payload ->
+            Encode.object
+                [ ( "type", Encode.string "GET_SENKU_STATE" )
+                , ( "payload"
+                  , Encode.object
+                        [ ( "get_senku_state"
+                          , Encode.object
+                                [ ( "project_id", Encode.int payload.projectId )
+                                ]
+                          )
+                        ]
+                  )
                 ]
 
 

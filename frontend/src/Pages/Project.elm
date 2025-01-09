@@ -3,7 +3,7 @@ module Pages.Project exposing (Model, Msg, init, subscriptions, update, view)
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
 import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask)
-import Html.Styled exposing (button, div, text)
+import Html.Styled exposing (button, div, h1, pre, text)
 import Html.Styled.Attributes exposing (css, id)
 import Html.Styled.Events exposing (onClick)
 import Json.Decode as Decode
@@ -18,7 +18,7 @@ import Utils exposing (viteAsset)
 
 type Model
     = Connecting
-    | WSConnectionFailed
+    | WSParsingError Decode.Error
     | SenkuView
     | TableView
 
@@ -51,8 +51,13 @@ update model msg =
             Debug.log "inner update" msg
     in
     case msg of
-        WSMessage _ ->
-            ( TableView, Cmd.none )
+        WSMessage result ->
+            case result of
+                Ok response ->
+                    ( TableView, Cmd.none )
+
+                Err error ->
+                    ( WSParsingError error, Cmd.none )
 
         GoToBacklog ->
             ( TableView, Cmd.none )
@@ -153,6 +158,27 @@ body model =
                    , borderWidth (px 1)
                    , color cssColors.white_50
                    ]
+
+        mainContent =
+            case model of
+                SenkuView ->
+                    [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct))
+                        [ onCreateTask CreateTask
+                        , onTaskChangedCoordinates TaskChangedCoords
+                        , onCreateConnection CreateConnection
+                        , onViewTask ViewTask
+                        , onDeleteTask DeleteTask
+                        , onDeleteConnection DeleteConnection
+                        ]
+                    ]
+
+                WSParsingError err ->
+                    [ pre [ css [ color Theme.cssColors.white_50 ] ]
+                        [ text (String.join "\n" [ "Parsing websocket message error:", Decode.errorToString err ]) ]
+                    ]
+
+                _ ->
+                    []
     in
     [ div
         [ css
@@ -255,20 +281,6 @@ body model =
             ]
             []
         , -- Main Content
-          div [ css [ paddingLeft (vw sidebardWidthPct) ] ]
-            (if model == SenkuView then
-                [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct))
-                    [ onCreateTask CreateTask
-                    , onTaskChangedCoordinates TaskChangedCoords
-                    , onCreateConnection CreateConnection
-                    , onViewTask ViewTask
-                    , onDeleteTask DeleteTask
-                    , onDeleteConnection DeleteConnection
-                    ]
-                ]
-
-             else
-                []
-            )
+          div [ css [ paddingLeft (vw sidebardWidthPct) ] ] mainContent
         ]
     ]
