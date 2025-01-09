@@ -237,6 +237,7 @@ class SenkuCanvas extends HTMLElement {
 	 */
 	attributeChangedCallback(name, oldValue, newValue) {
 		console.log(`Attribute ${name} has changed. ${oldValue} -> ${newValue}`);
+		this.initState();
 	}
 
 	initState() {
@@ -247,7 +248,24 @@ class SenkuCanvas extends HTMLElement {
 			const state = JSON.parse(attributeState);
 			this.senkuState = genDefaultState(
 				projectId,
-				state.cells,
+				state.cells.map((row) => {
+					return row.map((c) => {
+						// console.log("Parsing:", c);
+						return c
+							? {
+									id: c.id,
+									due_date: c.due_date
+										? Date.parse(JSON.parse(c.due_date))
+										: null,
+									title: c.title ? JSON.parse(c.title) : null,
+									status: c.status ? JSON.parse(c.status) : null,
+									icon: c.icon,
+									progress: JSON.parse(c.progress),
+									coordinates: c.coordinates,
+								}
+							: null;
+					});
+				}),
 				state.connections.map((c) => ({
 					start: scaleCoords(c.start, 2),
 					end: scaleCoords(c.end, 2),
