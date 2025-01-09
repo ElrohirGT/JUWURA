@@ -66,7 +66,7 @@ update model msg =
             case result of
                 Ok response ->
                     case response of
-                        WsPort.ConnectionErrorResponse _ ->
+                        WsPort.ConnectionErrorResponse ->
                             ( { model | state = WSConnectionError }, Cmd.none )
 
                         WsPort.GetSenkuStateResponse state ->
@@ -182,6 +182,7 @@ body model =
                    , color cssColors.white_50
                    ]
 
+        mainContentTopBar : Html.Styled.Html Msg
         mainContentTopBar =
             case model.state of
                 SenkuView _ ->
@@ -265,6 +266,7 @@ body model =
                             ]
                         ]
 
+        mainContent : List (Html.Styled.Html Msg)
         mainContent =
             case model.state of
                 SenkuView state ->

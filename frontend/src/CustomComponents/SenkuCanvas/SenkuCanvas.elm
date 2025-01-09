@@ -37,12 +37,14 @@ type alias CellCoordinates =
     }
 
 
+cellCoordinatesDecoder : Decode.Decoder CellCoordinates
 cellCoordinatesDecoder =
     Decode.succeed CellCoordinates
         |> required "row" int
         |> required "column" int
 
 
+cellCoordinatesEncoder : CellCoordinates -> Encode.Value
 cellCoordinatesEncoder value =
     Encode.object
         [ ( "row", Encode.int value.row )
@@ -56,12 +58,14 @@ type alias CellConnection =
     }
 
 
+cellConnectionDecoder : Decode.Decoder CellConnection
 cellConnectionDecoder =
     Decode.succeed CellConnection
         |> required "start" cellCoordinatesDecoder
         |> required "end" cellCoordinatesDecoder
 
 
+cellConnectionEncoder : CellConnection -> Encode.Value
 cellConnectionEncoder value =
     Encode.object
         [ ( "start", cellCoordinatesEncoder value.start )
@@ -80,6 +84,7 @@ type alias Cell =
     }
 
 
+cellDecoder : Decode.Decoder Cell
 cellDecoder =
     Decode.succeed Cell
         |> required "id" int
@@ -97,12 +102,14 @@ type alias SenkuState =
     }
 
 
+senkuStateDecoder : Decode.Decoder SenkuState
 senkuStateDecoder =
     Decode.succeed SenkuState
         |> required "cells" (list (list (nullable cellDecoder)))
         |> required "connections" (list cellConnectionDecoder)
 
 
+maybeEncoder : (a -> Encode.Value) -> Maybe a -> Encode.Value
 maybeEncoder encoder value =
     case value of
         Just a ->

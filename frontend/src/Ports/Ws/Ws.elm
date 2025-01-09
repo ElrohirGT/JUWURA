@@ -16,7 +16,7 @@ type WSRequests
 
 type WSResponses
     = UserConnectedResponse String
-    | ConnectionErrorResponse ()
+    | ConnectionErrorResponse
     | GetSenkuStateResponse SenkuCanvas.SenkuState
 
 
@@ -28,10 +28,16 @@ userConnectedResponseDecoder =
 
 connectionErrorResponseDecoder : Decode.Decoder WSResponses
 connectionErrorResponseDecoder =
-    Decode.succeed ConnectionErrorResponse
+    let
+        toDecoder : a -> WSResponses
+        toDecoder _ =
+            ConnectionErrorResponse
+    in
+    Decode.succeed toDecoder
         |> required "connection_error" (null ())
 
 
+unit : a -> a
 unit v =
     v
 
