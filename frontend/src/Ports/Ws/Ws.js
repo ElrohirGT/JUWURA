@@ -20,8 +20,8 @@ export function initializeWsPorts(app) {
 	let socket = "UNITILIAZED WEB SOCKET";
 
 	/**
-	* @param {{data: string}} event
-	*/
+	 * @param {{data: string}} event
+	 */
 	const sendDataToElm = (event) => {
 		console.log("RECEIVED MSG FROM WESOCKET:", event.data);
 		app.ports.wsMessageReceiver.send(event.data);
@@ -54,7 +54,7 @@ export function initializeWsPorts(app) {
 					});
 				} catch (err) {}
 			} else if (message.type === "GET_SENKU_STATE") {
-				socket.send(message.payload);
+				socket.send(JSON.stringify(message.payload));
 			}
 		},
 	);

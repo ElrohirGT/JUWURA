@@ -1,12 +1,13 @@
 port module Ports.Ws.Ws exposing (WSRequests(..), WSResponses(..), onMessage, sendMessage)
 
+import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas
 import Json.Decode as Decode exposing (int, null, string)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
 
 
 type WSRequests
-    = Connect
+    = ConnectRequest
         { projectId : Int
         , email : String
         }
@@ -14,31 +15,42 @@ type WSRequests
 
 
 type WSResponses
-    = UserConnected String
-    | ConnectionError ()
+    = UserConnectedResponse String
+    | ConnectionErrorResponse ()
+    | GetSenkuStateResponse SenkuCanvas.SenkuState
 
 
 userConnectedResponseDecoder : Decode.Decoder WSResponses
 userConnectedResponseDecoder =
-    Decode.succeed UserConnected
+    Decode.succeed UserConnectedResponse
         |> required "user_connected" string
 
 
 connectionErrorResponseDecoder : Decode.Decoder WSResponses
 connectionErrorResponseDecoder =
-    Decode.succeed ConnectionError
+    Decode.succeed ConnectionErrorResponse
         |> required "connection_error" (null ())
+
+
+unit v =
+    v
+
+
+getSenkuStateResponseDecoder : Decode.Decoder WSResponses
+getSenkuStateResponseDecoder =
+    Decode.succeed GetSenkuStateResponse
+        |> required "get_senku_state" (Decode.succeed unit |> required "state" SenkuCanvas.senkuStateDecoder)
 
 
 wsPortResponsesDecoder : Decode.Decoder WSResponses
 wsPortResponsesDecoder =
-    Decode.oneOf [ userConnectedResponseDecoder, connectionErrorResponseDecoder ]
+    Decode.oneOf [ userConnectedResponseDecoder, connectionErrorResponseDecoder, getSenkuStateResponseDecoder ]
 
 
 wsPortMessagesEncoder : WSRequests -> Encode.Value
 wsPortMessagesEncoder value =
     case value of
-        Connect payload ->
+        ConnectRequest payload ->
             Encode.object
                 [ ( "type", Encode.string "CONNECT" )
                 , ( "projectId", Encode.int payload.projectId )

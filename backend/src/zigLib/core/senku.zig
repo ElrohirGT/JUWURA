@@ -13,7 +13,7 @@ pub const CellCoordinates = struct { row: i32, column: i32 };
 
 const Cell = struct {
     id: i32,
-    due_date: ?i64,
+    due_date: ?[]const u8,
     title: ?[]const u8,
     status: ?[]const u8,
     icon: []const u8,
@@ -22,7 +22,7 @@ const Cell = struct {
 
     pub fn fromDBRow(alloc: std.mem.Allocator, row: pg.Row) !Cell {
         const id = row.get(i32, 0);
-        const due_date = row.get(?i64, 1);
+        const due_date = try uwu_lib.dupeIfNotNull(u8, alloc, row.get(?[]u8, 1));
         const title = try uwu_lib.dupeIfNotNull(u8, alloc, row.get(?[]u8, 2));
         const status = try uwu_lib.dupeIfNotNull(u8, alloc, row.get(?[]u8, 3));
         const icon = try alloc.dupe(u8, row.get([]const u8, 4));
@@ -92,7 +92,7 @@ pub fn get_senku_state(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetSenkuSt
     const tasks: []Cell = get_tasks_block: {
         const params = .{req.project_id};
         const query =
-            \\ select 
+            \\select
             \\	t.id,
             \\	(
             \\	select
@@ -173,8 +173,9 @@ pub fn get_senku_state(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetSenkuSt
             \\	and t.parent_id is null
         ;
 
-        uwu_log.logInfo("Getting tasks from DB...")
+        uwu_log.logInfo("Querying DB...")
             .int("project_id", req.project_id)
+            .string("query", query)
             .log();
 
         var result = conn.query(query, params) catch |err| {
@@ -231,7 +232,7 @@ pub fn get_senku_state(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetSenkuSt
     const connections: []TaskConnection = get_connections_block: {
         const params = .{req.project_id};
         const query =
-            \\select 
+            \\select
             \\	t1.senku_row as t1_row,
             \\	t1.senku_column as t1_column,
             \\	t2.senku_row as t2_row,
@@ -245,6 +246,8 @@ pub fn get_senku_state(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetSenkuSt
             \\where
             \\	t2.project_id = $1
             \\	and t1.project_id = $1
+            \\  and t1.parent_id is null
+            \\  and t2.parent_id is null
         ;
 
         uwu_log.logInfo("Getting task connections from DB...").int("project_id", req.project_id).log();

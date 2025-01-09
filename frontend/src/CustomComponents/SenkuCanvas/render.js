@@ -468,7 +468,7 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 			return false;
 		},
 		(a) => {
-			return a !== undefined && a.id !== endTask.id;
+			return !!a && a.id !== endTask.id;
 		},
 	);
 

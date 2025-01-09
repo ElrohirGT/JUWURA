@@ -1,10 +1,15 @@
-module CustomComponents.SenkuCanvas.SenkuCanvas exposing (CellCoordinates, CreateConnectionEventDetail, CreateTaskEventDetail, DeleteConnectionEventDetail, DeleteTaskEventDetail, Model, SenkuCanvasEvent, TaskChangedCoordinatesEventDetail, ViewTaskEventDetail, init, onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask, view)
+module CustomComponents.SenkuCanvas.SenkuCanvas exposing (CellCoordinates, CreateConnectionEventDetail, CreateTaskEventDetail, DeleteConnectionEventDetail, DeleteTaskEventDetail, Model, SenkuCanvasEvent, SenkuState, TaskChangedCoordinatesEventDetail, ViewTaskEventDetail, init, onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask, senkuStateDecoder, view)
 
 import Html.Styled exposing (Html, node)
 import Html.Styled.Attributes exposing (attribute)
 import Html.Styled.Events exposing (on)
-import Json.Decode as Decode exposing (int, nullable, string)
+import Json.Decode as Decode exposing (float, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (required)
+import Json.Encode as Encode
+
+
+
+-- EVENT HELPERS
 
 
 type alias SenkuCanvasEvent detail =
@@ -26,15 +31,121 @@ detailsMapper ev =
 -- MODEL
 
 
-type alias Model =
-    { widthPct : Float
-    , heightPct : Float
+type alias CellCoordinates =
+    { row : Int
+    , column : Int
     }
 
 
-init : Float -> Float -> Model
-init widthPct heightPct =
-    Model widthPct heightPct
+cellCoordinatesDecoder =
+    Decode.succeed CellCoordinates
+        |> required "row" int
+        |> required "column" int
+
+
+cellCoordinatesEncoder value =
+    Encode.object
+        [ ( "row", Encode.int value.row )
+        , ( "column", Encode.int value.column )
+        ]
+
+
+type alias CellConnection =
+    { start : CellCoordinates
+    , end : CellCoordinates
+    }
+
+
+cellConnectionDecoder =
+    Decode.succeed CellConnection
+        |> required "start" cellCoordinatesDecoder
+        |> required "end" cellCoordinatesDecoder
+
+
+cellConnectionEncoder value =
+    Encode.object
+        [ ( "start", cellCoordinatesEncoder value.start )
+        , ( "end", cellCoordinatesEncoder value.end )
+        ]
+
+
+type alias Cell =
+    { id : Int
+    , due_date : Maybe String
+    , title : Maybe String
+    , status : Maybe String
+    , icon : String
+    , progress : Float
+    , coordinates : CellCoordinates
+    }
+
+
+cellDecoder =
+    Decode.succeed Cell
+        |> required "id" int
+        |> required "due_date" (nullable string)
+        |> required "title" (nullable string)
+        |> required "status" (nullable string)
+        |> required "icon" string
+        |> required "progress" float
+        |> required "coordinates" cellCoordinatesDecoder
+
+
+type alias SenkuState =
+    { cells : List (List (Maybe Cell))
+    , connections : List CellConnection
+    }
+
+
+senkuStateDecoder =
+    Decode.succeed SenkuState
+        |> required "cells" (list (list (nullable cellDecoder)))
+        |> required "connections" (list cellConnectionDecoder)
+
+
+maybeEncoder encoder value =
+    case value of
+        Just a ->
+            encoder a
+
+        Nothing ->
+            Encode.null
+
+
+cellEncoder : Cell -> Encode.Value
+cellEncoder cell =
+    Encode.object
+        [ ( "id", Encode.int cell.id )
+        , ( "due_date", maybeEncoder Encode.string cell.due_date )
+        , ( "title", maybeEncoder Encode.string cell.title )
+        , ( "status", maybeEncoder Encode.string cell.status )
+        , ( "icon", Encode.string cell.icon )
+        , ( "progress", Encode.float cell.progress )
+        , ( "coordinates"
+          , cellCoordinatesEncoder cell.coordinates
+          )
+        ]
+
+
+senkuStateEncoder : SenkuState -> Encode.Value
+senkuStateEncoder state =
+    Encode.object
+        [ ( "cells", Encode.list (Encode.list (maybeEncoder cellEncoder)) state.cells )
+        , ( "connections", Encode.list cellConnectionEncoder state.connections )
+        ]
+
+
+type alias Model =
+    { widthPct : Float
+    , heightPct : Float
+    , state : SenkuState
+    , projectId : Int
+    }
+
+
+init : Float -> Float -> SenkuState -> Int -> Model
+init widthPct heightPct senkuState projectId =
+    Model widthPct heightPct senkuState projectId
 
 
 
@@ -68,12 +179,6 @@ onCreateTask mapper =
 
 
 -- TaskChangedCoordinatesEvent
-
-
-type alias CellCoordinates =
-    { row : Int
-    , column : Int
-    }
 
 
 type alias TaskChangedCoordinatesEventDetail =
@@ -214,6 +319,8 @@ view model attrs =
     node "uwu-senku"
         ([ attribute "widthPct" (String.fromFloat model.widthPct)
          , attribute "heightPct" (String.fromFloat model.heightPct)
+         , attribute "senkuState" (Encode.encode 0 (senkuStateEncoder model.state))
+         , attribute "projectId" (Encode.encode 0 (Encode.int model.projectId))
          ]
             ++ attrs
         )

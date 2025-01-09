@@ -2,7 +2,7 @@ module Pages.Project exposing (Model, Msg, init, subscriptions, update, view)
 
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
-import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask)
+import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (CellCoordinates, onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask)
 import Html.Styled exposing (button, div, pre, text)
 import Html.Styled.Attributes exposing (css, id)
 import Html.Styled.Events exposing (onClick)
@@ -20,7 +20,8 @@ type PageState
     = WSConnecting
     | WSConnectionError
     | WSParsingError Decode.Error
-    | SenkuView
+    | Loading
+    | SenkuView SenkuCanvas.SenkuState
     | TableView
 
 
@@ -35,7 +36,7 @@ init projectId email =
     ( { projectId = projectId
       , state = WSConnecting
       }
-    , WsPort.sendMessage (WsPort.Connect { projectId = 1, email = email })
+    , WsPort.sendMessage (WsPort.ConnectRequest { projectId = projectId, email = email })
     )
 
 
@@ -66,8 +67,11 @@ update model msg =
             case result of
                 Ok response ->
                     case response of
-                        WsPort.ConnectionError _ ->
+                        WsPort.ConnectionErrorResponse _ ->
                             ( { model | state = WSConnectionError }, Cmd.none )
+
+                        WsPort.GetSenkuStateResponse state ->
+                            ( { model | state = SenkuView state }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
@@ -79,7 +83,7 @@ update model msg =
             ( { model | state = TableView }, Cmd.none )
 
         GoToOverview ->
-            ( { model | state = SenkuView }, WsPort.sendMessage (WsPort.GetSenkuState { projectId = 1 }) )
+            ( { model | state = Loading }, WsPort.sendMessage (WsPort.GetSenkuState { projectId = model.projectId }) )
 
         CreateTask _ ->
             ( model, Cmd.none )
@@ -175,10 +179,93 @@ body model =
                    , color cssColors.white_50
                    ]
 
+        mainContentTopBar =
+            case model.state of
+                SenkuView _ ->
+                    div
+                        [ css
+                            [ displayFlex
+                            , Css.property "gap" spacing.xl
+                            , alignItems stretch
+                            ]
+                        ]
+                        [ div
+                            [ css viewNavbarContainerStyles
+                            , onClick GoToBacklog
+                            ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/table")
+                            , text "BACKLOG"
+                            ]
+                        , div
+                            [ css activeViewbarContainerStyles
+                            , onClick GoToOverview
+                            ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/share-nodes")
+                            , text "OVERVIEW"
+                            ]
+                        , div [ css viewNavbarContainerStyles ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/plus")
+                            ]
+                        ]
+
+                TableView ->
+                    div
+                        [ css
+                            [ displayFlex
+                            , Css.property "gap" spacing.xl
+                            , alignItems stretch
+                            ]
+                        ]
+                        [ div
+                            [ css activeViewbarContainerStyles
+                            , onClick GoToBacklog
+                            ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/table")
+                            , text "BACKLOG"
+                            ]
+                        , div
+                            [ css viewNavbarContainerStyles
+                            , onClick GoToOverview
+                            ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/share-nodes")
+                            , text "OVERVIEW"
+                            ]
+                        , div [ css viewNavbarContainerStyles ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/plus")
+                            ]
+                        ]
+
+                _ ->
+                    div
+                        [ css
+                            [ displayFlex
+                            , Css.property "gap" spacing.xl
+                            , alignItems stretch
+                            ]
+                        ]
+                        [ div
+                            [ css viewNavbarContainerStyles
+                            , onClick GoToBacklog
+                            ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/table")
+                            , text "BACKLOG"
+                            ]
+                        , div
+                            [ css viewNavbarContainerStyles
+                            , onClick GoToOverview
+                            ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/share-nodes")
+                            , text "OVERVIEW"
+                            ]
+                        , div [ css viewNavbarContainerStyles ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/plus")
+                            ]
+                        ]
+
         mainContent =
             case model.state of
-                SenkuView ->
-                    [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct))
+                SenkuView state ->
+                    [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct) state model.projectId)
                         [ onCreateTask CreateTask
                         , onTaskChangedCoordinates TaskChangedCoords
                         , onCreateConnection CreateConnection
@@ -191,6 +278,11 @@ body model =
                 WSConnectionError ->
                     [ pre [ css [ color Theme.cssColors.white_50 ] ]
                         [ text "An error ocurred connecting to the websocket!" ]
+                    ]
+
+                Loading ->
+                    [ pre [ css [ color Theme.cssColors.white_50 ] ]
+                        [ text "Cargando..." ]
                     ]
 
                 WSParsingError err ->
@@ -231,46 +323,9 @@ body model =
                 ]
             , id "viewTopbar"
             ]
-            [ div
-                [ css
-                    [ displayFlex
-                    , Css.property "gap" spacing.xl
-                    , alignItems stretch
-                    ]
-                ]
-                [ div
-                    [ css
-                        (if model.state == TableView then
-                            activeViewbarContainerStyles
-
-                         else
-                            viewNavbarContainerStyles
-                        )
-                    , onClick GoToBacklog
-                    ]
-                    [ Icon.view (viteAsset "~icons/fa6-solid/table")
-                    , text "BACKLOG"
-                    ]
-                , div
-                    [ css
-                        (if model.state == SenkuView then
-                            activeViewbarContainerStyles
-
-                         else
-                            viewNavbarContainerStyles
-                        )
-                    , onClick GoToOverview
-                    ]
-                    [ Icon.view (viteAsset "~icons/fa6-solid/share-nodes")
-                    , text "OVERVIEW"
-                    ]
-                , div [ css viewNavbarContainerStyles ]
-                    [ Icon.view (viteAsset "~icons/fa6-solid/plus")
-                    ]
-                ]
-
-            -- View Topbar buttons
-            , div
+            [ mainContentTopBar
+            , -- View Topbar buttons
+              div
                 [ css
                     [ paddingBottom cssSpacing.xs
                     , displayFlex
