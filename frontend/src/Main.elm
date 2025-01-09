@@ -86,7 +86,7 @@ fromUrlToAppState basePath url navKey =
             NotFound
 
         Routing.Project ->
-            Project ProjectPage.init
+            Project (ProjectPage.init 1 "correo1@gmail.com")
 
         Routing.RouteWithParams ->
             Details (DetailsPage.init basePath)

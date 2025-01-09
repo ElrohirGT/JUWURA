@@ -16,16 +16,25 @@ import Utils exposing (viteAsset)
 -- MODEL
 
 
-type Model
+type PageState
     = Connecting
     | WSParsingError Decode.Error
     | SenkuView
     | TableView
 
 
-init : ( Model, Cmd msg )
-init =
-    ( Connecting, WsPort.sendMessage (WsPort.Connect { projectId = 1, email = "correo1@gmail.com" }) )
+type alias Model =
+    { projectId : Int
+    , state : PageState
+    }
+
+
+init : Int -> String -> ( Model, Cmd msg )
+init projectId email =
+    ( {
+    projectId = projectId
+    ,state = Connecting
+    }, WsPort.sendMessage (WsPort.Connect { projectId = 1, email = email }) )
 
 
 
@@ -54,16 +63,16 @@ update model msg =
         WSMessage result ->
             case result of
                 Ok response ->
-                    ( TableView, Cmd.none )
+                    ( model , Cmd.none )
 
                 Err error ->
-                    ( WSParsingError error, Cmd.none )
+                    ( {model | state =WSParsingError error}, Cmd.none )
 
         GoToBacklog ->
-            ( TableView, Cmd.none )
+            ( {model | state =TableView}, Cmd.none )
 
         GoToOverview ->
-            ( SenkuView, Cmd.none )
+            ( {model | state =SenkuView}, WsPort.sendMessage (WsPort.GetSenkuState { projectId = 1 }) )
 
         CreateTask _ ->
             ( model, Cmd.none )
@@ -160,7 +169,7 @@ body model =
                    ]
 
         mainContent =
-            case model of
+            case model.state of
                 SenkuView ->
                     [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct))
                         [ onCreateTask CreateTask
@@ -219,7 +228,7 @@ body model =
                 ]
                 [ div
                     [ css
-                        (if model == TableView then
+                        (if model.state == TableView then
                             activeViewbarContainerStyles
 
                          else
@@ -232,7 +241,7 @@ body model =
                     ]
                 , div
                     [ css
-                        (if model == SenkuView then
+                        (if model.state == SenkuView then
                             activeViewbarContainerStyles
 
                          else
