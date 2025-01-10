@@ -7,6 +7,11 @@ pub const core = @import("core/root.zig");
 pub const log = @import("log.zig");
 pub const db = @import("db.zig");
 
+/// Checks if a number is inside the interval [min, max).
+pub fn betweenMaxExclusive(a: i32, min: i32, max: i32) bool {
+    return a >= min and a < max;
+}
+
 /// Duplicates an array of `ValueType`s if the `value` is not null.
 /// The caller owns the memory so make sure to call `free` afterwards.
 ///

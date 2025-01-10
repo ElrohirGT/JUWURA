@@ -47,4 +47,4 @@ jobs:
       - name: Linting JS
         run: pnpm run lint
       - name: E2E Testing
-        run: pnpm run test
+        run: pnpm run test:ci

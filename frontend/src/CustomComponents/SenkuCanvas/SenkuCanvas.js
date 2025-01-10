@@ -136,7 +136,7 @@ function genObstacle(cells, connections) {
  * Generates dummy data for the graph
  * @returns {import("./types").SenkuCanvasState}
  */
-function generateDummyData() {
+function genDefaultState(projectId, initialCells, initialConnections) {
 	/**@type {import("./types").TaskConnection}*/
 	const connections = [];
 	/** @type {import("./types").Cells}*/
@@ -144,7 +144,7 @@ function generateDummyData() {
 	for (let i = 0; i < GRID_SIZE; i++) {
 		cells.push([]);
 		for (let j = 0; j < GRID_SIZE; j++) {
-			cells[i].push(undefined);
+			cells[i].push(null);
 		}
 	}
 
@@ -154,8 +154,8 @@ function generateDummyData() {
 	genObstacle(cells, connections);
 
 	return {
-		cells,
-		connections,
+		cells: initialCells ?? cells,
+		connections: initialConnections ?? connections,
 		projectId: 1,
 		mouseDown: false,
 		scale: SCALE_DIMENSIONS.min,
@@ -171,7 +171,12 @@ function generateDummyData() {
 }
 
 class SenkuCanvas extends HTMLElement {
-	static observedAttributes = ["widthPct", "heightPct", "zoom"];
+	static observedAttributes = [
+		"widthPct",
+		"heightPct",
+		"senkuState",
+		"projectId",
+	];
 
 	/**
 	 * Function that runs when the element is added to the page.
@@ -232,10 +237,45 @@ class SenkuCanvas extends HTMLElement {
 	 */
 	attributeChangedCallback(name, oldValue, newValue) {
 		console.log(`Attribute ${name} has changed. ${oldValue} -> ${newValue}`);
+		this.initState();
 	}
 
 	initState() {
-		this.senkuState = generateDummyData();
+		const attributeState = this.getAttribute("senkuState");
+		const projectId = Number.parseInt(this.getAttribute("projectId"));
+
+		if (attributeState) {
+			const state = JSON.parse(attributeState);
+			this.senkuState = genDefaultState(
+				projectId,
+				state.cells.map((row) => {
+					return row.map((c) => {
+						// console.log("Parsing:", c);
+						return c
+							? {
+									id: c.id,
+									due_date: c.due_date
+										? Date.parse(JSON.parse(c.due_date))
+										: null,
+									title: c.title ? JSON.parse(c.title) : null,
+									status: c.status ? JSON.parse(c.status) : null,
+									icon: c.icon,
+									progress: JSON.parse(c.progress),
+									coordinates: c.coordinates,
+								}
+							: null;
+					});
+				}),
+				state.connections.map((c) => ({
+					start: scaleCoords(c.start, 2),
+					end: scaleCoords(c.end, 2),
+				})),
+			);
+		} else {
+			this.senkuState = genDefaultState(projectId);
+		}
+
+		console.log("Initialized state:", this.senkuState);
 	}
 
 	getState() {
@@ -331,6 +371,7 @@ class SenkuCanvas extends HTMLElement {
 					project_id: state.projectId,
 					parent_id: null,
 					icon,
+					cords: cellCords,
 				});
 				this.dispatchEvent(event);
 			} else if (clickedOnATask) {
@@ -456,6 +497,7 @@ class SenkuCanvas extends HTMLElement {
 							project_id: state.projectId,
 							parent_id: null,
 							icon: taskData.icon,
+							cords: coordinates,
 						});
 
 						this.dispatchEvent(event);

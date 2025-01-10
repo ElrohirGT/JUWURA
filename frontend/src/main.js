@@ -3,6 +3,7 @@ import { IconComponent } from "./CustomComponents/Icon/Icon.js";
 import { SenkuCanvasComponent } from "./CustomComponents/SenkuCanvas/SenkuCanvas.js";
 import { Elm } from "./Main.elm";
 import { initializeOauthPorts } from "./Ports/Auth/Auth.js";
+import { initializeWsPorts } from "./Ports/Ws/Ws.js";
 
 SenkuCanvasComponent.register();
 IconComponent.register();
@@ -35,3 +36,6 @@ socket.addEventListener("message", (event) => {
 
 // OAUTH
 initializeOauthPorts(app);
+
+// WEBSOCKETS
+initializeWsPorts(app);
