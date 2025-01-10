@@ -60,7 +60,7 @@ describe("Change task Cords Test suite", () => {
 		console.log("Task created with ID", taskId);
 	});
 
-	test.only("Edit task fields within range", async () => {
+	test("Edit task fields within range", async () => {
 		const payload = {
 			change_task_cords: {
 				task_id: taskId,
@@ -100,6 +100,42 @@ describe("Change task Cords Test suite", () => {
 					fields: [],
 				},
 			},
+		};
+
+		expect(response).toEqual(expectedResponse);
+	});
+
+	test("Can't give values outside range!", async () => {
+		const payload = {
+			change_task_cords: {
+				task_id: taskId,
+				cords: {
+					row: 10, // Outside range!
+					column: 5,
+				},
+			},
+		};
+
+		const client = await generateClient("correo1@gmail.com", projectId);
+		const promise = new Promise((res, rej) => {
+			client.configureHandlers(rej, (recv) => {
+				try {
+					const data = JSON.parse(recv.toString());
+					if (data.err) {
+						res(data);
+					}
+				} catch (err) {
+					rej(err);
+				}
+			});
+		});
+
+		await client.send(JSON.stringify(payload));
+		const response = await promise;
+		await client.close();
+
+		const expectedResponse = {
+			err: "ChangeTaskCordsError",
 		};
 
 		expect(response).toEqual(expectedResponse);
