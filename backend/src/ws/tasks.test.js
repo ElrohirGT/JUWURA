@@ -2,6 +2,7 @@ import { expect, describe, test, beforeEach } from "vitest";
 import {
 	createTask,
 	editTaskField,
+	GRID_SIZE,
 	updateTask,
 } from "../jsLib/testHelpers/tasks.js";
 import { createProject } from "../jsLib/testHelpers/projects.js";
@@ -9,6 +10,8 @@ import {
 	errorOnlyOnSameClient,
 	messageIsSentToAllClients,
 } from "../jsLib/testHelpers/index.js";
+import { randomInt } from "../jsLib/utils.js";
+import { generateClient } from "../jsLib/ws.js";
 
 // describe("Edit Task Field test suite", () => {
 // 	const userEmail = "correo3@gmail.com";
@@ -36,6 +39,72 @@ import {
 // 		await editTaskField(userEmail, projectId, taskId, 1, )
 // 	});
 // });
+
+describe("Change task Cords Test suite", () => {
+	let projectId = 0;
+	let taskId = 0;
+
+	beforeEach(async () => {
+		console.log("Creating project for test...");
+		projectId = await createProject(
+			"correo3@gmail.com",
+			"UPDATE TASK TEST SUITE PROJECT",
+			"😀",
+			"https://img.freepik.com/free-photo/painting-mountain-lake-with-mountain-background_188544-9126.jpg",
+			["correo1@gmail.com", "correo2@gmail.com"],
+		);
+		console.log("Created project with ID", projectId);
+
+		console.log("Creating task for test...");
+		taskId = await createTask("correo1@gmail.com", projectId, null, "😀");
+		console.log("Task created with ID", taskId);
+	});
+
+	test.only("Edit task fields within range", async () => {
+		const payload = {
+			change_task_cords: {
+				task_id: taskId,
+				cords: {
+					row: randomInt(GRID_SIZE),
+					column: randomInt(GRID_SIZE),
+				},
+			},
+		};
+
+		const client = await generateClient("correo1@gmail.com", projectId);
+		const promise = new Promise((res, rej) => {
+			client.configureHandlers(rej, (recv) => {
+				try {
+					const data = JSON.parse(recv.toString());
+					if (data.change_task_cords) {
+						res(data);
+					}
+				} catch (err) {
+					rej(err);
+				}
+			});
+		});
+
+		await client.send(JSON.stringify(payload));
+		const response = await promise;
+		await client.close();
+
+		const expectedResponse = {
+			change_task_cords: {
+				task: {
+					id: taskId,
+					project_id: projectId,
+					parent_id: null,
+					display_id: expect.any(String),
+					icon: expect.any(String),
+					fields: [],
+				},
+			},
+		};
+
+		expect(response).toEqual(expectedResponse);
+	});
+});
 
 describe("Update Task test suite", () => {
 	let projectId = 0;

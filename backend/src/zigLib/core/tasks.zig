@@ -11,6 +11,7 @@ pub const Errors = error{
     DeleteTaskError,
     UpdateTaskError,
     EditTaskFieldError,
+    ChangeTaskCordsError,
 };
 
 /// Represents a field for a given task.
@@ -372,4 +373,54 @@ pub fn edit_task_field(alloc: std.mem.Allocator, pool: *pg.Pool, req: EditTaskFi
 
     const response: GetTaskResponse = try get_task(alloc, pool, GetTaskRequest{ .task_id = req.task_id });
     return EditTaskFieldResponse{ .task = response.task };
+}
+
+pub const ChangeTaskCordsRequest = struct { task_id: i32, cords: uwu_senku.CellCoordinates };
+pub const ChangeTaskCordsResponse = struct { task: Task };
+pub fn change_task_cords(alloc: std.mem.Allocator, pool: *pg.Pool, req: ChangeTaskCordsRequest) !ChangeTaskCordsResponse {
+    if (!uwu_lib.betweenMaxExclusive(req.cords.row, 0, uwu_senku.GRID_SIZE) or !uwu_lib.betweenMaxExclusive(req.cords.column, 0, uwu_senku.GRID_SIZE)) {
+        return error.CoordinatesOutOfBounds;
+    }
+
+    uwu_log.logInfo("Getting DB connection...").log();
+    const conn = try pool.acquire();
+    defer conn.release();
+    uwu_log.logInfo("Connection aquired!").log();
+
+    conn.begin() catch |err| {
+        var l = uwu_log.logErr("Error beginning transaction!").src(@src());
+        uwu_db.logPgError(l, err, conn);
+        l.log();
+
+        return err;
+    };
+    defer conn.commit() catch unreachable;
+    errdefer conn.rollback() catch unreachable;
+
+    const task: Task = create_task_block: {
+        const query =
+            \\ UPDATE task SET
+            \\ senku_row = $2,
+            \\ senku_column = $3
+            \\ WHERE id = $1
+            \\ RETURNING * 
+        ;
+        const params = .{ req.task_id, req.cords.row, req.cords.column };
+
+        var result: pg.QueryRow = conn.row(query, params) catch |err| {
+            var l = uwu_log.logErr("Error updating task coordinates!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            return err;
+        } orelse {
+            uwu_log.logErr("No task found!").log();
+            return error.TaskNotFound;
+        };
+        defer result.deinit() catch {};
+
+        break :create_task_block Task.fromDB(alloc, result) catch unreachable;
+    };
+
+    return ChangeTaskCordsResponse{ .task = task };
 }

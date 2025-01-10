@@ -179,6 +179,7 @@ const WebsocketRequest = union(enum) {
     update_task: uwu_tasks.UpdateTaskRequest,
     edit_task_field: uwu_tasks.EditTaskFieldRequest,
     get_senku_state: uwu_senku.GetSenkuStateRequest,
+    change_task_cords: uwu_tasks.ChangeTaskCordsRequest,
 };
 const WebsocketResponse = union(enum) {
     err: WebsocketAPIError,
@@ -188,6 +189,7 @@ const WebsocketResponse = union(enum) {
     update_task: uwu_tasks.UpdateTaskResponse,
     edit_task_field: uwu_tasks.EditTaskFieldResponse,
     get_senku_state: uwu_senku.GetSenkuStateResponse,
+    change_task_cords: uwu_tasks.ChangeTaskCordsResponse,
 };
 
 fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []const u8, is_text: bool) void {
@@ -299,6 +301,22 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                 defer conn.allocator.free(json_response);
 
                 WebsocketHandler.write(handle, json_response, true) catch unreachable;
+            },
+
+            .change_task_cords => {
+                const response: uwu_tasks.ChangeTaskCordsResponse = uwu_lib.retryOperation(.{ .max_retries = 3 }, uwu_tasks.change_task_cords, .{ conn.allocator, conn.pool, request.change_task_cords }, &[_]anyerror{error.CoordinatesOutOfBounds}) catch |err| {
+                    uwu_log.logErr("An error occurred changing the task cords!").src(@src()).err(err).string("message", message).log();
+                    const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.ChangeTaskCordsError }) catch unreachable;
+                    defer conn.allocator.free(serve_error);
+
+                    WebsocketHandler.write(handle, serve_error, true) catch unreachable;
+                    return;
+                };
+
+                const json_response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .change_task_cords = response }) catch unreachable;
+                defer conn.allocator.free(json_response);
+
+                WebsocketHandler.publish(.{ .channel = conn.project_id, .message = json_response, .is_json = true });
             },
         }
     }

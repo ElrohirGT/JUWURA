@@ -1,5 +1,8 @@
 import { expect } from "vitest";
 import { generateClient } from "../ws";
+import { randomInt } from "../utils";
+
+export const GRID_SIZE = 10;
 
 /**
  * Edits a field in a task from a given project.
@@ -75,7 +78,10 @@ export async function createTask(
 			project_id: projectId,
 			parent_id: parentId,
 			icon,
-			cords: { row, column },
+			cords: {
+				row: row ?? randomInt(GRID_SIZE),
+				column: column ?? randomInt(GRID_SIZE),
+			},
 		},
 	};
 
