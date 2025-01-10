@@ -23,6 +23,7 @@ type WSResponses
     | ConnectionErrorResponse
     | GetSenkuStateResponse SenkuCanvas.SenkuState
     | CreateTaskResponse Task
+    | TaskChangedCordsResponse Task
 
 
 userConnectedResponseDecoder : Decode.Decoder WSResponses
@@ -65,6 +66,15 @@ createTaskResponseDecoder =
             )
 
 
+taskChangedCordsResponseDecoder : Decode.Decoder WSResponses
+taskChangedCordsResponseDecoder =
+    Decode.succeed TaskChangedCordsResponse
+        |> required "change_task_cords"
+            (Decode.succeed unit
+                |> required "task" taskDecoder
+            )
+
+
 wsPortResponsesDecoder : Decode.Decoder WSResponses
 wsPortResponsesDecoder =
     Decode.oneOf
@@ -72,6 +82,7 @@ wsPortResponsesDecoder =
         , connectionErrorResponseDecoder
         , getSenkuStateResponseDecoder
         , createTaskResponseDecoder
+        , taskChangedCordsResponseDecoder
         ]
 
 

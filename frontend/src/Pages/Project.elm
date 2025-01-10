@@ -65,6 +65,10 @@ update model msg =
         WSMessage result ->
             case result of
                 Ok response ->
+                    let
+                        dontChangeModelRefreshSenku mod =
+                            ( mod, WsPort.sendMessage (WsPort.GetSenkuStateRequest { projectId = mod.projectId }) )
+                    in
                     case response of
                         WsPort.ConnectionErrorResponse ->
                             ( { model | state = WSConnectionError }, Cmd.none )
@@ -80,7 +84,10 @@ update model msg =
                                 ( model, Cmd.none )
 
                         WsPort.CreateTaskResponse _ ->
-                            ( model, WsPort.sendMessage (WsPort.GetSenkuStateRequest { projectId = model.projectId }) )
+                            dontChangeModelRefreshSenku model
+
+                        WsPort.TaskChangedCordsResponse _ ->
+                            dontChangeModelRefreshSenku model
 
                 Err error ->
                     ( { model | state = WSParsingError error }, Cmd.none )
