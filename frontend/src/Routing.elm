@@ -33,7 +33,7 @@ type Route
     | Http Int
     | Json Int
     | Ports
-    | Project
+    | Project Int
 
 
 {-| Generates a route parser given a base path.
@@ -69,8 +69,8 @@ genRouteParser maybeBasePath =
                 -- /${basePath}/ports
                 , P.map Ports (s basePath </> s "ports")
 
-                -- /${basePath}/project
-                , P.map Project (s basePath </> s "project")
+                -- /${basePath}/project/<projectId>
+                , P.map Project (s basePath </> s "project" </> P.int)
                 ]
 
         Nothing ->
@@ -96,8 +96,8 @@ genRouteParser maybeBasePath =
                 -- /ports
                 , P.map Ports (s "ports")
 
-                -- /project
-                , P.map Project (s "project")
+                -- /project/<projectId>
+                , P.map Project (s "project" </> P.int)
                 ]
 
 
@@ -139,7 +139,7 @@ type alias NavigationHrefs msg =
     , goToRouteWithParams : Attribute msg
     , goToLogin : Attribute msg
     , goToHome : Attribute msg
-    , goToSenku : Attribute msg
+    , goToProject : Int -> Attribute msg
     }
 
 
@@ -151,7 +151,7 @@ generateRoutingFuncs basePath =
     , goToRouteWithParams = goToRouteWithParams basePath
     , goToLogin = goToLogin basePath
     , goToHome = goToHome basePath
-    , goToSenku = goToProject basePath
+    , goToProject = goToProject basePath
     }
 
 
@@ -229,11 +229,11 @@ goToHome basePath =
 
 {-| Generates an href attribute to go to the senku page
 -}
-goToProject : BasePath -> Attribute msg
-goToProject basePath =
+goToProject : BasePath -> Int -> Attribute msg
+goToProject basePath projectId =
     case basePath of
         Just s ->
-            href (String.concat [ "/", s, "/project" ])
+            href (String.concat [ "/", s, "/project/", String.fromInt projectId ])
 
         Nothing ->
-            href "/project"
+            href (String.concat [ "/project/", String.fromInt projectId ])
