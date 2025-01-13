@@ -387,16 +387,6 @@ pub fn change_task_cords(alloc: std.mem.Allocator, pool: *pg.Pool, req: ChangeTa
     defer conn.release();
     uwu_log.logInfo("Connection aquired!").log();
 
-    conn.begin() catch |err| {
-        var l = uwu_log.logErr("Error beginning transaction!").src(@src());
-        uwu_db.logPgError(l, err, conn);
-        l.log();
-
-        return err;
-    };
-    defer conn.commit() catch unreachable;
-    errdefer conn.rollback() catch unreachable;
-
     const task: Task = create_task_block: {
         const query =
             \\ UPDATE task SET
