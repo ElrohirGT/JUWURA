@@ -180,6 +180,7 @@ const WebsocketRequest = union(enum) {
     edit_task_field: uwu_tasks.EditTaskFieldRequest,
     get_senku_state: uwu_senku.GetSenkuStateRequest,
     change_task_cords: uwu_tasks.ChangeTaskCordsRequest,
+    create_task_connection: uwu_senku.CreateTaskConnectionResponse,
 };
 const WebsocketResponse = union(enum) {
     err: WebsocketAPIError,
@@ -190,6 +191,7 @@ const WebsocketResponse = union(enum) {
     edit_task_field: uwu_tasks.EditTaskFieldResponse,
     get_senku_state: uwu_senku.GetSenkuStateResponse,
     change_task_cords: uwu_tasks.ChangeTaskCordsResponse,
+    create_task_connection: uwu_senku.CreateTaskConnectionResponse,
 };
 
 fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []const u8, is_text: bool) void {
@@ -314,6 +316,22 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                 };
 
                 const json_response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .change_task_cords = response }) catch unreachable;
+                defer conn.allocator.free(json_response);
+
+                WebsocketHandler.publish(.{ .channel = conn.project_id, .message = json_response, .is_json = true });
+            },
+
+            .create_task_connection => {
+                const response: uwu_senku.CreateTaskConnectionResponse = uwu_lib.retryOperation(.{ .max_retries = 3 }, uwu_senku.create_task_connection, .{ conn.pool, request.create_task_connection }, &[_]anyerror{error.TaskDoesntExist}) catch |err| {
+                    uwu_log.logErr("An error occurred while creating task connection!").src(@src()).err(err).string("message", message).log();
+                    const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.CreateTaskConnectionError }) catch unreachable;
+                    defer conn.allocator.free(serve_error);
+
+                    WebsocketHandler.write(handle, serve_error, true);
+                    return;
+                };
+
+                const json_response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .create_task_connection = response }) catch unreachable;
                 defer conn.allocator.free(json_response);
 
                 WebsocketHandler.publish(.{ .channel = conn.project_id, .message = json_response, .is_json = true });

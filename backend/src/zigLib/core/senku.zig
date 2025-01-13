@@ -7,6 +7,7 @@ const uwu_db = uwu_lib.db;
 
 pub const Errors = error{
     GetSenkuStateError,
+    CreateTaskConnectionError,
 };
 
 pub const CellCoordinates = struct { row: i32, column: i32 };
@@ -282,4 +283,82 @@ pub fn get_senku_state(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetSenkuSt
     uwu_log.logInfo("DONE!").log();
     const state: SenkuState = .{ .cells = cells, .connections = connections };
     return .{ .state = state };
+}
+
+pub const CreateTaskConnectionRequest = struct { origin_id: i32, target_id: i32 };
+pub const CreateTaskConnectionResponse = struct { connection: TaskConnection };
+pub fn create_task_connection(pool: *pg.Pool, req: CreateTaskConnectionRequest) !CreateTaskConnectionResponse {
+    uwu_log.logInfo("Getting DB connection...").log();
+    const conn = try pool.acquire();
+    defer conn.release();
+    uwu_log.logInfo("Connection aquired!").log();
+
+    conn.begin() catch unreachable;
+    errdefer conn.rollback() catch unreachable;
+
+    const tasks_exist: bool = check_tasks_block: {
+        const params = .{ req.origin_id, req.target_id };
+        const query =
+            \\select
+            \\ count(*)
+            \\from task
+            \\where id=$1 or id=$2
+        ;
+        const row = conn.row(query, params) catch |err| {
+            var l = uwu_log.logErr("An error occurred while checking if tasks exist!").src(@src()).err(err);
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            return err;
+        } orelse unreachable;
+        defer row.deinit();
+
+        const count = row.get(i32, 0);
+
+        break :check_tasks_block count == 2;
+    };
+
+    if (!tasks_exist) {
+        uwu_log.logErr("One of the tasks doesn't exist!").log();
+        return error.TaskDoesntExist;
+    }
+
+    {
+        const params = .{ req.origin_id, req.target_id };
+        const query =
+            \\ insert into task_connection (target_task, unblocked_task) values ($1, $2)
+            \\ on update do nothing
+        ;
+
+        conn.exec(query, params) catch |err| {
+            var l = uwu_log.logErr("Error inserting connection!").src(@src()).err(err);
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            return err;
+        } orelse unreachable;
+    }
+
+    const connection: TaskConnection = get_task_connection: {
+        const params = .{ req.origin_id, req.target_id };
+        const query =
+            \\ select t1.senku_row, t1.senku_column, t2.senku_row, t2.senku_column
+            \\ from task t1
+            \\ inner join task t2
+            \\ where t1.id = $1 and t2.id $2
+        ;
+
+        const row = conn.row(query, params) catch |err| {
+            var l = uwu_log.logErr("An error occurred while getting task connection!").src(@src()).err(err);
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            return err;
+        };
+        break :get_task_connection TaskConnection.fromDBRow(&row);
+    };
+
+    conn.commit() catch unreachable;
+
+    return CreateTaskConnectionResponse{ .connection = connection };
 }
