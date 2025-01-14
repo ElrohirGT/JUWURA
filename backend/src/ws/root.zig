@@ -180,7 +180,7 @@ const WebsocketRequest = union(enum) {
     edit_task_field: uwu_tasks.EditTaskFieldRequest,
     get_senku_state: uwu_senku.GetSenkuStateRequest,
     change_task_cords: uwu_tasks.ChangeTaskCordsRequest,
-    create_task_connection: uwu_senku.CreateTaskConnectionResponse,
+    create_task_connection: uwu_senku.CreateTaskConnectionRequest,
 };
 const WebsocketResponse = union(enum) {
     err: WebsocketAPIError,
@@ -327,7 +327,7 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                     const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.CreateTaskConnectionError }) catch unreachable;
                     defer conn.allocator.free(serve_error);
 
-                    WebsocketHandler.write(handle, serve_error, true);
+                    WebsocketHandler.write(handle, serve_error, true) catch unreachable;
                     return;
                 };
 

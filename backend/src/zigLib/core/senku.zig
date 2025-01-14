@@ -58,7 +58,26 @@ const TaskConnection = struct {
     start: CellCoordinates,
     end: CellCoordinates,
 
-    pub fn fromDBRow(row: *const pg.Row) TaskConnection {
+    pub fn fromPgRow(row: *const pg.Row) TaskConnection {
+        const t1_row = row.get(i32, 0);
+        const t1_column = row.get(i32, 1);
+
+        const t2_row = row.get(i32, 2);
+        const t2_column = row.get(i32, 3);
+
+        return .{
+            .start = .{
+                .row = t1_row,
+                .column = t1_column,
+            },
+            .end = .{
+                .row = t2_row,
+                .column = t2_column,
+            },
+        };
+    }
+
+    pub fn fromPgQueryRow(row: *const pg.QueryRow) TaskConnection {
         const t1_row = row.get(i32, 0);
         const t1_column = row.get(i32, 1);
 
@@ -270,7 +289,7 @@ pub fn get_senku_state(alloc: std.mem.Allocator, pool: *pg.Pool, req: GetSenkuSt
 
             return error.DBQueryError;
         }) |row| {
-            const connection = TaskConnection.fromDBRow(&row);
+            const connection = TaskConnection.fromPgRow(&row);
             connections.append(connection) catch unreachable;
         }
         defer connections.deinit();
@@ -300,18 +319,18 @@ pub fn create_task_connection(pool: *pg.Pool, req: CreateTaskConnectionRequest) 
         const params = .{ req.origin_id, req.target_id };
         const query =
             \\select
-            \\ count(*)
+            \\ count(*)::integer
             \\from task
             \\where id=$1 or id=$2
         ;
-        const row = conn.row(query, params) catch |err| {
+        var row = conn.row(query, params) catch |err| {
             var l = uwu_log.logErr("An error occurred while checking if tasks exist!").src(@src()).err(err);
             uwu_db.logPgError(l, err, conn);
             l.log();
 
             return err;
         } orelse unreachable;
-        defer row.deinit();
+        defer row.deinit() catch unreachable;
 
         const count = row.get(i32, 0);
 
@@ -327,10 +346,10 @@ pub fn create_task_connection(pool: *pg.Pool, req: CreateTaskConnectionRequest) 
         const params = .{ req.origin_id, req.target_id };
         const query =
             \\ insert into task_connection (target_task, unblocked_task) values ($1, $2)
-            \\ on update do nothing
+            \\ on conflict do nothing
         ;
 
-        conn.exec(query, params) catch |err| {
+        _ = conn.exec(query, params) catch |err| {
             var l = uwu_log.logErr("Error inserting connection!").src(@src()).err(err);
             uwu_db.logPgError(l, err, conn);
             l.log();
@@ -343,19 +362,22 @@ pub fn create_task_connection(pool: *pg.Pool, req: CreateTaskConnectionRequest) 
         const params = .{ req.origin_id, req.target_id };
         const query =
             \\ select t1.senku_row, t1.senku_column, t2.senku_row, t2.senku_column
-            \\ from task t1
-            \\ inner join task t2
-            \\ where t1.id = $1 and t2.id $2
+            \\ from task_connection tc
+            \\ inner join task t1 on tc.target_task = t1.id
+            \\ inner join task t2 on tc.unblocked_task = t2.id
+            \\ where tc.target_task = $1 and tc.unblocked_task = $2
         ;
 
-        const row = conn.row(query, params) catch |err| {
+        var row = conn.row(query, params) catch |err| {
             var l = uwu_log.logErr("An error occurred while getting task connection!").src(@src()).err(err);
             uwu_db.logPgError(l, err, conn);
             l.log();
 
             return err;
-        };
-        break :get_task_connection TaskConnection.fromDBRow(&row);
+        } orelse unreachable;
+        defer row.deinit() catch unreachable;
+
+        break :get_task_connection TaskConnection.fromPgQueryRow(&row);
     };
 
     conn.commit() catch unreachable;

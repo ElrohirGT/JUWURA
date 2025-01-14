@@ -3,6 +3,87 @@ import { createProject } from "../jsLib/testHelpers/projects";
 import { createTask } from "../jsLib/testHelpers/tasks";
 import { generateClient } from "../jsLib/ws";
 
+describe("Create task connection test suite", () => {
+	let projectId;
+	let task1Id;
+	let task2Id;
+
+	beforeEach(async () => {
+		console.log("Creating project for test...");
+		projectId = await createProject(
+			"correo4@gmail.com",
+			"GET SENKU TEST SUITE PROJECT",
+			"🤠",
+			"https://img.freepik.com/free-photo/painting-mountain-lake-with-mountain-background_188544-9126.jpg",
+			["correo1@gmail.com", "correo2@gmail.com"],
+		);
+		console.log("Created project with ID", projectId);
+
+		task1Id = await createTask(
+			"correo1@gmail.com",
+			projectId,
+			null,
+			"🤠",
+			0,
+			0,
+		);
+		task2Id = await createTask(
+			"correo1@gmail.com",
+			projectId,
+			null,
+			"🤠",
+			1,
+			1,
+		);
+		await createTask("correo1@gmail.com", projectId, null, "🤠", 2, 2);
+	});
+
+	test.only("Can create task connection", async () => {
+		const payload = {
+			create_task_connection: {
+				origin_id: task1Id,
+				target_id: task2Id,
+			},
+		};
+
+		const client = await generateClient("correo1@gmail.com", projectId);
+		const promise = new Promise((res, rej) => {
+			client.configureHandlers(rej, (rec) => {
+				try {
+					const data = JSON.parse(rec.toString());
+
+					if (data.create_task_connection) {
+						res(data);
+					}
+				} catch (err) {
+					rej(err);
+				}
+			});
+		});
+
+		await client.send(JSON.stringify(payload));
+		const response = await promise;
+		await client.close();
+
+		const expectedResponse = {
+			create_task_connection: {
+				connection: {
+					start: {
+						row: expect.any(Number),
+						column: expect.any(Number),
+					},
+					end: {
+						row: expect.any(Number),
+						column: expect.any(Number),
+					},
+				},
+			},
+		};
+
+		expect(response).toEqual(expectedResponse);
+	});
+});
+
 describe("Get senku test suite", () => {
 	let projectId = 0;
 
