@@ -58,7 +58,7 @@ type AppState
     = NotFound
     | Login
     | LoginCallback ( LoginCallbackPage.Model, Cmd LoginCallbackPage.Msg )
-    | Project ProjectPage.Model
+    | Project ( ProjectPage.Model, Cmd ProjectPage.Msg )
     | Details DetailsPage.Model
     | Home ( HomePage.Model, Cmd HomePage.Msg )
     | Http ( HttpPage.Model, Cmd HttpPage.Msg )
@@ -85,8 +85,8 @@ fromUrlToAppState basePath url navKey =
         Routing.NotFound ->
             NotFound
 
-        Routing.Project ->
-            Project ProjectPage.init
+        Routing.Project projectId ->
+            Project (ProjectPage.init projectId replaceUrl)
 
         Routing.RouteWithParams ->
             Details (DetailsPage.init basePath)
@@ -129,6 +129,12 @@ init basePath url navKey =
         Json ( _, command ) ->
             ( Model navKey basePath initialAppState, Cmd.map JsonViewMsg command )
 
+        Ports ( _, command ) ->
+            ( Model navKey basePath initialAppState, Cmd.map PortsViewMsg command )
+
+        Project ( _, command ) ->
+            ( Model navKey basePath initialAppState, Cmd.map ProjectViewMsg command )
+
         _ ->
             ( Model navKey basePath initialAppState, Cmd.none )
 
@@ -149,6 +155,9 @@ subscriptions model =
         Ports innerModel ->
             Sub.map PortsViewMsg (PortsPage.subscriptions (Tuple.first innerModel))
 
+        Project innerModel ->
+            Sub.map ProjectViewMsg (ProjectPage.subscriptions (Tuple.first innerModel))
+
         _ ->
             Sub.none
 
@@ -167,7 +176,7 @@ type Msg
     | HttpViewMsg HttpPage.Msg
     | JsonViewMsg JsonPage.Msg
     | PortsViewMsg PortsPage.Msg
-    | SenkuViewMsg ProjectPage.Msg
+    | ProjectViewMsg ProjectPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -264,14 +273,14 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        SenkuViewMsg innerMsg ->
+        ProjectViewMsg innerMsg ->
             case model.state of
                 Project innerModel ->
                     let
-                        newModel =
-                            ProjectPage.update innerModel innerMsg
+                        ( newModel, command ) =
+                            ProjectPage.update (Tuple.first innerModel) innerMsg
                     in
-                    ( { model | state = Project newModel }, Cmd.none )
+                    ( { model | state = Project ( newModel, command ) }, Cmd.map ProjectViewMsg command )
 
                 _ ->
                     ( model, Cmd.none )
@@ -348,4 +357,4 @@ view model =
             viewStateLess NotFoundPage.view
 
         Project pageModel ->
-            viewWithState ProjectPage.view pageModel SenkuViewMsg
+            viewWithEffects ProjectPage.view pageModel ProjectViewMsg

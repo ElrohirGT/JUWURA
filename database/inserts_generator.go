@@ -115,14 +115,14 @@ func main() {
 	}
 
 	taskStatuses := []string{
-		"TODO",
-		"DOING",
-		"DONE",
+		fmt.Sprintf(`{"name": "%s", "color": "#d3d3d3", "isDone": false}`, "TODO"),
+		fmt.Sprintf(`{"name": "%s", "color": "#3b5083", "isDone": false}`, "DOING"),
+		fmt.Sprintf(`{"name": "%s", "color": "#4b6a37", "isDone": true}`, "DONE"),
 	}
 	taskPriorities := []string{
-		"HIGH",
-		"MEDIUM",
-		"LOW",
+		fmt.Sprintf(`{"name": "%s", "color": "#d3d3d3"}`, "LOW"),
+		fmt.Sprintf(`{"name": "%s", "color": "#c87731"}`, "MEDIUM"),
+		fmt.Sprintf(`{"name": "%s", "color": "##ca323d"}`, "HIGH"),
 	}
 	taskFieldTypes := []string{"TEXT", "DATE", "CHOICE", "NUMBER", "ASSIGNEE"}
 	defaultTaskFields := [][]string{
@@ -240,7 +240,7 @@ func main() {
 
 	// Generate tasks...
 	taskCount := 10
-	fmt.Println("INSERT INTO task (project_id, parent_id, short_title, icon) VALUES")
+	fmt.Println("INSERT INTO task (project_id, parent_id, display_id, icon, senku_row, senku_column) VALUES")
 	for projectIdx := range projectCount {
 		for i := range taskCount {
 			projectId := projectIdx + 1
@@ -250,7 +250,9 @@ func main() {
 			}
 			shortTitle := fmt.Sprintf("T-%d", i+1)
 			icon := from(random, emojis)
-			fmt.Printf("(%d, %s, '%s', '%s')", projectId, parentId, shortTitle, icon)
+			row := random.Intn(10)
+			column := random.Intn(10)
+			fmt.Printf("(%d, %s, '%s', '%s', %d, %d)", projectId, parentId, shortTitle, icon, row, column)
 
 			endInserts((projectIdx+1)*(i+1)-1, projectCount*taskCount)
 		}
@@ -268,25 +270,25 @@ func main() {
 				value := "NULL"
 				switch i {
 				case 0:
-					okValue := fmt.Sprintf("'%s'", from(random, taskNames))
+					okValue := fmt.Sprintf(`'"%s"'`, from(random, taskNames))
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 1:
-					okValue := fmt.Sprintf("NOW() + interval '%d day'", random.Intn(20))
+					okValue := fmt.Sprintf("to_jsonb(NOW() + interval '%d day')", random.Intn(20))
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 2:
-					okValue := fmt.Sprintf("'%s'", from(random, taskStatuses))
+					okValue := fmt.Sprintf(`'%s'`, from(random, taskStatuses))
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 3:
-					okValue := fmt.Sprintf("'%s'", from(random, taskPriorities))
+					okValue := fmt.Sprintf(`'%s'`, from(random, taskPriorities))
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 4:
-					okValue := fmt.Sprintf("%d", random.Intn(15)+1)
+					okValue := fmt.Sprintf(`'"%d"'`, random.Intn(15)+1)
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 5:
 					okValue := fmt.Sprintf("'[\"%s\"]'", from(random, membersByProject[projectIdx]))
 					value = nullEveryPercent(random, 0.5, okValue)
 				case 6:
-					okValue := fmt.Sprintf("'%s'", "This is a test description!")
+					okValue := fmt.Sprintf(`'"%s"'`, "This is a test description!")
 					value = nullEveryPercent(random, 0.5, okValue)
 				}
 				fmt.Printf("(%d, %d, %s)", taskId, taskFieldId, value)
@@ -302,7 +304,7 @@ func main() {
 	fmt.Println()
 
 	// Generate tasks unblocks...
-	fmt.Println("INSERT INTO task_unblock (target_task, unblocked_task) VALUES")
+	fmt.Println("INSERT INTO task_connection (target_task, unblocked_task) VALUES")
 	relationCount := 5
 	for projectIdx := range projectCount {
 		// Each project has #`taskCount` tasks,

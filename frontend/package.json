@@ -9,7 +9,9 @@
 		"preview": "vite preview",
 		"format": "biome format --write ./src",
 		"format:check": "biome format ./src",
-		"lint": "biome lint --write ./src"
+		"lint": "biome lint --write ./src",
+		"test": "vitest",
+		"test:ci": "vitest run"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
@@ -22,6 +24,7 @@
 	},
 	"dependencies": {
 		"auth0-js": "^9.28.0",
-		"vite-plugin-elm": "^3.0.1"
+		"vite-plugin-elm": "^3.0.1",
+		"vitest": "^2.1.8"
 	}
 }

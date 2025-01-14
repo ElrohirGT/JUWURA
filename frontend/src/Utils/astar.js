@@ -57,7 +57,10 @@ function init(grid) {
 }
 
 function heap(comparator) {
-	return new BinaryHeap((node) => node.f, comparator);
+	return new BinaryHeap(
+		(node) => node.f,
+		(nodeA, nodeB) => comparator(nodeA.value, nodeB.value),
+	);
 }
 
 function manhattan(x1, y1, x2, y2) {
