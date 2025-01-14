@@ -120,6 +120,9 @@ update model msg =
                                 WsPort.TaskChangedCordsResponse _ ->
                                     dontChangeModelRefreshSenku model
 
+                                WsPort.CreateTaskConnectionResponse _ ->
+                                    dontChangeModelRefreshSenku model
+
                         Err error ->
                             ( { model | state = Authorized { authState | state = WSParsingError error } }, Cmd.none )
 
@@ -134,6 +137,9 @@ update model msg =
 
                 TaskChangedCoords info ->
                     ( model, WsPort.sendMessage (WsPort.TaskChangedCordsRequest info) )
+
+                CreateConnection info ->
+                    ( model, WsPort.sendMessage (WsPort.CreateTaskConnectionRequest info) )
 
                 _ ->
                     ( model, Cmd.none )

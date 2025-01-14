@@ -16,6 +16,7 @@ type WSRequests
     | GetSenkuStateRequest { projectId : Int }
     | CreateTaskRequest SenkuCanvas.CreateTaskEventDetail
     | TaskChangedCordsRequest SenkuCanvas.TaskChangedCoordinatesEventDetail
+    | CreateTaskConnectionRequest SenkuCanvas.CreateConnectionEventDetail
 
 
 type WSResponses
@@ -24,6 +25,7 @@ type WSResponses
     | GetSenkuStateResponse SenkuCanvas.SenkuState
     | CreateTaskResponse Task
     | TaskChangedCordsResponse Task
+    | CreateTaskConnectionResponse SenkuCanvas.CellConnection
 
 
 userConnectedResponseDecoder : Decode.Decoder WSResponses
@@ -75,6 +77,15 @@ taskChangedCordsResponseDecoder =
             )
 
 
+createTaskConnectionResponseDecoder : Decode.Decoder WSResponses
+createTaskConnectionResponseDecoder =
+    Decode.succeed CreateTaskConnectionResponse
+        |> required "create_task_connection"
+            (Decode.succeed unit
+                |> required "connection" SenkuCanvas.cellConnectionDecoder
+            )
+
+
 wsPortResponsesDecoder : Decode.Decoder WSResponses
 wsPortResponsesDecoder =
     Decode.oneOf
@@ -83,6 +94,7 @@ wsPortResponsesDecoder =
         , getSenkuStateResponseDecoder
         , createTaskResponseDecoder
         , taskChangedCordsResponseDecoder
+        , createTaskConnectionResponseDecoder
         ]
 
 
@@ -136,6 +148,21 @@ wsPortMessagesEncoder value =
                           , Encode.object
                                 [ ( "task_id", Encode.int payload.taskId )
                                 , ( "cords", SenkuCanvas.cellCoordinatesEncoder payload.coordinates )
+                                ]
+                          )
+                        ]
+                  )
+                ]
+
+        CreateTaskConnectionRequest payload ->
+            Encode.object
+                [ ( "type", Encode.string "CREATE_TASK_CONNECTION_REQUEST" )
+                , ( "payload"
+                  , Encode.object
+                        [ ( "create_task_connection"
+                          , Encode.object
+                                [ ( "origin_id", Encode.int payload.originTaskId )
+                                , ( "target_id", Encode.int payload.targetTaskId )
                                 ]
                           )
                         ]
