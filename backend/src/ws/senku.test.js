@@ -38,7 +38,7 @@ describe("Create task connection test suite", () => {
 		await createTask("correo1@gmail.com", projectId, null, "🤠", 2, 2);
 	});
 
-	test.only("Can create task connection", async () => {
+	test("Can create task connection", async () => {
 		const payload = {
 			create_task_connection: {
 				origin_id: task1Id,
@@ -78,6 +78,40 @@ describe("Create task connection test suite", () => {
 					},
 				},
 			},
+		};
+
+		expect(response).toEqual(expectedResponse);
+	});
+
+	test("Can create task connection", async () => {
+		const payload = {
+			create_task_connection: {
+				origin_id: 0, // Invalid Ids
+				target_id: 0,
+			},
+		};
+
+		const client = await generateClient("correo1@gmail.com", projectId);
+		const promise = new Promise((res, rej) => {
+			client.configureHandlers(rej, (rec) => {
+				try {
+					const data = JSON.parse(rec.toString());
+
+					if (data.err) {
+						res(data);
+					}
+				} catch (err) {
+					rej(err);
+				}
+			});
+		});
+
+		await client.send(JSON.stringify(payload));
+		const response = await promise;
+		await client.close();
+
+		const expectedResponse = {
+			err: "CreateTaskConnectionError",
 		};
 
 		expect(response).toEqual(expectedResponse);
