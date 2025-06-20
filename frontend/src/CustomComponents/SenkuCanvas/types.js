@@ -42,6 +42,7 @@
  * @property {number} project_id
  * @property {number|null} parent_id
  * @property {string} icon
+ * @property {CellCoord} cords
  */
 
 /**

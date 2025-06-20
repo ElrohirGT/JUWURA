@@ -4,12 +4,14 @@ const pg = @import("pg");
 const uwu_lib = @import("../root.zig");
 const uwu_log = uwu_lib.log;
 const uwu_db = uwu_lib.db;
+const uwu_senku = uwu_lib.core.senku;
 
 pub const Errors = error{
     CreateTaskError,
     DeleteTaskError,
     UpdateTaskError,
     EditTaskFieldError,
+    ChangeTaskCordsError,
 };
 
 /// Represents a field for a given task.
@@ -42,19 +44,20 @@ pub const TaskField = struct {
         };
     }
 };
+
 /// Container for all task data.
 pub const Task = struct {
     id: i32,
     parent_id: ?i32 = null,
     project_id: i32,
-    short_title: []const u8,
+    display_id: []const u8,
     icon: []const u8,
     fields: []TaskField,
 
     /// Frees all the memory associated with the task.
     /// This includes the task fields!
     pub fn deinit(self: Task, alloc: std.mem.Allocator) void {
-        alloc.free(self.short_title);
+        alloc.free(self.display_id);
         alloc.free(self.icon);
 
         for (self.fields) |field| {
@@ -66,7 +69,7 @@ pub const Task = struct {
         const id = row.get(i32, 0);
         const parent_id = row.get(?i32, 1);
         const project_id = row.get(i32, 2);
-        const short_title = try alloc.dupe(u8, row.get([]const u8, 3));
+        const display_id = try alloc.dupe(u8, row.get([]const u8, 3));
         const icon = try alloc.dupe(u8, row.get([]const u8, 4));
         const fields = &[_]TaskField{};
 
@@ -74,7 +77,7 @@ pub const Task = struct {
             .id = id,
             .project_id = project_id,
             .parent_id = parent_id,
-            .short_title = short_title,
+            .display_id = display_id,
             .icon = icon,
             .fields = fields,
         };
@@ -169,6 +172,7 @@ pub const CreateTaskRequest = struct {
     project_id: i32,
     parent_id: ?i32 = null,
     icon: []const u8,
+    cords: uwu_senku.CellCoordinates,
 };
 pub const CreateTaskResponse = struct { task: Task };
 pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequest) !CreateTaskResponse {
@@ -219,13 +223,15 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
         const short_title = std.fmt.allocPrint(alloc, "T-{d}", .{display_id}) catch unreachable;
         defer alloc.free(short_title);
 
-        const query = "INSERT INTO task (parent_id, project_id, short_title, icon) VALUES ($1, $2, $3, $4) RETURNING *";
-        const params = .{ req.parent_id, req.project_id, short_title, req.icon };
+        const query = "INSERT INTO task (parent_id, project_id, display_id, icon, senku_row, senku_column) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
+        const params = .{ req.parent_id, req.project_id, short_title, req.icon, req.cords.row, req.cords.column };
         uwu_log.logInfo("Creating task in project!")
             .int("projectId", req.project_id)
             .int("parentId", req.parent_id)
             .string("short_title", short_title)
             .string("icon", req.icon)
+            .int("row", req.cords.row)
+            .int("column", req.cords.column)
             .log();
 
         var dataRow = conn.row(query, params) catch |err| {
@@ -256,7 +262,7 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
     uwu_log.logInfo("Task created!")
         .int("projectId", task.project_id)
         .int("parentId", task.parent_id)
-        .string("short_title", task.short_title)
+        .string("short_title", task.display_id)
         .string("icon", task.icon)
         .log();
 
@@ -266,7 +272,7 @@ pub fn create_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: CreateTaskRequ
 pub const UpdateTaskRequest = struct {
     task_id: i32,
     parent_id: ?i32 = null,
-    short_title: []const u8,
+    display_id: []const u8,
     icon: []const u8,
 };
 pub const UpdateTaskResponse = struct { task: Task };
@@ -280,16 +286,16 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
         const query =
             \\ UPDATE task SET
             \\ parent_id = $2,
-            \\ short_title = $3,
+            \\ display_id = $3,
             \\ icon = $4
             \\ WHERE id = $1
             \\ RETURNING *
         ;
-        const params = .{ req.task_id, req.parent_id, req.short_title, req.icon };
+        const params = .{ req.task_id, req.parent_id, req.display_id, req.icon };
         uwu_log.logInfo("Updating task in project...")
             .int("task_id", req.task_id)
             .int("parent_id", req.parent_id)
-            .string("short_title", req.short_title)
+            .string("short_title", req.display_id)
             .string("icon", req.icon)
             .log();
 
@@ -306,7 +312,7 @@ pub fn update_task(alloc: std.mem.Allocator, pool: *pg.Pool, req: UpdateTaskRequ
     uwu_log.logInfo("Task updated!")
         .int("task_id", task.id)
         .int("parent_id", task.parent_id)
-        .string("short_title", task.short_title)
+        .string("short_title", task.display_id)
         .log();
 
     return UpdateTaskResponse{ .task = task };
@@ -367,4 +373,44 @@ pub fn edit_task_field(alloc: std.mem.Allocator, pool: *pg.Pool, req: EditTaskFi
 
     const response: GetTaskResponse = try get_task(alloc, pool, GetTaskRequest{ .task_id = req.task_id });
     return EditTaskFieldResponse{ .task = response.task };
+}
+
+pub const ChangeTaskCordsRequest = struct { task_id: i32, cords: uwu_senku.CellCoordinates };
+pub const ChangeTaskCordsResponse = struct { task: Task };
+pub fn change_task_cords(alloc: std.mem.Allocator, pool: *pg.Pool, req: ChangeTaskCordsRequest) !ChangeTaskCordsResponse {
+    if (!uwu_lib.betweenMaxExclusive(req.cords.row, 0, uwu_senku.GRID_SIZE) or !uwu_lib.betweenMaxExclusive(req.cords.column, 0, uwu_senku.GRID_SIZE)) {
+        return error.CoordinatesOutOfBounds;
+    }
+
+    uwu_log.logInfo("Getting DB connection...").log();
+    const conn = try pool.acquire();
+    defer conn.release();
+    uwu_log.logInfo("Connection aquired!").log();
+
+    const task: Task = create_task_block: {
+        const query =
+            \\ UPDATE task SET
+            \\ senku_row = $2,
+            \\ senku_column = $3
+            \\ WHERE id = $1
+            \\ RETURNING * 
+        ;
+        const params = .{ req.task_id, req.cords.row, req.cords.column };
+
+        var result: pg.QueryRow = conn.row(query, params) catch |err| {
+            var l = uwu_log.logErr("Error updating task coordinates!").src(@src());
+            uwu_db.logPgError(l, err, conn);
+            l.log();
+
+            return err;
+        } orelse {
+            uwu_log.logErr("No task found!").log();
+            return error.TaskNotFound;
+        };
+        defer result.deinit() catch {};
+
+        break :create_task_block Task.fromDB(alloc, result) catch unreachable;
+    };
+
+    return ChangeTaskCordsResponse{ .task = task };
 }

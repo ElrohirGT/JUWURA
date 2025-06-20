@@ -8,6 +8,7 @@ const uwu_lib = @import("juwura");
 const uwu_tasks = uwu_lib.core.tasks;
 const uwu_log = uwu_lib.log;
 const uwu_db = uwu_lib.db;
+const uwu_senku = uwu_lib.core.senku;
 
 /// Hashmap to store connectinos by user.
 /// * Key: User email.
@@ -171,12 +172,15 @@ fn on_close_base(connection: ?*Connection, uuid: isize) void {
     }
 }
 
-const WebsocketAPIError = error{ MalformedMessage, InternalServerError } || uwu_tasks.Errors;
+const WebsocketAPIError = error{ MalformedMessage, InternalServerError } || uwu_tasks.Errors || uwu_senku.Errors;
 
 const WebsocketRequest = union(enum) {
     create_task: uwu_tasks.CreateTaskRequest,
     update_task: uwu_tasks.UpdateTaskRequest,
     edit_task_field: uwu_tasks.EditTaskFieldRequest,
+    get_senku_state: uwu_senku.GetSenkuStateRequest,
+    change_task_cords: uwu_tasks.ChangeTaskCordsRequest,
+    create_task_connection: uwu_senku.CreateTaskConnectionRequest,
 };
 const WebsocketResponse = union(enum) {
     err: WebsocketAPIError,
@@ -185,6 +189,9 @@ const WebsocketResponse = union(enum) {
     create_task: uwu_tasks.CreateTaskResponse,
     update_task: uwu_tasks.UpdateTaskResponse,
     edit_task_field: uwu_tasks.EditTaskFieldResponse,
+    get_senku_state: uwu_senku.GetSenkuStateResponse,
+    change_task_cords: uwu_tasks.ChangeTaskCordsResponse,
+    create_task_connection: uwu_senku.CreateTaskConnectionResponse,
 };
 
 fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []const u8, is_text: bool) void {
@@ -280,6 +287,54 @@ fn on_message(connection: ?*Connection, handle: WebSockets.WsHandle, message: []
                 defer conn.allocator.free(json_response);
 
                 WebsocketHandler.publish(.{ .channel = conn.project_id, .message = json_response });
+            },
+
+            .get_senku_state => {
+                const response: uwu_senku.GetSenkuStateResponse = uwu_lib.retryOperation(.{ .max_retries = 3 }, uwu_senku.get_senku_state, .{ conn.allocator, conn.pool, request.get_senku_state }, &[_]anyerror{}) catch |err| {
+                    uwu_log.logErr("An error ocurred getting the senku state!").src(@src()).err(err).string("message", message).log();
+                    const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.GetSenkuStateError }) catch unreachable;
+                    defer conn.allocator.free(serve_error);
+
+                    WebsocketHandler.write(handle, serve_error, true) catch unreachable;
+                    return;
+                };
+
+                const json_response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .get_senku_state = response }) catch unreachable;
+                defer conn.allocator.free(json_response);
+
+                WebsocketHandler.write(handle, json_response, true) catch unreachable;
+            },
+
+            .change_task_cords => {
+                const response: uwu_tasks.ChangeTaskCordsResponse = uwu_lib.retryOperation(.{ .max_retries = 3 }, uwu_tasks.change_task_cords, .{ conn.allocator, conn.pool, request.change_task_cords }, &[_]anyerror{error.CoordinatesOutOfBounds}) catch |err| {
+                    uwu_log.logErr("An error occurred changing the task cords!").src(@src()).err(err).string("message", message).log();
+                    const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.ChangeTaskCordsError }) catch unreachable;
+                    defer conn.allocator.free(serve_error);
+
+                    WebsocketHandler.write(handle, serve_error, true) catch unreachable;
+                    return;
+                };
+
+                const json_response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .change_task_cords = response }) catch unreachable;
+                defer conn.allocator.free(json_response);
+
+                WebsocketHandler.publish(.{ .channel = conn.project_id, .message = json_response, .is_json = true });
+            },
+
+            .create_task_connection => {
+                const response: uwu_senku.CreateTaskConnectionResponse = uwu_lib.retryOperation(.{ .max_retries = 3 }, uwu_senku.create_task_connection, .{ conn.pool, request.create_task_connection }, &[_]anyerror{error.TaskDoesntExist}) catch |err| {
+                    uwu_log.logErr("An error occurred while creating task connection!").src(@src()).err(err).string("message", message).log();
+                    const serve_error = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .err = WebsocketAPIError.CreateTaskConnectionError }) catch unreachable;
+                    defer conn.allocator.free(serve_error);
+
+                    WebsocketHandler.write(handle, serve_error, true) catch unreachable;
+                    return;
+                };
+
+                const json_response = uwu_lib.toJson(conn.allocator, WebsocketResponse{ .create_task_connection = response }) catch unreachable;
+                defer conn.allocator.free(json_response);
+
+                WebsocketHandler.publish(.{ .channel = conn.project_id, .message = json_response, .is_json = true });
             },
         }
     }

@@ -218,22 +218,24 @@ export function drawCanvas(canvas, state) {
 						taskInfoPaddedLeft.y,
 					);
 
-					const displayTitle =
-						task.title.length < MAX_TASK_TITLE_CHARS
-							? task.title
-							: `${task.title.substring(0, MAX_TASK_TITLE_CHARS)}...`;
 					const titleTextHeight = 16;
-					ctx.font = `${titleTextHeight}px Parkinsans`;
-					ctx.textBaseline = "top";
-
 					const titleY =
 						taskInfoPaddedLeft.y + progressHeight + INFO_ITEMS_SPACING;
-					ctx.fillText(
-						displayTitle,
-						taskInfoPaddedLeft.x,
-						titleY,
-						INFO_WIDTH - TASK_INFO_PADDING * 2,
-					);
+					if (task.title) {
+						const displayTitle =
+							task.title.length < MAX_TASK_TITLE_CHARS
+								? task.title
+								: `${task.title.substring(0, MAX_TASK_TITLE_CHARS)}...`;
+						ctx.font = `${titleTextHeight}px Parkinsans`;
+						ctx.textBaseline = "top";
+
+						ctx.fillText(
+							displayTitle,
+							taskInfoPaddedLeft.x,
+							titleY,
+							INFO_WIDTH - TASK_INFO_PADDING * 2,
+						);
+					}
 
 					const statusTextHeight = 12;
 					const statusContainerY =
@@ -468,7 +470,7 @@ function drawTaskConnection(ctx, connInfo, matrix) {
 			return false;
 		},
 		(a) => {
-			return a !== undefined && a.id !== endTask.id;
+			return !!a && a.id !== endTask.id;
 		},
 	);
 

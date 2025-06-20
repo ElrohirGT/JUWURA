@@ -1,5 +1,8 @@
 import { expect } from "vitest";
 import { generateClient } from "../ws";
+import { randomInt } from "../utils";
+
+export const GRID_SIZE = 10;
 
 /**
  * Edits a field in a task from a given project.
@@ -58,14 +61,27 @@ export async function editTaskField(
  * @param {number} projectId - The id of the project
  * @param {number|null} parentId - The ID of the parent task
  * @param {string} icon - The task type
+ * @param {number} row - The 0 index row of the senku canvas
+ * @param {number} column - The 0 index column of the senku canvas
  * @returns {Promise<number>} The created task id
  */
-export async function createTask(email, projectId, parentId, icon) {
+export async function createTask(
+	email,
+	projectId,
+	parentId,
+	icon,
+	row,
+	column,
+) {
 	const payload = {
 		create_task: {
 			project_id: projectId,
 			parent_id: parentId,
 			icon,
+			cords: {
+				row: row ?? randomInt(GRID_SIZE),
+				column: column ?? randomInt(GRID_SIZE),
+			},
 		},
 	};
 
@@ -92,7 +108,7 @@ export async function createTask(email, projectId, parentId, icon) {
 				id: expect.any(Number),
 				project_id: expect.any(Number),
 				parent_id: parentId,
-				short_title: expect.any(String),
+				display_id: expect.any(String),
 				icon: expect.any(String),
 				fields: [],
 			},
@@ -121,7 +137,7 @@ export async function createTask(email, projectId, parentId, icon) {
  * @property {number} id
  * @property {number} project_id
  * @property {number|null} parent_id
- * @property {string} short_title
+ * @property {string} display_id
  * @property {string} icon
  * @property {[]TaskField} fields
  */
@@ -130,7 +146,7 @@ export async function createTask(email, projectId, parentId, icon) {
  * @typedef {Object} UpdateTaskRequest
  * @property{number} task_id
  * @property{number|null} parent_id
- * @property{string} short_title
+ * @property{string} display_id
  * @property{string} icon
  */
 
@@ -167,7 +183,7 @@ export async function updateTask(email, projectId, taskData) {
 				id: taskData.task_id,
 				icon: taskData.icon,
 				parent_id: taskData.parent_id,
-				short_title: taskData.short_title,
+				display_id: taskData.display_id,
 				project_id: projectId,
 				fields: [],
 			},

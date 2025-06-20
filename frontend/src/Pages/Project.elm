@@ -1,11 +1,14 @@
-module Pages.Project exposing (Model, Msg, init, update, view)
+module Pages.Project exposing (Model, Msg, PageState, init, subscriptions, update, view)
 
 import Css exposing (absolute, alignItems, backgroundColor, border, borderBottom3, borderColor, borderRadius, borderRadius4, borderWidth, color, displayFlex, fitContent, flexDirection, fontFamilies, fontSize, height, justifyContent, left, maxWidth, padding2, paddingBottom, paddingLeft, paddingRight, paddingTop, pct, position, px, row, solid, spaceBetween, stretch, top, vh, vw, width, zero)
 import CustomComponents.Icon.Icon as Icon
 import CustomComponents.SenkuCanvas.SenkuCanvas as SenkuCanvas exposing (onCreateConnection, onCreateTask, onDeleteConnection, onDeleteTask, onTaskChangedCoordinates, onViewTask)
-import Html.Styled exposing (button, div, text)
+import Html.Styled exposing (button, div, pre, text)
 import Html.Styled.Attributes exposing (css, id)
 import Html.Styled.Events exposing (onClick)
+import Json.Decode as Decode
+import Ports.Auth.Auth as Auth
+import Ports.Ws.Ws as WsPort
 import Theme exposing (cssColors, cssFontSizes, cssSpacing, spacing)
 import Utils exposing (viteAsset)
 
@@ -14,14 +17,36 @@ import Utils exposing (viteAsset)
 -- MODEL
 
 
-type Model
-    = SenkuView
+type PageState
+    = WSConnecting
+    | WSConnectionError
+    | WSParsingError Decode.Error
+    | Loading
+    | SenkuView SenkuCanvas.SenkuState
     | TableView
 
 
-init : Model
-init =
-    SenkuView
+type AuthorizationState
+    = Authorizing
+    | Authorized
+        { projectId : Int
+        , email : String
+        , state : PageState
+        }
+
+
+type alias Model =
+    { replaceUrl : String -> Cmd Msg
+    , projectId : Int
+    , state : AuthorizationState
+    }
+
+
+init : Int -> (String -> Cmd Msg) -> ( Model, Cmd msg )
+init projectId replaceUrl =
+    ( { replaceUrl = replaceUrl, projectId = projectId, state = Authorizing }
+    , Auth.checkUserSession ()
+    )
 
 
 
@@ -37,34 +62,99 @@ type Msg
     | DeleteConnection SenkuCanvas.DeleteConnectionEventDetail
     | GoToBacklog
     | GoToOverview
+    | WSMessage (Result Decode.Error WsPort.WSResponses)
+    | CheckedUserSession (Maybe Auth.UserCredentials)
 
 
-update : Model -> Msg -> Model
+update : Model -> Msg -> ( Model, Cmd Msg )
 update model msg =
-    case msg of
-        GoToBacklog ->
-            TableView
+    case model.state of
+        Authorizing ->
+            case msg of
+                CheckedUserSession option ->
+                    case option of
+                        Just credentials ->
+                            ( { model
+                                | state =
+                                    Authorized
+                                        { projectId = model.projectId
+                                        , email = credentials.profile.email
+                                        , state = Loading
+                                        }
+                              }
+                            , WsPort.sendMessage (WsPort.ConnectRequest { projectId = model.projectId, email = credentials.profile.email })
+                            )
 
-        GoToOverview ->
-            SenkuView
+                        Nothing ->
+                            ( model, model.replaceUrl "/login/" )
 
-        CreateTask _ ->
-            model
+                _ ->
+                    ( model, Cmd.none )
 
-        TaskChangedCoords _ ->
-            model
+        Authorized authState ->
+            case msg of
+                WSMessage result ->
+                    case result of
+                        Ok response ->
+                            let
+                                dontChangeModelRefreshSenku mod =
+                                    ( mod, WsPort.sendMessage (WsPort.GetSenkuStateRequest { projectId = mod.projectId }) )
+                            in
+                            case response of
+                                WsPort.ConnectionErrorResponse ->
+                                    ( { model | state = Authorized { authState | state = WSConnectionError } }, Cmd.none )
 
-        CreateConnection _ ->
-            model
+                                WsPort.GetSenkuStateResponse state ->
+                                    ( { model | state = Authorized { authState | state = SenkuView state } }, Cmd.none )
 
-        ViewTask _ ->
-            model
+                                WsPort.UserConnectedResponse email ->
+                                    if authState.email == email then
+                                        ( { model | state = Authorized { authState | state = TableView } }, Cmd.none )
 
-        DeleteTask _ ->
-            model
+                                    else
+                                        ( model, Cmd.none )
 
-        DeleteConnection _ ->
-            model
+                                WsPort.CreateTaskResponse _ ->
+                                    dontChangeModelRefreshSenku model
+
+                                WsPort.TaskChangedCordsResponse _ ->
+                                    dontChangeModelRefreshSenku model
+
+                                WsPort.CreateTaskConnectionResponse _ ->
+                                    dontChangeModelRefreshSenku model
+
+                        Err error ->
+                            ( { model | state = Authorized { authState | state = WSParsingError error } }, Cmd.none )
+
+                GoToBacklog ->
+                    ( { model | state = Authorized { authState | state = TableView } }, Cmd.none )
+
+                GoToOverview ->
+                    ( { model | state = Authorized { authState | state = Loading } }, WsPort.sendMessage (WsPort.GetSenkuStateRequest { projectId = model.projectId }) )
+
+                CreateTask info ->
+                    ( model, WsPort.sendMessage (WsPort.CreateTaskRequest info) )
+
+                TaskChangedCoords info ->
+                    ( model, WsPort.sendMessage (WsPort.TaskChangedCordsRequest info) )
+
+                CreateConnection info ->
+                    ( model, WsPort.sendMessage (WsPort.CreateTaskConnectionRequest info) )
+
+                _ ->
+                    ( model, Cmd.none )
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.batch
+        [ WsPort.onMessage WSMessage
+        , Auth.onCheckedUserSession CheckedUserSession
+        ]
 
 
 
@@ -132,6 +222,138 @@ body model =
                    , borderWidth (px 1)
                    , color cssColors.white_50
                    ]
+
+        mainContentTopBar : Html.Styled.Html Msg
+        mainContentTopBar =
+            let
+                defaultTopBar =
+                    div
+                        [ css
+                            [ displayFlex
+                            , Css.property "gap" spacing.xl
+                            , alignItems stretch
+                            ]
+                        ]
+                        [ div
+                            [ css viewNavbarContainerStyles
+                            , onClick GoToBacklog
+                            ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/table")
+                            , text "BACKLOG"
+                            ]
+                        , div
+                            [ css viewNavbarContainerStyles
+                            , onClick GoToOverview
+                            ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/share-nodes")
+                            , text "OVERVIEW"
+                            ]
+                        , div [ css viewNavbarContainerStyles ]
+                            [ Icon.view (viteAsset "~icons/fa6-solid/plus")
+                            ]
+                        ]
+            in
+            case model.state of
+                Authorizing ->
+                    defaultTopBar
+
+                Authorized authState ->
+                    case authState.state of
+                        SenkuView _ ->
+                            div
+                                [ css
+                                    [ displayFlex
+                                    , Css.property "gap" spacing.xl
+                                    , alignItems stretch
+                                    ]
+                                ]
+                                [ div
+                                    [ css viewNavbarContainerStyles
+                                    , onClick GoToBacklog
+                                    ]
+                                    [ Icon.view (viteAsset "~icons/fa6-solid/table")
+                                    , text "BACKLOG"
+                                    ]
+                                , div
+                                    [ css activeViewbarContainerStyles
+                                    , onClick GoToOverview
+                                    ]
+                                    [ Icon.view (viteAsset "~icons/fa6-solid/share-nodes")
+                                    , text "OVERVIEW"
+                                    ]
+                                , div [ css viewNavbarContainerStyles ]
+                                    [ Icon.view (viteAsset "~icons/fa6-solid/plus")
+                                    ]
+                                ]
+
+                        TableView ->
+                            div
+                                [ css
+                                    [ displayFlex
+                                    , Css.property "gap" spacing.xl
+                                    , alignItems stretch
+                                    ]
+                                ]
+                                [ div
+                                    [ css activeViewbarContainerStyles
+                                    , onClick GoToBacklog
+                                    ]
+                                    [ Icon.view (viteAsset "~icons/fa6-solid/table")
+                                    , text "BACKLOG"
+                                    ]
+                                , div
+                                    [ css viewNavbarContainerStyles
+                                    , onClick GoToOverview
+                                    ]
+                                    [ Icon.view (viteAsset "~icons/fa6-solid/share-nodes")
+                                    , text "OVERVIEW"
+                                    ]
+                                , div [ css viewNavbarContainerStyles ]
+                                    [ Icon.view (viteAsset "~icons/fa6-solid/plus")
+                                    ]
+                                ]
+
+                        _ ->
+                            defaultTopBar
+
+        mainContent : List (Html.Styled.Html Msg)
+        mainContent =
+            case model.state of
+                Authorizing ->
+                    [ pre [ css [ color Theme.cssColors.white_50 ] ]
+                        [ text "Authorizing..." ]
+                    ]
+
+                Authorized authState ->
+                    case authState.state of
+                        SenkuView state ->
+                            [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct) state model.projectId)
+                                [ onCreateTask CreateTask
+                                , onTaskChangedCoordinates TaskChangedCoords
+                                , onCreateConnection CreateConnection
+                                , onViewTask ViewTask
+                                , onDeleteTask DeleteTask
+                                , onDeleteConnection DeleteConnection
+                                ]
+                            ]
+
+                        WSConnectionError ->
+                            [ pre [ css [ color Theme.cssColors.white_50 ] ]
+                                [ text "An error ocurred connecting to the websocket!" ]
+                            ]
+
+                        Loading ->
+                            [ pre [ css [ color Theme.cssColors.white_50 ] ]
+                                [ text "Cargando..." ]
+                            ]
+
+                        WSParsingError err ->
+                            [ pre [ css [ color Theme.cssColors.white_50 ] ]
+                                [ text (String.join "\n" [ "Parsing websocket message error:", Decode.errorToString err ]) ]
+                            ]
+
+                        _ ->
+                            []
     in
     [ div
         [ css
@@ -163,46 +385,9 @@ body model =
                 ]
             , id "viewTopbar"
             ]
-            [ div
-                [ css
-                    [ displayFlex
-                    , Css.property "gap" spacing.xl
-                    , alignItems stretch
-                    ]
-                ]
-                [ div
-                    [ css
-                        (if model == TableView then
-                            activeViewbarContainerStyles
-
-                         else
-                            viewNavbarContainerStyles
-                        )
-                    , onClick GoToBacklog
-                    ]
-                    [ Icon.view (viteAsset "~icons/fa6-solid/table")
-                    , text "BACKLOG"
-                    ]
-                , div
-                    [ css
-                        (if model == SenkuView then
-                            activeViewbarContainerStyles
-
-                         else
-                            viewNavbarContainerStyles
-                        )
-                    , onClick GoToOverview
-                    ]
-                    [ Icon.view (viteAsset "~icons/fa6-solid/share-nodes")
-                    , text "OVERVIEW"
-                    ]
-                , div [ css viewNavbarContainerStyles ]
-                    [ Icon.view (viteAsset "~icons/fa6-solid/plus")
-                    ]
-                ]
-
-            -- View Topbar buttons
-            , div
+            [ mainContentTopBar
+            , -- View Topbar buttons
+              div
                 [ css
                     [ paddingBottom cssSpacing.xs
                     , displayFlex
@@ -234,20 +419,6 @@ body model =
             ]
             []
         , -- Main Content
-          div [ css [ paddingLeft (vw sidebardWidthPct) ] ]
-            (if model == SenkuView then
-                [ SenkuCanvas.view (SenkuCanvas.init (100 - sidebardWidthPct) (100 - topbarHeightPct))
-                    [ onCreateTask CreateTask
-                    , onTaskChangedCoordinates TaskChangedCoords
-                    , onCreateConnection CreateConnection
-                    , onViewTask ViewTask
-                    , onDeleteTask DeleteTask
-                    , onDeleteConnection DeleteConnection
-                    ]
-                ]
-
-             else
-                []
-            )
+          div [ css [ paddingLeft (vw sidebardWidthPct) ] ] mainContent
         ]
     ]
