@@ -39,6 +39,10 @@
             .url = "git+https://github.com/karlseguin/log.zig?ref=zig-0.13#5d5bbaeb98ad30cda30c60ab0f2d1a7fb4890676",
             .hash = "122030cda8b80a813ed2d1c460b9d1138bbb0c325f4ccda74785810e7395d6154670",
         },
+        .@"zig-jwt" = .{
+            .url = "git+https://github.com/leroycep/zig-jwt#fc2088fabb38d8d87b256059e2ff8884e175172c",
+            .hash = "12206d9432ca7a6d186f82f9e8b661ba5bdc860a18e818f09f8c42b2f77474a43d9b",
+        },
     },
     .paths = .{
         "build.zig",
