@@ -40,7 +40,7 @@
 
     frontendPkgs = forAllSystems (system: let
       pkgs = nixpkgsFor.${system};
-    in [pkgs.gleam pkgs.biome]);
+    in [pkgs.gleam pkgs.biome pkgs.tailwindcss_4]);
     orquestrationPkgs = forAllSystems (system: let
       pkgs = nixpkgsFor.${system};
     in [pkgs.process-compose pkgs.coreutils pkgs.xc]);

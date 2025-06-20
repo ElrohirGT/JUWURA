@@ -6,6 +6,7 @@ import gleam/erlang/process.{type Selector, type Subject}
 import gleam/function
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
+import gleam/io
 import gleam/json
 import gleam/option.{type Option, None, Some}
 import gleam/otp/actor
@@ -149,6 +150,8 @@ fn loop_whiteboard_socket(
     }
 
     mist.Custom(client_message) -> {
+      io.print("Received message:")
+      echo client_message
       let json = server_component.client_message_to_json(client_message)
       let assert Ok(_) = mist.send_text_frame(connection, json.to_string(json))
 
