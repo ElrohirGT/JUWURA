@@ -1,8 +1,0 @@
-# Yarn and nodejs outputs
-.yarn
-.pnp.*
-node_modules/
-
-# Zig outputs
-.zig-cache/
-zig-out/

@@ -24,7 +24,7 @@
 
     # System packages...
     # backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.pnpm pkgs.websocat];
-    backendPkgs = pkgs: [pkgs.gleam pkgs.websocat pkgs.nodejs pkgs.pnpm];
+    backendPkgs = pkgs: [pkgs.gleam pkgs.erlang];
     dbPkgs = pkgs: [pkgs.sqlfluff];
     # frontendPkgs = pkgs: [pkgs.nodejs pkgs.pnpm pkgs.elmPackages.elm pkgs.elmPackages.elm-format pkgs.biome pkgs.elmPackages.elm-review];
     frontendPkgs = pkgs: [pkgs.gleam pkgs.biome];
