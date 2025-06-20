@@ -36,14 +36,14 @@
     );
     dbPkgs = forAllSystems (system: let
       pkgs = nixpkgsFor.${system};
-    in [pkgs.sqlfluff]);
+    in [pkgs.sqlfluff pkgs.podman pkgs.podman-compose]);
 
     frontendPkgs = forAllSystems (system: let
       pkgs = nixpkgsFor.${system};
     in [pkgs.gleam pkgs.biome]);
     orquestrationPkgs = forAllSystems (system: let
       pkgs = nixpkgsFor.${system};
-    in [pkgs.process-compose pkgs.coreutils]);
+    in [pkgs.process-compose pkgs.coreutils pkgs.xc]);
   in {
     devShells = forAllSystems (system: let
       pkgs = nixpkgsFor.${system};

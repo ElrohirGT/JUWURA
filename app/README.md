@@ -1,24 +1,20 @@
-# app
+# JUWURA Application
 
-[![Package Version](https://img.shields.io/hexpm/v/app)](https://hex.pm/packages/app)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/app/)
+This project uses Nix to manage it's dependencies, you can simply type:
 
-```sh
-gleam add app@1
-```
-```gleam
-import app
-
-pub fn main() -> Nil {
-  // TODO: An example of the project in use
-}
+```bash
+nix develop
 ```
 
-Further documentation can be found at <https://hexdocs.pm/app>.
+And Nix will install and configure all the dependencies to run this project.
 
-## Development
+## Tasks
 
-```sh
-gleam run   # Run the project
-gleam test  # Run the tests
+### dev
+
+Run the project in development mode, with auto reloading. Make sure to already
+be on the shell that Nix provides.
+
+```bash
+gleam run -m lustre/dev start
 ```
