@@ -22,31 +22,46 @@
     # Nixpkgs instantiated for supported system types.
     nixpkgsFor = forAllSystems (system: import nixpkgs {inherit system;});
 
-    # System packages...
-    # backendPkgs = pkgs: [pkgs.zig pkgs.nodejs pkgs.pnpm pkgs.websocat];
-    backendPkgs = pkgs: [pkgs.gleam pkgs.erlang pkgs.rebar3 pkgs.inotify-tools];
-    dbPkgs = pkgs: [pkgs.sqlfluff];
-    # frontendPkgs = pkgs: [pkgs.nodejs pkgs.pnpm pkgs.elmPackages.elm pkgs.elmPackages.elm-format pkgs.biome pkgs.elmPackages.elm-review];
-    frontendPkgs = pkgs: [pkgs.gleam pkgs.biome];
-    orquestrationPkgs = pkgs: [pkgs.process-compose pkgs.coreutils];
+    # Project packages...
+    backendPkgs = forAllSystems (
+      system: let
+        pkgs = nixpkgsFor.${system};
+      in
+        [pkgs.gleam pkgs.erlang pkgs.rebar3]
+        ++ (
+          if system != "aarch64-darwin"
+          then [pkgs.inotify-tools]
+          else []
+        )
+    );
+    dbPkgs = forAllSystems (system: let
+      pkgs = nixpkgsFor.${system};
+    in [pkgs.sqlfluff]);
+
+    frontendPkgs = forAllSystems (system: let
+      pkgs = nixpkgsFor.${system};
+    in [pkgs.gleam pkgs.biome]);
+    orquestrationPkgs = forAllSystems (system: let
+      pkgs = nixpkgsFor.${system};
+    in [pkgs.process-compose pkgs.coreutils]);
   in {
     devShells = forAllSystems (system: let
       pkgs = nixpkgsFor.${system};
     in {
       default = pkgs.mkShell {
-        packages = backendPkgs pkgs ++ frontendPkgs pkgs ++ orquestrationPkgs pkgs ++ dbPkgs pkgs;
+        packages = backendPkgs.${system} ++ frontendPkgs.${system} ++ orquestrationPkgs.${system} ++ dbPkgs.${system};
       };
 
       cicdFrontend = pkgs.mkShell {
-        packages = frontendPkgs pkgs;
+        packages = frontendPkgs.${system};
       };
 
       cicdBackend = pkgs.mkShell {
-        packages = backendPkgs pkgs ++ orquestrationPkgs pkgs;
+        packages = backendPkgs.${system} ++ orquestrationPkgs.${system};
       };
 
       cicdDB = pkgs.mkShell {
-        packages = dbPkgs pkgs;
+        packages = dbPkgs.${system};
       };
     });
   };
