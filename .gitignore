@@ -3,3 +3,4 @@
 
 .pgData
 *.seed
+*.DS_Store

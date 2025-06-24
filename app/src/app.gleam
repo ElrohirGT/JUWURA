@@ -1,14 +1,15 @@
 // IMPORTS ---------------------------------------------------------------------
 
-import gleam/dict.{type Dict}
 import gleam/int
-import gleam/list
+import gleam/string
 import gleam/uri.{type Uri}
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
+import styles
+import theme
 
 // Modem is a package providing effects and functionality for routing in SPAs.
 // This means instead of links taking you to a new page and reloading everything,
@@ -27,36 +28,14 @@ pub fn main() {
 // MODEL -----------------------------------------------------------------------
 
 type Model {
-  Model(posts: Dict(Int, Post), route: Route)
+  Model(route: Route)
 }
 
-type Post {
-  Post(id: Int, title: String, summary: String, text: String)
-}
-
-/// In a real application, we'll likely want to show different views depending on
-/// which URL we are on:
-///
-/// - /      - show the home page
-/// - /posts - show a list of posts
-/// - /about - show an about page
-/// - ...
-///
-/// We could store the `Uri` or perhaps the path as a `String` in our model, but
-/// this can be awkward to work with and error prone as our application grows.
-///
-/// Instead, we _parse_ the URL into a nice Gleam custom type with just the
-/// variants we need! This lets us benefit from Gleam's pattern matching,
-/// exhaustiveness checks, and LSP features, while also serving as documentation
-/// for our app: if you can get to a page, it must be in this type!
-///
 type Route {
   Index
-  Posts
-  PostById(id: Int)
-  About
-  /// It's good practice to store whatever `Uri` we failed to match in case we
-  /// want to log it or hint to the user that maybe they made a typo.
+  Home(user_id: Int)
+  TableView(project_id: Int)
+  SenkuView(project_id: Int)
   NotFound(uri: Uri)
 }
 
@@ -64,30 +43,34 @@ fn parse_route(uri: Uri) -> Route {
   case uri.path_segments(uri.path) {
     [] | [""] -> Index
 
-    ["posts"] -> Posts
-
-    ["post", post_id] ->
-      case int.parse(post_id) {
-        Ok(post_id) -> PostById(id: post_id)
+    ["home", user_id] ->
+      case int.parse(user_id) {
+        Ok(user_id) -> Home(user_id: user_id)
         Error(_) -> NotFound(uri:)
       }
 
-    ["about"] -> About
+    ["table", project_id] ->
+      case int.parse(project_id) {
+        Ok(project_id) -> TableView(project_id: project_id)
+        Error(_) -> NotFound(uri:)
+      }
+
+    ["senku", project_id] ->
+      case int.parse(project_id) {
+        Ok(project_id) -> SenkuView(project_id: project_id)
+        Error(_) -> NotFound(uri:)
+      }
 
     _ -> NotFound(uri:)
   }
 }
 
-/// We also need a way to turn a Route back into a an `href` attribute that we
-/// can then use on `html.a` elements. It is important to keep this function in
-/// sync with the parsing, but once you do, all links are guaranteed to work!
-///
 fn href(route: Route) -> Attribute(msg) {
   let url = case route {
     Index -> "/"
-    About -> "/about"
-    Posts -> "/posts"
-    PostById(post_id) -> "/post/" <> int.to_string(post_id)
+    Home(id) -> "/home/" <> int.to_string(id)
+    TableView(id) -> "/table/" <> int.to_string(id)
+    SenkuView(id) -> "/senku/" <> int.to_string(id)
     NotFound(_) -> "/404"
   }
 
@@ -103,12 +86,7 @@ fn init(_) -> #(Model, Effect(Msg)) {
     Error(_) -> Index
   }
 
-  let posts =
-    posts
-    |> list.map(fn(post) { #(post.id, post) })
-    |> dict.from_list
-
-  let model = Model(route:, posts:)
+  let model = Model(route:)
 
   let effect =
     // We need to initialise modem in order for it to intercept links. To do that
@@ -129,149 +107,110 @@ type Msg {
   UserNavigatedTo(route: Route)
 }
 
-fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+fn update(_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    UserNavigatedTo(route:) -> #(Model(..model, route:), effect.none())
+    UserNavigatedTo(route:) -> #(Model(route:), effect.none())
   }
 }
 
 // VIEW ------------------------------------------------------------------------
 
-fn view(model: Model) -> Element(Msg) {
-  html.div([attribute.class("mx-auto max-w-2xl px-32")], [
-    html.nav([attribute.class("flex justify-between items-center my-16")], [
-      html.h1([attribute.class("text-purple-600 font-medium text-xl")], [
-        html.a([href(Index)], [html.text("My little Blog")]),
-      ]),
-      html.ul([attribute.class("flex space-x-8")], [
-        view_header_link(current: model.route, to: Posts, label: "Posts"),
-        view_header_link(current: model.route, to: About, label: "About"),
-      ]),
-    ]),
-    html.main([attribute.class("my-16")], {
-      // Just like we would show different HTML based on some other state in the
-      // model, we can also pattern match on our Route value to show different
-      // views based on the current page!
-      case model.route {
-        Index -> view_index()
-        Posts -> view_posts(model)
-        PostById(post_id) -> view_post(model, post_id)
-        About -> view_about()
-        NotFound(_) -> view_not_found()
-      }
-    }),
-  ])
-}
-
-fn view_header_link(
-  to target: Route,
-  current current: Route,
-  label text: String,
-) -> Element(msg) {
-  let is_active = case current, target {
-    PostById(_), Posts -> True
-    _, _ -> current == target
-  }
-
-  html.li(
-    [
-      attribute.classes([
-        #("border-transparent border-b-2 hover:border-purple-600", True),
-        #("text-purple-600", is_active),
-      ]),
-    ],
-    [html.a([href(target)], [html.text(text)])],
-  )
-}
-
-// VIEW PAGES ------------------------------------------------------------------
-
-fn view_index() -> List(Element(msg)) {
-  [
-    title("Hello, Joe"),
-    leading(
-      "Or whoever you may be! This is were I will share random ramblings
-       and thoughts about life.",
-    ),
-    html.p([attribute.class("mt-14")], [
-      html.text("There is not much going on at the moment, but you can still "),
-      link(Posts, "read my ramblings ->"),
-    ]),
-    paragraph("If you like <3"),
-  ]
-}
-
-fn view_posts(model: Model) -> List(Element(msg)) {
-  let posts =
-    model.posts
-    |> dict.values
-    |> list.sort(fn(a, b) { int.compare(a.id, b.id) })
-    |> list.map(fn(post) {
-      html.article([attribute.class("mt-14")], [
-        html.h3([attribute.class("text-xl text-purple-600 font-light")], [
-          html.a([attribute.class("hover:underline"), href(PostById(post.id))], [
-            html.text(post.title),
-          ]),
+fn view(_: Model) -> Element(Msg) {
+  // Top App Container
+  html.div([attribute.styles([styles.background_color("#191919")])], [
+    html.div(
+      [
+        attribute.styles([
+          styles.background_color(theme.black_400),
+          styles.padding("1rem 1rem 1rem 6rem"),
+          styles.display("flex"),
+          styles.justify_content("space-between"),
         ]),
-        html.p([attribute.class("mt-1")], [html.text(post.summary)]),
-      ])
-    })
-
-  [title("Posts"), ..posts]
-}
-
-fn view_post(model: Model, post_id: Int) -> List(Element(msg)) {
-  case dict.get(model.posts, post_id) {
-    Error(_) -> view_not_found()
-    Ok(post) -> [
-      html.article([], [
-        title(post.title),
-        leading(post.summary),
-        paragraph(post.text),
-      ]),
-      html.p([attribute.class("mt-14")], [link(Posts, "<- Go back?")]),
-    ]
-  }
-}
-
-fn view_about() -> List(Element(msg)) {
-  [
-    title("Me"),
-    paragraph(
-      "I document the odd occurrences that catch my attention and rewrite my own
-       narrative along the way. I'm fine being referred to with pronouns.",
+      ],
+      [
+        title("Home/"),
+        html.div(
+          [
+            attribute.styles([
+              styles.display("flex"),
+              styles.justify_content("space-around"),
+              styles.gap("30px"),
+            ]),
+          ],
+          [
+            search_bar("SEARCH..."),
+            btn_secondary("SHORTCUTS"),
+            btn_profile("none"),
+          ],
+        ),
+      ],
     ),
-    paragraph(
-      "If you enjoy these glimpses into my mind, feel free to come back
-       semi-regularly. But not too regularly, you creep.",
-    ),
-  ]
-}
-
-fn view_not_found() -> List(Element(msg)) {
-  [
-    title("Not found"),
-    paragraph(
-      "You glimpse into the void and see -- nothing?
-       Well that was somewhat expected.",
-    ),
-  ]
+  ])
 }
 
 // VIEW HELPERS ----------------------------------------------------------------
 
 fn title(title: String) -> Element(msg) {
-  html.h2([attribute.class("text-3xl text-purple-800 font-light")], [
-    html.text(title),
+  html.h1(
+    [
+      attribute.styles([
+        styles.color(theme.white_400),
+        styles.font_weight("bold"),
+        styles.font_family(theme.font_title),
+        styles.font_size(theme.title_l),
+      ]),
+    ],
+    [html.text(title |> string.uppercase())],
+  )
+}
+
+fn btn_secondary(text: String) -> Element(msg) {
+  html.button(
+    [
+      attribute.styles([
+        styles.color(theme.white_700),
+        styles.font_size(theme.title_m),
+        styles.font_family(theme.font_title),
+        styles.padding("4px 10px"),
+        styles.font_weight("bold"),
+        styles.border_radius("4px"),
+        styles.All(".1rem")
+          |> styles.BorderInfo("solid", theme.white_700)
+          |> styles.border,
+      ]),
+    ],
+    [html.text(text)],
+  )
+}
+
+fn btn_profile(pic_src: String) -> Element(msg) {
+  html.img([
+    attribute.src(pic_src),
+    attribute.styles([
+      styles.border_radius("50%"),
+      styles.width("2rem"),
+      styles.height("2rem"),
+    ]),
   ])
 }
 
-fn leading(text: String) -> Element(msg) {
-  html.p([attribute.class("mt-8 text-lg")], [html.text(text)])
-}
-
-fn paragraph(text: String) -> Element(msg) {
-  html.p([attribute.class("mt-14")], [html.text(text)])
+fn search_bar(placeholder: String) -> Element(msg) {
+  html.input([
+    attribute.type_("text"),
+    attribute.name("search-bar"),
+    attribute.placeholder(placeholder),
+    attribute.styles([
+      styles.border_radius("4px"),
+      styles.color(theme.white_700),
+      styles.font_size(theme.title_m),
+      styles.font_family(theme.font_title),
+      styles.border_radius("4px"),
+      styles.font_weight("bold"),
+      styles.All(".1rem")
+        |> styles.BorderInfo("solid", theme.white_700)
+        |> styles.border,
+    ]),
+  ])
 }
 
 /// In other frameworks you might see special `<Link />` components that are
@@ -288,45 +227,3 @@ fn link(target: Route, title: String) -> Element(msg) {
     [html.text(title)],
   )
 }
-
-// DATA ------------------------------------------------------------------------
-
-const posts: List(Post) = [
-  Post(
-    id: 1,
-    title: "The Empty Chair",
-    summary: "A guide to uninvited furniture and its temporal implications",
-    text: "
-      There's an empty chair in my home that wasn't there yesterday. When I sit
-      in it, I start to remember things that haven't happened yet. The chair is
-      getting closer to my bedroom each night, though I never caught it move.
-      Last night, I dreamt it was watching me sleep. This morning, it offered
-      me coffee.
-    ",
-  ),
-  Post(
-    id: 2,
-    title: "The Library of Unwritten Books",
-    summary: "Warning: Reading this may shorten your narrative arc",
-    text: "
-      Between the shelves in the public library exists a thin space where
-      books that were never written somehow exist. Their pages change when you
-      blink. Forms shifting to match the souls blueprint. Librarians warn
-      against reading the final chapter of any unwritten book – those who do
-      find their own stories mysteriously concluding. Yourself is just another
-      draft to be rewritten.
-    ",
-  ),
-  Post(
-    id: 3,
-    title: "The Hum",
-    summary: "A frequency analysis of the collective forgetting",
-    text: "
-      The citywide hum started Tuesday. Not everyone can hear it, but those who
-      can't are slowly being replaced by perfect copies who smile too widely.
-      The hum isn't sound – it's the universe forgetting our coordinates.
-      Reports suggest humming back in harmony might postpone whatever comes
-      next. Or perhaps accelerate it.
-    ",
-  ),
-]
