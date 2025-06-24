@@ -90,3 +90,7 @@ pub fn border_radius(rad: String) -> #(String, String) {
 pub fn gap(gap: String) -> #(String, String) {
   #("gap", gap)
 }
+
+pub fn align_items(align: String) -> #(String, String) {
+  #("align-items", align)
+}

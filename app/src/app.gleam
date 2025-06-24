@@ -174,8 +174,8 @@ fn btn_secondary(text: String) -> Element(msg) {
         styles.padding("4px 10px"),
         styles.font_weight("bold"),
         styles.border_radius("4px"),
-        styles.All(".1rem")
-          |> styles.BorderInfo("solid", theme.white_700)
+        styles.All("1px")
+          |> styles.BorderInfo("solid", theme.black_300)
           |> styles.border,
       ]),
     ],
@@ -195,22 +195,35 @@ fn btn_profile(pic_src: String) -> Element(msg) {
 }
 
 fn search_bar(placeholder: String) -> Element(msg) {
-  html.input([
-    attribute.type_("text"),
-    attribute.name("search-bar"),
-    attribute.placeholder(placeholder),
-    attribute.styles([
-      styles.border_radius("4px"),
-      styles.color(theme.white_700),
-      styles.font_size(theme.title_m),
-      styles.font_family(theme.font_title),
-      styles.border_radius("4px"),
-      styles.font_weight("bold"),
-      styles.All(".1rem")
-        |> styles.BorderInfo("solid", theme.white_700)
-        |> styles.border,
-    ]),
-  ])
+  html.div(
+    [
+      attribute.styles([
+        styles.display("flex"),
+        styles.align_items("center"),
+        styles.padding("4px 10px"),
+        styles.color(theme.white_700),
+        styles.font_size(theme.title_m),
+        styles.font_family(theme.font_title),
+        styles.border_radius("4px"),
+        styles.All("1px")
+          |> styles.BorderInfo("solid", theme.black_300)
+          |> styles.border,
+      ]),
+    ],
+    [
+      html.svg(
+        [attribute.styles([styles.width("1rem"), styles.height("1rem")])],
+        [],
+      ),
+      html.input([
+        attribute.type_("text"),
+        attribute.name("search-bar"),
+        attribute.styles([styles.font_weight("bold")]),
+        attribute.placeholder(placeholder),
+      ]),
+      html.span([], [html.text("CTRL + K")]),
+    ],
+  )
 }
 
 /// In other frameworks you might see special `<Link />` components that are
