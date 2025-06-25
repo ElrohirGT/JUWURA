@@ -24,6 +24,10 @@ pub fn background_color(color: String) -> #(String, String) {
   #("background-color", color)
 }
 
+pub fn background(color: String) -> #(String, String) {
+  #("background", color)
+}
+
 pub fn color(color: String) -> #(String, String) {
   #("color", color)
 }
@@ -42,6 +46,26 @@ pub fn font_family(family: String) -> #(String, String) {
 
 pub fn display(display: String) -> #(String, String) {
   #("display", display)
+}
+
+pub fn grid_template_rows(display: String) -> #(String, String) {
+  #("grid-template-rows", display)
+}
+
+pub fn grid_template_columns(display: String) -> #(String, String) {
+  #("grid-template-columns", display)
+}
+
+pub fn grid_template_areas(display: String) -> #(String, String) {
+  #("grid-template-areas", display)
+}
+
+pub fn grid_area(display: String) -> #(String, String) {
+  #("grid-area", display)
+}
+
+pub fn flex_direction(or: String) -> #(String, String) {
+  #("flex-direction", or)
 }
 
 pub fn justify_content(js: String) -> #(String, String) {

@@ -123,35 +123,79 @@ fn update(_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
 fn view(_: Model) -> Element(Msg) {
   // Top App Container
-  html.div([attribute.styles([styles.background_color("#191919")])], [
-    html.div(
-      [
-        attribute.styles([
-          styles.background_color(theme.black_400),
-          styles.padding("1rem 1rem 1rem 6rem"),
-          styles.display("flex"),
-          styles.justify_content("space-between"),
-        ]),
-      ],
-      [
-        title("Home/"),
-        html.div(
-          [
-            attribute.styles([
-              styles.display("flex"),
-              styles.justify_content("space-around"),
-              styles.gap("30px"),
-            ]),
-          ],
-          [
-            search_bar.element([search_bar.placeholder("SEARCH...")]),
-            btn_secondary("SHORTCUTS", option.Some(icons.QuestionMark)),
-            btn_profile("/priv/static/profile.webp"),
-          ],
-        ),
-      ],
-    ),
-  ])
+  html.div(
+    [
+      attribute.styles([
+        styles.background_color("#191919"),
+        styles.width("100vw"),
+        styles.height("100vh"),
+        styles.display("grid"),
+        styles.grid_template_rows("6% 90%"),
+        styles.grid_template_columns("5% auto"),
+        styles.grid_template_areas("\"sidebar header\" \"sidebar content\" "),
+      ]),
+    ],
+    [
+      // Page Header
+      html.div(
+        [
+          attribute.styles([
+            styles.background_color(theme.black_400),
+            styles.padding("1rem 1rem 1rem 3rem"),
+            styles.display("flex"),
+            styles.justify_content("space-between"),
+            styles.align_items("center"),
+            styles.grid_area("header"),
+          ]),
+        ],
+        [
+          title("Home/"),
+          html.div(
+            [
+              attribute.styles([
+                styles.display("flex"),
+                styles.justify_content("space-around"),
+                styles.gap("30px"),
+              ]),
+            ],
+            [
+              search_bar.element([search_bar.placeholder("SEARCH...")]),
+              btn_secondary("SHORTCUTS", option.Some(icons.QuestionMark)),
+              btn_profile("/priv/static/profile.webp"),
+            ],
+          ),
+        ],
+      ),
+      // Page Sidebar
+      html.div(
+        [
+          attribute.styles([
+            styles.height("100vh"),
+            styles.background(
+              "linear-gradient(180deg, "
+              <> theme.black_400
+              <> " 0%, "
+              <> theme.white_50
+              <> "00 100%)",
+            ),
+            styles.grid_area("sidebar"),
+          ]),
+        ],
+        [
+          html.div(
+            [
+              attribute.styles([
+                styles.height("100vh"),
+                styles.background_color(theme.black_500),
+                styles.border_radius("0 10px 10px 0"),
+              ]),
+            ],
+            [],
+          ),
+        ],
+      ),
+    ],
+  )
 }
 
 // VIEW HELPERS ----------------------------------------------------------------
