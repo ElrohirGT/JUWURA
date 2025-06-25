@@ -2,8 +2,10 @@
 
 import components/search_bar
 import gleam/int
+import gleam/option
 import gleam/string
 import gleam/uri.{type Uri}
+import icons
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/effect.{type Effect}
@@ -143,8 +145,8 @@ fn view(_: Model) -> Element(Msg) {
           ],
           [
             search_bar.element([search_bar.placeholder("SEARCH...")]),
-            btn_secondary("SHORTCUTS"),
-            btn_profile("none"),
+            btn_secondary("SHORTCUTS", option.Some(icons.QuestionMark)),
+            btn_profile("/priv/static/profile.webp"),
           ],
         ),
       ],
@@ -168,7 +170,7 @@ fn title(title: String) -> Element(msg) {
   )
 }
 
-fn btn_secondary(text: String) -> Element(msg) {
+fn btn_secondary(text: String, icon: option.Option(icons.Icon)) -> Element(msg) {
   html.button(
     [
       attribute.styles([
@@ -178,12 +180,22 @@ fn btn_secondary(text: String) -> Element(msg) {
         styles.padding("4px 10px"),
         styles.font_weight("bold"),
         styles.border_radius("4px"),
+        styles.display("flex"),
+        styles.gap("10px"),
         styles.All("1px")
           |> styles.BorderInfo("solid", theme.black_300)
           |> styles.border,
       ]),
     ],
-    [html.text(text)],
+    [
+      case icon {
+        option.Some(icon) -> html.img([attribute.src(icons.to_uri(icon))])
+        option.None -> {
+          html.span([], [])
+        }
+      },
+      html.text(text),
+    ],
   )
 }
 
