@@ -1,16 +1,16 @@
 // IMPORTS ---------------------------------------------------------------------
 
 import components/search_bar
-import gleam/int
+import components/sidebar
 import gleam/option
-import gleam/string
-import gleam/uri.{type Uri}
+import helpers
 import icons
 import lustre
-import lustre/attribute.{type Attribute}
+import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
+import routes.{type Route}
 import styles
 import theme
 
@@ -24,6 +24,7 @@ import modem
 pub fn main() {
   // Registering components
   let assert Ok(_) = search_bar.register()
+  let assert Ok(_) = sidebar.register()
 
   let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
@@ -34,53 +35,7 @@ pub fn main() {
 // MODEL -----------------------------------------------------------------------
 
 type Model {
-  Model(route: Route)
-}
-
-type Route {
-  Index
-  Home(user_id: Int)
-  TableView(project_id: Int)
-  SenkuView(project_id: Int)
-  NotFound(uri: Uri)
-}
-
-fn parse_route(uri: Uri) -> Route {
-  case uri.path_segments(uri.path) {
-    [] | [""] -> Index
-
-    ["home", user_id] ->
-      case int.parse(user_id) {
-        Ok(user_id) -> Home(user_id: user_id)
-        Error(_) -> NotFound(uri:)
-      }
-
-    ["table", project_id] ->
-      case int.parse(project_id) {
-        Ok(project_id) -> TableView(project_id: project_id)
-        Error(_) -> NotFound(uri:)
-      }
-
-    ["senku", project_id] ->
-      case int.parse(project_id) {
-        Ok(project_id) -> SenkuView(project_id: project_id)
-        Error(_) -> NotFound(uri:)
-      }
-
-    _ -> NotFound(uri:)
-  }
-}
-
-fn href(route: Route) -> Attribute(msg) {
-  let url = case route {
-    Index -> "/"
-    Home(id) -> "/home/" <> int.to_string(id)
-    TableView(id) -> "/table/" <> int.to_string(id)
-    SenkuView(id) -> "/senku/" <> int.to_string(id)
-    NotFound(_) -> "/404"
-  }
-
-  attribute.href(url)
+  Model(route: Route, sidebar_expanded: Bool)
 }
 
 fn init(_) -> #(Model, Effect(Msg)) {
@@ -88,11 +43,11 @@ fn init(_) -> #(Model, Effect(Msg)) {
   // HTTP request, and let the app itself determine what to show. Modem stores
   // the first URL so we can parse it for the app's initial route.
   let route = case modem.initial_uri() {
-    Ok(uri) -> parse_route(uri)
-    Error(_) -> Index
+    Ok(uri) -> routes.parse_route(uri)
+    Error(_) -> routes.Index
   }
 
-  let model = Model(route:)
+  let model = Model(route:, sidebar_expanded: False)
 
   let effect =
     // We need to initialise modem in order for it to intercept links. To do that
@@ -100,7 +55,7 @@ fn init(_) -> #(Model, Effect(Msg)) {
     // turns it into a `Msg`.
     modem.init(fn(uri) {
       uri
-      |> parse_route
+      |> routes.parse_route
       |> UserNavigatedTo
     })
 
@@ -111,17 +66,22 @@ fn init(_) -> #(Model, Effect(Msg)) {
 
 type Msg {
   UserNavigatedTo(route: Route)
+  ToggleSidebar(expand: Bool)
 }
 
-fn update(_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    UserNavigatedTo(route:) -> #(Model(route:), effect.none())
+    UserNavigatedTo(route:) -> #(Model(..model, route:), effect.none())
+    ToggleSidebar(expand:) -> #(
+      Model(..model, sidebar_expanded: expand),
+      effect.none(),
+    )
   }
 }
 
 // VIEW ------------------------------------------------------------------------
 
-fn view(_: Model) -> Element(Msg) {
+fn view(model: Model) -> Element(Msg) {
   // Top App Container
   html.div(
     [
@@ -131,8 +91,11 @@ fn view(_: Model) -> Element(Msg) {
         styles.height("100vh"),
         styles.display("grid"),
         styles.grid_template_rows("6% 90%"),
-        styles.grid_template_columns("5% auto"),
         styles.grid_template_areas("\"sidebar header\" \"sidebar content\" "),
+        case model.sidebar_expanded {
+          True -> styles.grid_template_columns("10% auto")
+          False -> styles.grid_template_columns("5% auto")
+        },
       ]),
     ],
     [
@@ -149,7 +112,7 @@ fn view(_: Model) -> Element(Msg) {
           ]),
         ],
         [
-          title("Home/"),
+          helpers.title("Home/"),
           html.div(
             [
               attribute.styles([
@@ -160,111 +123,17 @@ fn view(_: Model) -> Element(Msg) {
             ],
             [
               search_bar.element([search_bar.placeholder("SEARCH...")]),
-              btn_secondary("SHORTCUTS", option.Some(icons.QuestionMark)),
-              btn_profile("/priv/static/profile.webp"),
+              helpers.btn_secondary(
+                "SHORTCUTS",
+                option.Some(icons.QuestionMark),
+              ),
+              helpers.btn_profile("/priv/static/profile.webp"),
             ],
           ),
         ],
       ),
       // Page Sidebar
-      html.div(
-        [
-          attribute.styles([
-            styles.height("100vh"),
-            styles.background(
-              "linear-gradient(180deg, "
-              <> theme.black_400
-              <> " 0%, "
-              <> theme.white_50
-              <> "00 100%)",
-            ),
-            styles.grid_area("sidebar"),
-          ]),
-        ],
-        [
-          html.div(
-            [
-              attribute.styles([
-                styles.height("100vh"),
-                styles.background_color(theme.black_500),
-                styles.border_radius("0 10px 10px 0"),
-              ]),
-            ],
-            [],
-          ),
-        ],
-      ),
+      sidebar.element([sidebar.on_toggle(ToggleSidebar)]),
     ],
-  )
-}
-
-// VIEW HELPERS ----------------------------------------------------------------
-
-fn title(title: String) -> Element(msg) {
-  html.h1(
-    [
-      attribute.styles([
-        styles.color(theme.white_400),
-        styles.font_weight("bold"),
-        styles.font_family(theme.font_title),
-        styles.font_size(theme.title_l),
-      ]),
-    ],
-    [html.text(title |> string.uppercase())],
-  )
-}
-
-fn btn_secondary(text: String, icon: option.Option(icons.Icon)) -> Element(msg) {
-  html.button(
-    [
-      attribute.styles([
-        styles.color(theme.white_700),
-        styles.font_size(theme.title_m),
-        styles.font_family(theme.font_title),
-        styles.padding("4px 10px"),
-        styles.font_weight("bold"),
-        styles.border_radius("4px"),
-        styles.display("flex"),
-        styles.gap("10px"),
-        styles.All("1px")
-          |> styles.BorderInfo("solid", theme.black_300)
-          |> styles.border,
-      ]),
-    ],
-    [
-      case icon {
-        option.Some(icon) -> html.img([attribute.src(icons.to_uri(icon))])
-        option.None -> {
-          html.span([], [])
-        }
-      },
-      html.text(text),
-    ],
-  )
-}
-
-fn btn_profile(pic_src: String) -> Element(msg) {
-  html.img([
-    attribute.src(pic_src),
-    attribute.styles([
-      styles.border_radius("50%"),
-      styles.width("2rem"),
-      styles.height("2rem"),
-    ]),
-  ])
-}
-
-/// In other frameworks you might see special `<Link />` components that are
-/// used to handle navigation logic. Using modem, we can just use normal HTML
-/// `<a>` elements and pass in the `href` attribute. This means we have the option
-/// of rendering our app as static HTML in the future!
-///
-fn link(target: Route, title: String) -> Element(msg) {
-  html.a(
-    [
-      href(target),
-      attribute.class("text-purple-600 hover:underline cursor-pointer"),
-    ],
-    [html.text(title)],
   )
 }

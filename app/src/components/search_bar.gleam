@@ -1,4 +1,6 @@
+// IMPORTS ------------------------------------------------------------------------
 import gleam/dynamic/decode
+import gleam/json
 import gleam/list
 import gleam/string
 import icons
@@ -11,6 +13,8 @@ import lustre/element/html
 import lustre/event
 import styles
 import theme
+
+const tag_name = "search-bar"
 
 // MAIN ------------------------------------------------------------------------
 pub fn register() -> Result(Nil, lustre.Error) {
@@ -25,12 +29,12 @@ pub fn register() -> Result(Nil, lustre.Error) {
         decode.string |> decode.map(PlaceholderChanged)
       }),
     ])
-  lustre.register(component, "search-bar")
+  lustre.register(component, tag_name)
 }
 
 ///The element to use for this component
 pub fn element(attributes: List(Attribute(msg))) -> Element(msg) {
-  element.element("search-bar", attributes, [])
+  element.element(tag_name, attributes, [])
 }
 
 /// The placeholder attribute.
@@ -70,7 +74,10 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     FocusChanged(focus) -> #(Model(..model, has_focus: focus), effect.none())
 
-    QueryChanged(query) -> #(Model(..model, query: query), effect.none())
+    QueryChanged(query) -> #(
+      Model(..model, query: query),
+      event.emit("change", json.string(query)),
+    )
   }
 }
 

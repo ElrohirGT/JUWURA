@@ -68,8 +68,16 @@ pub fn flex_direction(or: String) -> #(String, String) {
   #("flex-direction", or)
 }
 
+pub fn transition(or: String) -> #(String, String) {
+  #("transition", or)
+}
+
 pub fn justify_content(js: String) -> #(String, String) {
   #("justify-content", js)
+}
+
+pub fn align_self(js: String) -> #(String, String) {
+  #("align-self", js)
 }
 
 pub type BoxDimensions {
@@ -145,4 +153,8 @@ pub fn top(r: String) -> #(String, String) {
 
 pub fn bottom(r: String) -> #(String, String) {
   #("bottom", r)
+}
+
+pub fn transform(r: String) -> #(String, String) {
+  #("transform", r)
 }
