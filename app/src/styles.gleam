@@ -12,6 +12,14 @@ pub fn padding(pad: String) -> #(String, String) {
   #("padding", pad)
 }
 
+pub fn flex_grow(grow: String) -> #(String, String) {
+  #("flex-grow", grow)
+}
+
+pub fn overflow_x(ovflow: String) -> #(String, String) {
+  #("overflow-x", ovflow)
+}
+
 pub fn background_color(color: String) -> #(String, String) {
   #("background-color", color)
 }
@@ -93,4 +101,24 @@ pub fn gap(gap: String) -> #(String, String) {
 
 pub fn align_items(align: String) -> #(String, String) {
   #("align-items", align)
+}
+
+pub fn position(pos: String) -> #(String, String) {
+  #("position", pos)
+}
+
+pub fn right(r: String) -> #(String, String) {
+  #("right", r)
+}
+
+pub fn left(r: String) -> #(String, String) {
+  #("left", r)
+}
+
+pub fn top(r: String) -> #(String, String) {
+  #("top", r)
+}
+
+pub fn bottom(r: String) -> #(String, String) {
+  #("bottom", r)
 }

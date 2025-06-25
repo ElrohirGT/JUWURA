@@ -1,5 +1,6 @@
 // IMPORTS ---------------------------------------------------------------------
 
+import components/search_bar
 import gleam/int
 import gleam/string
 import gleam/uri.{type Uri}
@@ -19,6 +20,9 @@ import modem
 // MAIN ------------------------------------------------------------------------
 
 pub fn main() {
+  // Registering components
+  let assert Ok(_) = search_bar.register()
+
   let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
 
@@ -138,7 +142,7 @@ fn view(_: Model) -> Element(Msg) {
             ]),
           ],
           [
-            search_bar("SEARCH..."),
+            search_bar.element([search_bar.placeholder("SEARCH...")]),
             btn_secondary("SHORTCUTS"),
             btn_profile("none"),
           ],
@@ -192,38 +196,6 @@ fn btn_profile(pic_src: String) -> Element(msg) {
       styles.height("2rem"),
     ]),
   ])
-}
-
-fn search_bar(placeholder: String) -> Element(msg) {
-  html.div(
-    [
-      attribute.styles([
-        styles.display("flex"),
-        styles.align_items("center"),
-        styles.padding("4px 10px"),
-        styles.color(theme.white_700),
-        styles.font_size(theme.title_m),
-        styles.font_family(theme.font_title),
-        styles.border_radius("4px"),
-        styles.All("1px")
-          |> styles.BorderInfo("solid", theme.black_300)
-          |> styles.border,
-      ]),
-    ],
-    [
-      html.svg(
-        [attribute.styles([styles.width("1rem"), styles.height("1rem")])],
-        [],
-      ),
-      html.input([
-        attribute.type_("text"),
-        attribute.name("search-bar"),
-        attribute.styles([styles.font_weight("bold")]),
-        attribute.placeholder(placeholder),
-      ]),
-      html.span([], [html.text("CTRL + K")]),
-    ],
-  )
 }
 
 /// In other frameworks you might see special `<Link />` components that are
